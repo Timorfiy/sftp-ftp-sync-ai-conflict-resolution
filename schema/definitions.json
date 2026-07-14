@@ -335,6 +335,18 @@
   "ftp": {
     "type": "object",
     "properties": {
+      "ftpKeepAliveInterval": {
+        "type": "number",
+        "description": "Interval in milliseconds between FTP NOOP commands. Set to 0 to disable keepalive.",
+        "default": 180000,
+        "minimum": 0
+      },
+      "ftpReconnectAttempts": {
+        "type": "number",
+        "description": "Number of automatic reconnect attempts after the FTP control connection closes. Set to 0 to disable reconnect.",
+        "default": 1,
+        "minimum": 0
+      },
       "secure": {
         "type": ["string", "boolean"],
         "description": "Set to true for both control and data connection encryption, 'control' for control connection encryption only, or 'implicit' for\nimplicitly encrypted control connection (this mode is deprecated in modern times, but usually uses port 990).",

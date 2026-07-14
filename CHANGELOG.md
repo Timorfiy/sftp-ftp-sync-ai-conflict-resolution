@@ -1,3 +1,7 @@
+## 3.2.1 - 2026-07-14
+* **FTP reliability:** Send periodic `NOOP` commands to keep idle FTP control connections alive. When a server still closes the connection, reconnect automatically and safely retry idempotent control operations such as `ensureDir` and `list`.
+* **Configuration:** Added `ftpKeepAliveInterval` (default: 180000 ms, `0` disables) and `ftpReconnectAttempts` (default: 1, `0` disables).
+
 ## 3.1.1 - 2026-07-06
 * **Fix:** When the extension is installed but no `.vscode/sftp.json` exists, the SFTP activity bar icon now correctly shows an empty-state welcome card with a **"Create SFTP Config"** button. Previously the card was gated on `sftp.enabled`, which is set as soon as a workspace opens, so the onboarding message never appeared.
 

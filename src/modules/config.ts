@@ -30,6 +30,8 @@ const configScheme = z.object({
   secure: z.union([z.boolean(), z.literal('control'), z.literal('implicit')]).optional(),
   secureOptions: z.record(z.string(), z.any()).optional().nullable(),
   passive: z.boolean().optional(),
+  ftpKeepAliveInterval: z.number().int().min(0).optional(),
+  ftpReconnectAttempts: z.number().int().min(0).optional(),
 
   remotePath: z.string(),
   uploadOnSave: z.boolean().optional(),
@@ -120,6 +122,8 @@ const defaultConfig = {
   secure: false,
   // secureOptions,
   // passive: false,
+  ftpKeepAliveInterval: 180000,
+  ftpReconnectAttempts: 1,
   remoteTimeOffsetInHours: 0,
 
   remoteExplorer: {

@@ -24,6 +24,8 @@ export interface ConnectOption {
   secure?: any;
   secureOptions?: object;
   passive?: boolean;
+  ftpKeepAliveInterval?: number;
+  ftpReconnectAttempts?: number;
 }
 
 export enum ErrorCode {
