@@ -1,3 +1,6 @@
+## 3.2.2 - 2026-07-14
+* **Change:** FTP keepalive is now opt-in. `ftpKeepAliveInterval` defaults to `0` (disabled); set it explicitly to a positive interval for servers that close idle FTP sessions. Automatic reconnect remains enabled with one attempt by default.
+
 ## 3.2.1 - 2026-07-14
 * **FTP reliability:** Send periodic `NOOP` commands to keep idle FTP control connections alive. When a server still closes the connection, reconnect automatically and safely retry idempotent control operations such as `ensureDir` and `list`.
 * **Configuration:** Added `ftpKeepAliveInterval` (default: 180000 ms, `0` disables) and `ftpReconnectAttempts` (default: 1, `0` disables).

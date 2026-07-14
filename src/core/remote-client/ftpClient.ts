@@ -1,7 +1,7 @@
 import { Client } from 'basic-ftp';
 import RemoteClient, { ConnectOption } from './remoteClient';
 
-const DEFAULT_KEEPALIVE_INTERVAL = 180000;
+const DEFAULT_KEEPALIVE_INTERVAL = 0;
 const DEFAULT_RECONNECT_ATTEMPTS = 1;
 const RETRYABLE_METHODS = new Set([
   'cd',

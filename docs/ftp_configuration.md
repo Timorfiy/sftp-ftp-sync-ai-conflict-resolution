@@ -3,9 +3,9 @@
 ## ftpKeepAliveInterval
 *number*: Interval in milliseconds between FTP `NOOP` commands. The keepalive prevents servers with short idle timeouts from closing the control connection.
 
-Set to `0` to disable FTP keepalive.
+Set to a positive value such as `180000` (3 minutes) to enable FTP keepalive.
 
-**default**: 180000 (3 minutes)
+**default**: 0 (disabled)
 
 ## ftpReconnectAttempts
 *number*: Number of times to reconnect automatically when the FTP control connection is closed. Operations that are safe to repeat, such as directory navigation and listing, are retried once the connection is restored. Streaming transfers and mutating file operations are not repeated automatically after a mid-command disconnect.

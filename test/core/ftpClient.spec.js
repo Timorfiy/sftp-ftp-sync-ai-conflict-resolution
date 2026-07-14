@@ -14,7 +14,6 @@ describe('FTPClient', () => {
     username: 'user',
     password: 'secret',
     debug: jest.fn(),
-    ftpKeepAliveInterval: 1000,
     ftpReconnectAttempts: 1,
     ...overrides,
   });
@@ -60,12 +59,20 @@ describe('FTPClient', () => {
   }
 
   test('sends NOOP on the configured keepalive interval', async () => {
-    await connect();
+    await connect({ ftpKeepAliveInterval: 1000 });
 
     await jest.advanceTimersByTimeAsync(1000);
 
     expect(mockClient.send).toHaveBeenCalledTimes(1);
     expect(mockClient.send).toHaveBeenCalledWith('NOOP');
+  });
+
+  test('keeps FTP keepalive disabled by default', async () => {
+    await connect();
+
+    await jest.advanceTimersByTimeAsync(180000);
+
+    expect(mockClient.send).not.toHaveBeenCalled();
   });
 
   test('reconnects before an operation when the control connection is already closed', async () => {

@@ -122,7 +122,7 @@ const defaultConfig = {
   secure: false,
   // secureOptions,
   // passive: false,
-  ftpKeepAliveInterval: 180000,
+  ftpKeepAliveInterval: 0,
   ftpReconnectAttempts: 1,
   remoteTimeOffsetInHours: 0,
 

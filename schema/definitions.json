@@ -338,7 +338,7 @@
       "ftpKeepAliveInterval": {
         "type": "number",
         "description": "Interval in milliseconds between FTP NOOP commands. Set to 0 to disable keepalive.",
-        "default": 180000,
+        "default": 0,
         "minimum": 0
       },
       "ftpReconnectAttempts": {
