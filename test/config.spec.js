@@ -1,6 +1,26 @@
 const { validateConfig } = require('../src/modules/config');
 
 describe("validation config", () => {
+  test("FTP keepalive and reconnect options", () => {
+    const config = {
+      host: 'host',
+      username: 'username',
+      protocol: 'ftp',
+      remotePath: '/',
+      ftpKeepAliveInterval: 180000,
+      ftpReconnectAttempts: 1,
+    };
+
+    expect(validateConfig(config)).toBe(null);
+
+    config.ftpKeepAliveInterval = -1;
+    expect(validateConfig(config)).not.toBe(null);
+
+    config.ftpKeepAliveInterval = 0;
+    config.ftpReconnectAttempts = -1;
+    expect(validateConfig(config)).not.toBe(null);
+  });
+
   test("default config", () => {
     const config = {
       host: 'host',

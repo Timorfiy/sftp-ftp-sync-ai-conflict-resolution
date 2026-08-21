@@ -1,15 +1,44 @@
+import * as vscode from 'vscode';
 import { refreshRemoteExplorer } from '../shared';
 import createFileHandler, { FileHandlerContext } from '../createFileHandler';
 import { transfer, sync, TransferOption, SyncOption, TransferDirection } from './transfer';
 import { runHook } from '../../modules/hooks';
 import { remoteBackupsProvider } from '../../modules/remoteBackups';
+import { isConnectionError, withRetry } from '../../helper';
+import logger from '../../logger';
+import { createConflictLifecycle, UploadConflictAbortError } from './conflictCheck';
+
+const DEFAULT_TRANSFER_RETRY_ATTEMPTS = 3;
+
+function getTransferRetryAttempts(context: FileHandlerContext): number {
+  if (
+    context.config.protocol !== 'ftp' ||
+    context.config.ftpReconnectAttempts === undefined
+  ) {
+    return DEFAULT_TRANSFER_RETRY_ATTEMPTS;
+  }
+
+  return Math.max(1, Math.floor(context.config.ftpReconnectAttempts) + 1);
+}
+
+function createRetryOptions(context: FileHandlerContext) {
+  const maxAttempts = getTransferRetryAttempts(context);
+  return {
+    maxAttempts,
+    shouldRetry: isConnectionError,
+    onRetry: (_err: unknown, attempt: number) => {
+      logger.info(
+        `Connection lost during transfer (attempt ${attempt}/${maxAttempts - 1}). Reconnecting...`
+      );
+      context.fileService.clearRemoteFileSystem(context.config);
+    },
+  };
+}
 
 function createTransferHandle(direction: TransferDirection) {
   return async function handle(this: FileHandlerContext, option) {
-    const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
     const localFs = this.fileService.getLocalFileSystem();
     const { localFsPath, remoteFsPath } = this.target;
-    const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
     const hooks = this.config.hooks;
     const hookCtx = {
       localPath: localFsPath,
@@ -22,37 +51,57 @@ function createTransferHandle(direction: TransferDirection) {
     const isUpload = direction === TransferDirection.LOCAL_TO_REMOTE;
     const preHook = isUpload ? 'preUpload' : 'preDownload';
     const postHook = isUpload ? 'postUpload' : 'postDownload';
+    const lifecycle = createConflictLifecycle(this);
 
     await runHook(preHook, hooks, hookCtx, workspacePath);
 
-    let transferConfig;
-    if (direction === TransferDirection.REMOTE_TO_LOCAL) {
-      transferConfig = {
-        srcFsPath: remoteFsPath,
-        srcFs: remoteFs,
-        targetFsPath: localFsPath,
-        targetFs: localFs,
-        transferOption: option,
-        transferDirection: TransferDirection.REMOTE_TO_LOCAL,
-      };
-    } else {
-      transferConfig = {
-        srcFsPath: localFsPath,
-        srcFs: localFs,
-        targetFsPath: remoteFsPath,
-        targetFs: remoteFs,
-        transferOption: option,
-        filePerm: this.config.filePerm,
-        dirPerm: this.config.dirPerm,
-        transferDirection: TransferDirection.LOCAL_TO_REMOTE,
-      };
-    }
-    // todo: abort at here. we should stop collect task
-    await transfer(transferConfig, t => scheduler.add(t));
-    await scheduler.run();
+    try {
+      await withRetry(
+        async () => {
+          const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
+          const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
+          let transferConfig;
+          if (direction === TransferDirection.REMOTE_TO_LOCAL) {
+            transferConfig = {
+              srcFsPath: remoteFsPath,
+              srcFs: remoteFs,
+              targetFsPath: localFsPath,
+              targetFs: localFs,
+              transferOption: {
+                ...option,
+                ...lifecycle,
+              },
+              transferDirection: TransferDirection.REMOTE_TO_LOCAL,
+            };
+          } else {
+            transferConfig = {
+              srcFsPath: localFsPath,
+              srcFs: localFs,
+              targetFsPath: remoteFsPath,
+              targetFs: remoteFs,
+              transferOption: {
+                ...option,
+                ...lifecycle,
+              },
+              filePerm: this.config.filePerm,
+              dirPerm: this.config.dirPerm,
+              transferDirection: TransferDirection.LOCAL_TO_REMOTE,
+            };
+          }
+          await transfer(transferConfig, task => scheduler.add(task));
+          await scheduler.run();
 
-    if (isUpload) {
-      remoteBackupsProvider.refresh();
+          if (isUpload) {
+            remoteBackupsProvider.refresh();
+          }
+        },
+        createRetryOptions(this)
+      );
+    } catch (error) {
+      if (error instanceof UploadConflictAbortError) {
+        return;
+      }
+      throw error;
     }
 
     await runHook(postHook, hooks, hookCtx, workspacePath);
@@ -65,10 +114,8 @@ const downloadHandle = createTransferHandle(TransferDirection.REMOTE_TO_LOCAL);
 export const sync2Remote = createFileHandler<SyncOption>({
   name: 'sync local ➞ remote',
   async handle(option) {
-    const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
     const localFs = this.fileService.getLocalFileSystem();
     const { localFsPath, remoteFsPath } = this.target;
-    const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
     const hooks = this.config.hooks;
     const hookCtx = {
       localPath: localFsPath,
@@ -78,25 +125,55 @@ export const sync2Remote = createFileHandler<SyncOption>({
     };
     const workspacePath = this.fileService.workspace;
 
+    if (this.config.conflictCheck && option.delete) {
+      await vscode.window.showWarningMessage(
+        'SFTP Neo blocked Sync Local → Remote.',
+        {
+          modal: true,
+          detail:
+            'conflictCheck cannot safely be combined with syncOption.delete. Disable delete or use Upload File/Folder.',
+        }
+      );
+      return;
+    }
+
     await runHook('preSync', hooks, hookCtx, workspacePath);
 
-    // Attach filePerm and dirPerm to transferOption
     option.filePerm = this.config.filePerm;
     option.dirPerm = this.config.dirPerm;
-    await sync(
-      {
-        srcFsPath: localFsPath,
-        srcFs: localFs,
-        targetFsPath: remoteFsPath,
-        targetFs: remoteFs,
-        transferOption: option,
-        transferDirection: TransferDirection.LOCAL_TO_REMOTE,
-      },
-      t => scheduler.add(t)
-    );
-    await scheduler.run();
+    const lifecycle = createConflictLifecycle(this);
 
-    remoteBackupsProvider.refresh();
+    try {
+      await withRetry(
+        async () => {
+          const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
+          const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
+          await sync(
+            {
+              srcFsPath: localFsPath,
+              srcFs: localFs,
+              targetFsPath: remoteFsPath,
+              targetFs: remoteFs,
+              transferOption: {
+                ...option,
+                ...lifecycle,
+              },
+              transferDirection: TransferDirection.LOCAL_TO_REMOTE,
+            },
+            task => scheduler.add(task)
+          );
+          await scheduler.run();
+
+          remoteBackupsProvider.refresh();
+        },
+        createRetryOptions(this)
+      );
+    } catch (error) {
+      if (error instanceof UploadConflictAbortError) {
+        return;
+      }
+      throw error;
+    }
 
     await runHook('postSync', hooks, hookCtx, workspacePath);
   },
@@ -107,7 +184,6 @@ export const sync2Remote = createFileHandler<SyncOption>({
       perserveTargetMode: config.protocol === 'sftp' && !config.filePerm && !config.dirPerm,
       useTempFile: config.useTempFile,
       openSsh: config.openSsh,
-      // remoteTimeOffsetInHours: config.remoteTimeOffsetInHours,
       ignore: config.ignore,
       delete: syncOption.delete,
       skipCreate: syncOption.skipCreate,
@@ -126,10 +202,8 @@ export const sync2Remote = createFileHandler<SyncOption>({
 export const sync2Local = createFileHandler<SyncOption>({
   name: 'sync remote ➞ local',
   async handle(option) {
-    const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
     const localFs = this.fileService.getLocalFileSystem();
     const { localFsPath, remoteFsPath } = this.target;
-    const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
     const hooks = this.config.hooks;
     const hookCtx = {
       localPath: localFsPath,
@@ -138,21 +212,32 @@ export const sync2Local = createFileHandler<SyncOption>({
       protocol: this.config.protocol,
     };
     const workspacePath = this.fileService.workspace;
+    const lifecycle = createConflictLifecycle(this);
 
     await runHook('preSync', hooks, hookCtx, workspacePath);
 
-    await sync(
-      {
-        srcFsPath: remoteFsPath,
-        srcFs: remoteFs,
-        targetFsPath: localFsPath,
-        targetFs: localFs,
-        transferOption: option,
-        transferDirection: TransferDirection.REMOTE_TO_LOCAL,
+    await withRetry(
+      async () => {
+        const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
+        const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
+        await sync(
+          {
+            srcFsPath: remoteFsPath,
+            srcFs: remoteFs,
+            targetFsPath: localFsPath,
+            targetFs: localFs,
+            transferOption: {
+              ...option,
+              ...lifecycle,
+            },
+            transferDirection: TransferDirection.REMOTE_TO_LOCAL,
+          },
+          task => scheduler.add(task)
+        );
+        await scheduler.run();
       },
-      t => scheduler.add(t)
+      createRetryOptions(this)
     );
-    await scheduler.run();
 
     await runHook('postSync', hooks, hookCtx, workspacePath);
   },
@@ -161,7 +246,6 @@ export const sync2Local = createFileHandler<SyncOption>({
     const syncOption = config.syncOption || {};
     return {
       perserveTargetMode: false,
-      // remoteTimeOffsetInHours: config.remoteTimeOffsetInHours,
       ignore: config.ignore,
       delete: syncOption.delete,
       skipCreate: syncOption.skipCreate,
@@ -180,7 +264,6 @@ export const upload = createFileHandler<TransferOption>({
       perserveTargetMode: config.protocol === 'sftp' && !config.filePerm && !config.dirPerm,
       useTempFile: config.useTempFile,
       openSsh: config.openSsh,
-      // remoteTimeOffsetInHours: config.remoteTimeOffsetInHours,
       ignore: config.ignore,
       backup: config.backup,
       remotePath: config.remotePath,
@@ -201,7 +284,6 @@ export const uploadFile = createFileHandler<TransferOption>({
       perserveTargetMode: config.protocol === 'sftp' && !config.filePerm,
       useTempFile: config.useTempFile,
       openSsh: config.openSsh,
-      // remoteTimeOffsetInHours: config.remoteTimeOffsetInHours,
       ignore: config.ignore,
       backup: config.backup,
       remotePath: config.remotePath,
@@ -222,7 +304,6 @@ export const uploadFolder = createFileHandler<TransferOption>({
       perserveTargetMode: config.protocol === 'sftp' && !config.dirPerm,
       useTempFile: config.useTempFile,
       openSsh: config.openSsh,
-      // remoteTimeOffsetInHours: config.remoteTimeOffsetInHours,
       ignore: config.ignore,
       backup: config.backup,
       remotePath: config.remotePath,
@@ -238,11 +319,9 @@ export const download = createFileHandler<TransferOption>({
   name: 'download',
   handle: downloadHandle,
   transformOption() {
-    const config = this.config;
     return {
       perserveTargetMode: false,
-      // remoteTimeOffsetInHours: config.remoteTimeOffsetInHours,
-      ignore: config.ignore,
+      ignore: this.config.ignore,
     };
   },
 });
@@ -251,11 +330,9 @@ export const downloadFile = createFileHandler<TransferOption>({
   name: 'download file',
   handle: downloadHandle,
   transformOption() {
-    const config = this.config;
     return {
       perserveTargetMode: false,
-      // remoteTimeOffsetInHours: config.remoteTimeOffsetInHours,
-      ignore: config.ignore,
+      ignore: this.config.ignore,
     };
   },
 });
@@ -264,11 +341,9 @@ export const downloadFolder = createFileHandler<TransferOption>({
   name: 'download folder',
   handle: downloadHandle,
   transformOption() {
-    const config = this.config;
     return {
       perserveTargetMode: false,
-      // remoteTimeOffsetInHours: config.remoteTimeOffsetInHours,
-      ignore: config.ignore,
+      ignore: this.config.ignore,
     };
   },
 });

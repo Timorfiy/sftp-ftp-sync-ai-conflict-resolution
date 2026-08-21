@@ -33,6 +33,7 @@ function permissionsToMode(permissions?: { user: number; group: number; world: n
 
 export default class FTPFileSystem extends RemoteFileSystem {
   private _supportMFMT: boolean = true;
+  private _supportMDTM: boolean = true;
 
   get ftp(): Client {
     return this.getClient().getFsClient();
@@ -82,10 +83,36 @@ export default class FTPFileSystem extends RemoteFileSystem {
     const fileStat = stats.find(ns => ns.name === nameIdentity);
 
     if (!fileStat) {
-      throw new Error('file not exist');
+      const error = new Error('file not exist') as NodeJS.ErrnoException;
+      error.code = 'ENOENT';
+      throw error;
     }
 
-    return fileStat;
+    return this.ensureAccurateMtime(fileStat);
+  }
+
+  async ensureAccurateMtime(entry: FileEntry): Promise<FileEntry> {
+    if (entry.type !== FileType.File || entry.mtime > 0 || !this._supportMDTM) {
+      return entry;
+    }
+
+    try {
+      const modifiedAt = await this.ftp.lastMod(entry.fspath);
+      const mtime = this.toLocalTime(modifiedAt.getTime());
+      return {
+        ...entry,
+        mtime,
+        atime: mtime,
+      };
+    } catch (error) {
+      const code = Number((error as any)?.code);
+      if ([500, 501, 502, 504].includes(code)) {
+        this._supportMDTM = false;
+        logger.warn('FTP server does not support MDTM; exact remote modification times are unavailable.');
+        return entry;
+      }
+      throw error;
+    }
   }
 
   open(path: string, flags: string, mode?: number): Promise<FtpFileHandle> {

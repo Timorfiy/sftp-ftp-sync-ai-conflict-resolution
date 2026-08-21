@@ -79,6 +79,16 @@ export default abstract class FileSystem {
   abstract ensureDir(dir: string): Promise<void>;
   abstract chmod(path: string, mode: number): Promise<void>;
   abstract list(dir: string, option?): Promise<FileEntry[]>;
+
+  /**
+   * Resolve an exact modification time when a directory listing could not
+   * provide one. Most filesystems already return accurate entries, so the
+   * default implementation is intentionally a no-op.
+   */
+  async ensureAccurateMtime(entry: FileEntry): Promise<FileEntry> {
+    return entry;
+  }
+
   abstract lstat(path: string): Promise<FileStats>;
   abstract readlink(path: string): Promise<string>;
   abstract symlink(targetPath: string, path: string): Promise<void>;

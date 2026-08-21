@@ -30,9 +30,12 @@ const configScheme = z.object({
   secure: z.union([z.boolean(), z.literal('control'), z.literal('implicit')]).optional(),
   secureOptions: z.record(z.string(), z.any()).optional().nullable(),
   passive: z.boolean().optional(),
+  ftpKeepAliveInterval: z.number().int().min(0).optional(),
+  ftpReconnectAttempts: z.number().int().min(0).optional(),
 
   remotePath: z.string(),
   uploadOnSave: z.boolean().optional(),
+  conflictCheck: z.boolean().optional(),
   useTempFile: z.boolean().optional(),
   openSsh: z.boolean().optional(),
   downloadOnOpen: z.union([z.boolean(), z.literal('confirm')]).optional(),
@@ -43,6 +46,7 @@ const configScheme = z.object({
     files: z.union([z.string(), z.literal(false), z.null()]).optional(),
     autoUpload: z.boolean().optional(),
     autoDelete: z.boolean().optional(),
+    autoRename: z.boolean().optional(),
   }).optional(),
   concurrency: z.number().int().optional(),
 
@@ -57,12 +61,14 @@ const configScheme = z.object({
     location: z.enum(['local', 'remote']).optional(),
     folder: z.string().optional(),
     versions: z.number().int().min(0).optional(),
+    onDelete: z.boolean().optional(),
   }).optional(),
   remoteTimeOffsetInHours: z.number().optional(),
 
   remoteExplorer: z.object({
     filesExclude: z.array(z.string()).optional(),
     order: z.number().optional(),
+    enableDragAndDrop: z.boolean().optional(),
   }).optional(),
 
   hooks: z.object({
@@ -87,6 +93,7 @@ const defaultConfig = {
   // name: undefined,
   remotePath: './',
   uploadOnSave: false,
+  conflictCheck: false,
   useTempFile: false,
   openSsh: false,
   downloadOnOpen: false,
@@ -124,13 +131,15 @@ const defaultConfig = {
 
   remoteExplorer: {
     order: 0,
+    enableDragAndDrop: false,
   },
 
   backup: {
     enabled: false,
     location: 'remote',
     folder: '.vscode/sftp-backup',
-    versions: 5,
+    versions: 100,
+    onDelete: false,
   },
 };
 
@@ -138,6 +147,10 @@ function mergedDefault(config) {
   return {
     ...defaultConfig,
     ...config,
+    backup: {
+      ...defaultConfig.backup,
+      ...config.backup,
+    },
   };
 }
 
@@ -208,11 +221,13 @@ export function newConfig(basePath) {
             uploadOnSave: false,
             useTempFile: false,
             openSsh: false,
+            concurrency: 4,
             backup: {
               enabled: false,
               location: 'remote',
               folder: '.vscode/sftp-backup',
-              versions: 5,
+              versions: 100,
+              onDelete: false,
             },
           },
           { spaces: 4 }

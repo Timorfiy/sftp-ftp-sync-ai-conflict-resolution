@@ -20,10 +20,15 @@ export interface ConnectOption {
   hop?: ConnectOption | ConnectOption[];
   limitOpenFilesOnRemote?: boolean | number;
 
+  // connection keepalive (milliseconds)
+  keepalive?: number;
+
   // ftp-only
   secure?: any;
   secureOptions?: object;
   passive?: boolean;
+  ftpKeepAliveInterval?: number;
+  ftpReconnectAttempts?: number;
 }
 
 export enum ErrorCode {
@@ -49,6 +54,8 @@ export default abstract class RemoteClient {
   protected abstract _doConnect(connectOption: ConnectOption, config: Config): Promise<void>;
   protected abstract _hasProvideAuth(connectOption: ConnectOption): boolean;
   protected abstract _initClient(): any;
+
+  abstract isClosed(): boolean;
 
   async connect(connectOption: ConnectOption, config: Config) {
     if (this._hasProvideAuth(connectOption)) {
