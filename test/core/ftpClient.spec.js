@@ -1,7 +1,10 @@
+const { EventEmitter } = require('events');
+
 describe('FTPClient', () => {
   let FTPClient;
   let ftpClient;
   let mockClient;
+  let socket;
 
   const connectionConfig = {
     askForPasswd: jest.fn(),
@@ -14,18 +17,19 @@ describe('FTPClient', () => {
     username: 'user',
     password: 'secret',
     debug: jest.fn(),
-    ftpReconnectAttempts: 1,
     ...overrides,
   });
 
   beforeEach(() => {
     jest.useFakeTimers();
     jest.resetModules();
+    socket = new EventEmitter();
 
     mockClient = {
       closed: true,
       ftp: {
         log: jest.fn(),
+        socket,
       },
       access: jest.fn(async () => {
         mockClient.closed = false;
@@ -33,10 +37,7 @@ describe('FTPClient', () => {
       close: jest.fn(() => {
         mockClient.closed = true;
       }),
-      ensureDir: jest.fn(async () => {}),
-      list: jest.fn(async () => []),
-      send: jest.fn(async () => ({ code: 200, message: '200 NOOP' })),
-      uploadFrom: jest.fn(async () => {}),
+      sendIgnoringError: jest.fn(async () => ({ code: 200, message: '200 NOOP' })),
     };
 
     jest.doMock('basic-ftp', () => ({
@@ -55,91 +56,61 @@ describe('FTPClient', () => {
     const option = createOption(overrides);
     ftpClient = new FTPClient(option);
     await ftpClient.connect(option, connectionConfig);
-    return ftpClient.getFsClient();
   }
 
-  test('sends NOOP on the configured keepalive interval', async () => {
+  test('sends NOOP on the legacy fork keepalive interval', async () => {
     await connect({ ftpKeepAliveInterval: 1000 });
 
     await jest.advanceTimersByTimeAsync(1000);
 
-    expect(mockClient.send).toHaveBeenCalledTimes(1);
-    expect(mockClient.send).toHaveBeenCalledWith('NOOP');
+    expect(mockClient.sendIgnoringError).toHaveBeenCalledTimes(1);
+    expect(mockClient.sendIgnoringError).toHaveBeenCalledWith('NOOP');
   });
 
-  test('keeps FTP keepalive disabled by default', async () => {
+  test('uses the upstream 30-second keepalive by default', async () => {
     await connect();
+
+    await jest.advanceTimersByTimeAsync(29999);
+    expect(mockClient.sendIgnoringError).not.toHaveBeenCalled();
+
+    await jest.advanceTimersByTimeAsync(1);
+    expect(mockClient.sendIgnoringError).toHaveBeenCalledTimes(1);
+  });
+
+  test('allows the common keepalive option to disable NOOP', async () => {
+    await connect({ keepalive: 0 });
 
     await jest.advanceTimersByTimeAsync(180000);
 
-    expect(mockClient.send).not.toHaveBeenCalled();
+    expect(mockClient.sendIgnoringError).not.toHaveBeenCalled();
   });
 
-  test('reconnects before an operation when the control connection is already closed', async () => {
-    const client = await connect();
+  test('gives the legacy FTP keepalive override precedence', async () => {
+    await connect({ keepalive: 1000, ftpKeepAliveInterval: 0 });
+
+    await jest.advanceTimersByTimeAsync(1000);
+
+    expect(mockClient.sendIgnoringError).not.toHaveBeenCalled();
+  });
+
+  test('reports whether the cached FTP control connection is closed', async () => {
+    await connect({ keepalive: 0 });
+
+    expect(ftpClient.isClosed()).toBe(false);
     mockClient.closed = true;
-
-    await client.ensureDir('/public_html/local');
-
-    expect(mockClient.access).toHaveBeenCalledTimes(2);
-    expect(mockClient.ensureDir).toHaveBeenCalledTimes(1);
+    expect(ftpClient.isClosed()).toBe(true);
   });
 
-  test('reconnects and retries a safe operation after a mid-command disconnect', async () => {
-    const client = await connect();
-    mockClient.ensureDir
-      .mockImplementationOnce(async () => {
-        mockClient.closed = true;
-        throw new Error('Server sent FIN packet unexpectedly, closing connection.');
-      })
-      .mockResolvedValueOnce(undefined);
+  test.each(['end', 'close', 'error'])(
+    'invalidates the cached filesystem on socket %s',
+    async eventName => {
+      await connect({ keepalive: 0 });
+      const disconnected = jest.fn();
+      ftpClient.onDisconnected(disconnected);
 
-    await client.ensureDir('/public_html/local');
+      socket.emit(eventName, eventName === 'error' ? new Error('reset') : undefined);
 
-    expect(mockClient.access).toHaveBeenCalledTimes(2);
-    expect(mockClient.ensureDir).toHaveBeenCalledTimes(2);
-  });
-
-  test('reconnects but does not replay a streaming upload after a mid-command disconnect', async () => {
-    const client = await connect();
-    mockClient.uploadFrom.mockImplementationOnce(async () => {
-      mockClient.closed = true;
-      throw new Error('Server sent FIN packet unexpectedly, closing connection.');
-    });
-
-    await expect(client.uploadFrom({}, '/public_html/index.php')).rejects.toThrow(
-      'Server sent FIN packet unexpectedly'
-    );
-
-    expect(mockClient.access).toHaveBeenCalledTimes(2);
-    expect(mockClient.uploadFrom).toHaveBeenCalledTimes(1);
-  });
-
-  test('keeps the shared client reusable when one reconnect attempt is exhausted', async () => {
-    const client = await connect();
-    const disconnected = jest.fn();
-    ftpClient.onDisconnected(disconnected);
-    mockClient.closed = true;
-    mockClient.access.mockRejectedValueOnce(new Error('FTP server is unavailable'));
-
-    await expect(client.ensureDir('/public_html/local')).rejects.toThrow('FTP server is unavailable');
-
-    await client.ensureDir('/public_html/next');
-
-    expect(disconnected).not.toHaveBeenCalled();
-    expect(mockClient.access).toHaveBeenCalledTimes(3);
-    expect(mockClient.ensureDir).toHaveBeenCalledTimes(1);
-    expect(mockClient.ensureDir).toHaveBeenCalledWith('/public_html/next');
-  });
-
-  test('does not reconnect after the client is explicitly ended', async () => {
-    const client = await connect();
-    ftpClient.end();
-
-    await expect(client.ensureDir('/public_html/local')).rejects.toThrow(
-      'FTP client cannot reconnect after it has been closed.'
-    );
-
-    expect(mockClient.ensureDir).not.toHaveBeenCalled();
-  });
+      expect(disconnected).toHaveBeenCalledWith(eventName);
+    }
+  );
 });

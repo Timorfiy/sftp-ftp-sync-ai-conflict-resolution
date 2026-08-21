@@ -1,25 +1,99 @@
-## 3.2.5 - 2026-08-21
-* **FTP recovery:** A failed reconnect no longer permanently closes the shared FTP filesystem used by the rest of a batch. Later queued files can establish a fresh session instead of failing with `FTP client cannot reconnect after it has been closed`.
-* **Download retry:** Remote-to-local file transfers retry once after transient network failures such as `ETIMEDOUT`. Uploads are never replayed automatically.
+## 3.4.1 - 2026-08-21
 
-## 3.2.4 - 2026-08-21
+Fork integration release based on upstream 3.4.0.
+
+* **Conflict-safe uploads:** Added opt-in `conflictCheck`. Before file, folder, save, watcher, or non-deleting sync uploads, each existing remote file is compared by exact modification time and byte size against a workspace-scoped remote baseline. Changed files are blocked with Overwrite, Overwrite All, Open Diff, or cancel actions. No remote content download is required for the check.
+* **FTP metadata safety:** FTP Sync Remote → Local requests exact modification times with `MDTM` when `LIST` omits them. If exact timestamps remain unavailable, update comparison falls back to byte size.
 * **Smart text-only backups:** Backups are created for PHP, CSS, JavaScript/TypeScript, JSON, HTML/XML, SVG, configuration files, and other known text formats. Known binary images, media, fonts, PDFs, archives, and executables are skipped without blocking uploads; unknown extensions are sampled for binary content.
 * **Retention:** The default and recommended `backup.versions` limit is now 100. Pruning keeps the oldest historical anchor, the latest 50 versions, up to 5 newest backups made before confirmed conflict overwrites, and evenly distributed versions from the remaining history. All versions share the same hard per-file limit.
 * **Conflict integration:** Choosing Overwrite or Overwrite All for a confirmed changed-remote conflict marks the pre-overwrite backup as priority for pruning.
 
-## 3.2.3 - 2026-08-21
-* **Fix:** FTP Sync Remote → Local now requests exact file modification times with `MDTM` when `LIST` does not provide `modifiedAt`. This prevents `syncOption.update` from treating remote timestamps as zero and silently skipping changed existing files. If `MDTM` is unavailable, update comparison falls back to byte size instead of skipping every existing destination file.
-* **Safety:** Added opt-in `conflictCheck`. Before file, folder, save, watcher, or non-deleting sync uploads, each existing remote file is compared by exact modification time and byte size against a workspace-scoped remote baseline. Changed files are blocked with Overwrite, Overwrite All, Open Diff, or cancel actions. No remote content download is required for the check.
+## 3.4.0 - 2026-07-26
 
-## 3.2.2 - 2026-07-14
-* **Change:** FTP keepalive is now opt-in. `ftpKeepAliveInterval` defaults to `0` (disabled); set it explicitly to a positive interval for servers that close idle FTP sessions. Automatic reconnect remains enabled with one attempt by default.
+Remote file lifecycle: rename, move, and delete on the server without leaving the editor — and without re-uploading anything.
 
-## 3.2.1 - 2026-07-14
-* **FTP reliability:** Send periodic `NOOP` commands to keep idle FTP control connections alive. When a server still closes the connection, reconnect automatically and safely retry idempotent control operations such as `ensureDir` and `list`.
-* **Configuration:** Added `ftpKeepAliveInterval` (default: 180000 ms, `0` disables) and `ftpReconnectAttempts` (default: 1, `0` disables).
+### Features
 
-## 3.1.1 - 2026-07-06
+* **`SFTP: Rename Remote`:**
+  * Rename or move a file/folder on the server from the Remote Explorer context menu, without re-uploading it. The rename is server-side, so a folder costs one request regardless of how many files it holds.
+  * Entering a name containing `/` moves the item; the destination is validated to stay inside `remotePath`.
+  * Refuses to overwrite: if something already exists at the destination the command reports it instead of clobbering it.
+* **`SFTP: Delete Remote` is now discoverable:**
+  * Added to the local file explorer context menu and the Command Palette (where it targets the active editor's file). Previously it was only reachable by right-clicking in the Remote Explorer.
+  * Renamed from "Delete" to "Delete Remote" so it can't be mistaken for a local delete, and the confirmation is now a modal dialog rather than a dismissible toast.
+* **New Option — `watcher.autoRename` (default `false`):**
+  * Renaming or moving a file/folder inside VS Code renames it on the server instead of re-uploading it. No file contents cross the network.
+  * Covers renames made through VS Code (explorer, `F2`, drag to move, refactorings). `mv` in a terminal or `git mv` still appears as a delete plus a create.
+  * While a rename is in flight the file watcher ignores the affected paths, so `autoUpload`/`autoDelete` can't undo it or re-upload what was just moved. The claim is registered before the files move on disk, so it is always in place before the watcher can react.
+  * Moves that cross into a different configuration are skipped and fall back to the normal upload path. If the remote source doesn't exist yet, the rename fails and the new path is uploaded instead when `autoUpload` is on.
+  * Moving into a remote folder that doesn't exist yet creates it first, rather than failing with a bare "no such file".
+* **New Option — `remoteExplorer.enableDragAndDrop` (default `false`):**
+  * Drag files and folders inside the Remote Explorer to move them on the server. A move is a server-side rename: one request, no file contents transferred, regardless of folder size.
+  * Enabled per configuration, so it can be on for staging and off for production.
+  * Drop onto a folder to move into it; dropping onto a file moves into that file's folder. Moving a folder or multiple items asks for confirmation; moving a single file does not, since dragging it back undoes it.
+  * Refuses to move a folder into itself or its own subtree, refuses drops that cross configurations (the whole drop, not just part of it), and refuses drops on empty space where the destination would be ambiguous. Selecting a folder plus something inside it moves only the folder.
+  * Existing files are never overwritten — the move reports an error instead.
+  * Dragging *out* of the Remote Explorer does nothing; VS Code has no API to materialise a remote file on drop, so downloading stays a context-menu action.
+* **New Option — `backup.onDelete` (default `false`):**
+  * Backups previously only ran before an upload overwrote a remote file. With this on, files are also backed up before they are **deleted**, making deletes recoverable from the **Backups** panel.
+  * Covers every delete route: **SFTP: Delete Remote**, `watcher.autoDelete`, and the deletions performed by **SFTP: Upload Changed Files**.
+  * Deleting a folder backs up every file inside it first, recursively. If any backup fails the delete is **aborted** and nothing is removed — the error names the file that could not be copied.
+  * Symlinks are skipped rather than dereferenced, and the backup folder is never backed up into itself.
+  * Requires `backup.enabled` and a non-zero `backup.versions`. Backups copy file contents, so backing up a large folder before deleting it can move a lot of data.
+  * The **Delete Remote** confirmation now says whether a restorable copy will be kept, instead of always claiming the delete can't be undone.
+
+### Fixes
+
+* **`uploadOnSave` and `watcher.autoUpload` no longer upload twice:**
+  * With both enabled, a Ctrl+S uploaded the file once from the save handler and again from the file watcher. The path is now claimed on `onWillSaveTextDocument`, before the bytes reach disk, so the watcher skips its own event for that write and `uploadOnSave` is the only thing that uploads.
+  * Writes from outside the editor (AI agents, build steps) never trigger that event, so the watcher still picks them up as before. Every Ctrl+S still forces an upload.
+  * The claim is time-based rather than consumed by the first matching event: one write can produce more than one watcher event depending on platform, and a consume-once marker would let the second through. It expires after 2 seconds.
+  * Only applied when `uploadOnSave` is actually on for that file, so a manual save with only the watcher enabled still uploads.
+* **Profiles now control the file watcher:**
+  * `watcher` was read from the raw config, captured once at startup, while `ignore` in the same call came from the profile-merged config. A profile setting `watcher.autoUpload` was silently ignored. It is now resolved through the active profile like every other option, so auto-upload can be on for dev and off for prod.
+  * Switching with **SFTP: Set Profile** rebuilds the watcher immediately. Previously the watcher was created once and never recreated, so a profile change couldn't have taken effect even after the fix above.
+  * Disposed watchers are no longer left in the watcher table when a profile switch turns watching off.
+* **`SFTP: Upload Changed Files` never renamed anything:**
+  * The rename handler passed local filesystem paths to the remote server and applied them in reverse, so Git renames always failed. It now resolves the destination through the service config and renames source → destination.
+  * Upload, rename, and delete results were not awaited, so every failure was swallowed as an unhandled rejection. Failures are now caught and logged to the SFTP output channel.
+* **Stale Remote Explorer cache after a rename:**
+  * The tree caches items by remote path; renaming a folder left every descendant pointing at a path that no longer existed, breaking reveal and refresh for that subtree. The affected subtree is now dropped from the cache, and both the source and destination parents are refreshed.
+* **The watcher queues no longer hold duplicates:**
+  * The pending upload and delete queues were `Set`s of `Uri` objects. Every watcher event carries a fresh `Uri`, so `Set` compared by reference and the same file could be queued — and uploaded — several times. They are now keyed by path.
+
+### Docs
+
+* The README gained a full `sftp.json` reference block listing every option with its default, plus a note on the four options that are off by default and why.
+* `watcher.autoDelete` is now documented properly: its defaults, the fact that it is destructive, and how it interacts with renames.
+* Documented overriding `watcher` per profile, and the new `SFTP: Rename Remote` / `SFTP: Delete Remote` behaviour.
+
+## 3.3.0 - 2026-07-14
+* **New Option — `keepalive`:**
+  * Keeps idle SFTP/FTP connections alive by sending periodic keepalive packets (SFTP) or `NOOP` commands (FTP).
+  * Default is `30000` milliseconds (30 seconds). Set to `0` to disable.
+  * `ServerAliveInterval` from `~/.ssh/config` is now honored for SFTP and converted from seconds to milliseconds.
+* **Fix — Idle connection / FIN packet failures:**
+  * Cached connections are now checked before reuse; if the server closed the connection, the extension reconnects automatically instead of failing.
+  * FTP now detects socket `end`/`close`/`error` events and invalidates the cached client.
+  * Transfer retries increased from 2 to 3 for connection-related errors, with a clear "reconnecting..." log message.
+* **Fix — Watcher ignore rules:**
+  * The file watcher now applies `ignore` and `ignoreFile` patterns to `onDidCreate`, `onDidChange`, and `onDidDelete` events before queuing or logging.
+  * Prevents `.git`, local backups, and other ignored paths from flooding the SFTP output channel.
+* **Docs:**
+  * Expanded `concurrency` documentation with suggested values and the note that transfers share a single SSH session.
+  * Added a sample configuration block to the full configuration docs.
+  * The generated `sftp.json` now includes `concurrency: 4`.
+
+## 3.2.0 - 2026-07-08
+* **Feature — Remote Explorer Filter:**
+  * Quickly filter files and folders directly in the Remote Explorer sidebar. Click the filter icon in the Remote Explorer title bar, type a query, and the tree updates live as you type.
+  * The filter is purely client-side and applies only to files and folders already loaded in the Remote Explorer. It does **not** fetch new data from the server.
+  * Folders stay visible if they contain matching files or folders, so searching for a deep file keeps its parent path visible.
+  * The active filter is shown in the Remote Explorer header description, and a clear (X) button appears in the title bar when a filter is active.
+
+## 3.1.1 - 2026-07-08
 * **Fix:** When the extension is installed but no `.vscode/sftp.json` exists, the SFTP activity bar icon now correctly shows an empty-state welcome card with a **"Create SFTP Config"** button. Previously the card was gated on `sftp.enabled`, which is set as soon as a workspace opens, so the onboarding message never appeared.
+* **Fix:** Upload, download, and sync operations now automatically reconnect and retry once when the server closes the connection (`ECONNRESET`, FIN, "Connection closed", etc.). Previously the cached dead connection was reused, causing repeated timeouts and forcing users to retry manually.
 
 ## 3.1.0 - 2026-07-04
 * **Major Feature — Local or Remote File Backups:**

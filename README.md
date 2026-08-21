@@ -13,71 +13,74 @@
 
 </div>
 
-> 🍴 **Forked & Modernized** from [Natizyskunk/vscode-sftp](https://github.com/Natizyskunk/vscode-sftp), originally based on the abandoned [liximomo/vscode-sftp](https://github.com/liximomo/vscode-sftp). Updated dependencies, new features, and full compatibility with the latest VS Code APIs.
+---
+
+> **Forked & Modernized** from [Natizyskunk/vscode-sftp](https://github.com/Natizyskunk/vscode-sftp), originally based on the abandoned [liximomo/vscode-sftp](https://github.com/liximomo/vscode-sftp). Updated dependencies, new features, and full compatibility with the latest VS Code APIs.
 
 ---
 
-## 🎉 What's New in v3.2.0 — Remote Explorer Filter
+
+## 📑 Quick Links
 
 <div align="center">
 
-### 🔍 Find Remote Files Instantly
-
-Quickly filter the Remote Explorer sidebar as you type. No more scrolling through hundreds of remote files — just click the filter icon, start typing, and only matching files and folders stay visible.
+### ✨ [Features](#-features) &emsp;·&emsp; ⚡ [Quick Start](#-quick-start) &emsp;·&emsp; 🔧 [Config Examples](#-config-examples) &emsp;·&emsp; 📖 [Configuration](./docs/configuration.md)
+### 🔐 [Security](#-security) &emsp;·&emsp; 🔑 [SSH Authentication](#-ssh-authentication) &emsp;·&emsp; 🐛 [Debug](#-debug) &emsp;·&emsp; ❓ [FAQ](./FAQ.md)
 
 </div>
 
-| | |
-|:---|:---|
-| 🔍 **Live Filter** | Type in the filter box and the Remote Explorer updates instantly |
-| 🖥️ **Client-Side Only** | Filters only the files and folders already shown in the sidebar — no extra server requests |
-| 📂 **Smart Folders** | Parent folders stay visible when a child file or folder matches, so you don't lose your place |
-| ✖️ **One-Click Clear** | An X button appears in the title bar as soon as a filter is active |
-| 🏷️ **Always Visible** | The current filter is shown in the Remote Explorer header |
 
-> ⚡ [**Jump to Remote Explorer Filter Docs →**](./docs/commands.md#remote-explorer-filter)
+
+---
+
+## 🎉 What's New in v3.4.0 — Rename, Move & Safer Deletes
+
+Manage remote files without switching to FileZilla or an SSH terminal.
+
+### ✏️ Rename & Move on the Server
+`SFTP: Rename Remote` renames or moves a file or folder **on the server** — a single request, no re-upload, however large the folder. Include a `/` in the new name to move it somewhere else.
+
+### 🖱️ Drag to Move
+Set `"remoteExplorer": { "enableDragAndDrop": true }` and drag items around the Remote Explorer to reorganize the server. Also a server-side rename, so nothing is transferred.
+
+### 🔁 Local Renames Follow Along
+`"watcher": { "autoRename": true }` turns a rename inside VS Code into a server-side rename instead of the old delete-and-re-upload, which used to leave the old folder orphaned.
+
+### 🗑️ Deletes You Can Undo
+`"backup": { "onDelete": true }` saves a copy of everything a delete removes, restorable from the **Backups** panel. Deleting a folder backs up its contents first, and the delete is aborted if any copy fails.
+
+`SFTP: Delete Remote` also moved out of hiding — it's now in the local file explorer context menu and the Command Palette, retitled so it can't be mistaken for a local delete.
+
+### 🔧 Fixes
+- `uploadOnSave` and `watcher.autoUpload` no longer upload the same file twice on a Ctrl+S — safe to run both.
+- Profiles can now override `watcher`, so auto-upload can be on for dev and off for prod. Switching profiles rebuilds the watcher immediately.
+- `SFTP: Upload Changed Files` now actually applies Git renames (it silently failed before), and reports failures instead of swallowing them.
+
+> All new options default to **off** — nothing changes until you opt in. See the [full option reference](#-every-option-with-defaults).
 
 ---
 
 ## 🎉 Previous Releases
 
-### v3.1.0 — Local or Remote File Backups
+| Version | Highlights |
+|---------|------------|
+| **v3.3.0** | `keepalive` for idle connections, automatic reconnect on dropped sessions, watcher respects `ignore` rules |
+| **v3.2.0** | [Remote Explorer Filter](./docs/commands.md#remote-explorer-filter) — live client-side filtering of the sidebar |
+| **v3.1.0** | Backups can be stored locally or on the server via `backup.location` |
+| **v3.0.5** | "Don't show again" on the plaintext-password warning, workspace-scoped SSH host keys |
+| **v3.0** | Automatic versioned backups before every upload, with a panel to browse and restore |
 
-<div align="center">
+### Fork additions in v3.4.1
 
-### 🛡️ Never Lose a File Again
+- **Conflict-safe uploads:** optional `conflictCheck` compares the current remote `mtime` and byte size with the last observed baseline before overwriting an existing file.
+- **Explicit conflict choices:** overwrite one, overwrite all for the current operation, open a diff, or cancel without touching the remote file.
+- **Smart text backups:** source and configuration files are backed up; known binary media and archives are skipped.
+- **Long-history retention:** the recommended `backup.versions` value is `100`, preserving the oldest anchor, recent versions, confirmed conflict-overwrite backups, and evenly distributed history.
 
-**Automatic versioned backups** for text-file uploads & sync. Before a remote text file is overwritten, SFTP Neo saves a timestamped copy — either on the server or in your local workspace. SVG is included; binary media and archives are skipped. Browse, restore, or delete old versions directly from VS Code.
-
-</div>
-
-| | |
-|:---|:---|
-| 🔄 **Automatic Backups** | Text-file upload/sync creates a timestamped backup before overwriting the remote file |
-| 💻 **Local or Remote Storage** | Choose whether backups live on the server (`"location": "remote"`) or in your workspace (`"location": "local"`) |
-| 🎛️ **Configurable Retention** | Set how many versions to keep (`versions: 100` recommended) — old ones auto-prune intelligently |
-| 📂 **Context-Aware Panel** | Click any file in Remote Explorer → see its backup history instantly |
-| 🔄 **One-Click Restore** | Right-click any backup to restore it to the live remote file |
-| 🔒 **Failsafe Design** | Backup failures never block your upload — your code always goes live |
-
-### v3.0.5
-
-#### 🔕 "Don't Show Again" for Plaintext Password Warning
-If you choose to keep a password in `sftp.json`, the security warning now offers a **"Don't show again"** button. Your choice is saved in the global user setting `sftp.suppressPlaintextPasswordWarning`, so the warning stays suppressed across all workspaces.
-
-#### 🖥️ Workspace-Scoped SSH Host Keys
-Multiple projects connecting to the same development server (same IP and port) — common with containers or multi-tenant setups — no longer trigger false **"SSH host key has CHANGED"** errors. Host keys are now stored per workspace, and existing `host:port` entries are migrated automatically when the key still matches.
-
-### v3.0 — Remote File Backups
-Introduced automatic versioned backups before every upload/sync, with a dedicated panel to browse, restore, and delete backup versions.
+> 📖 Full history in the [CHANGELOG](./CHANGELOG.md).
 
 ---
 
-## 📑 Quick Links
-
-[✨ Features](#-features) · [⚡ Quick Start](#-quick-start) · [🔧 Config Examples](#-config-examples) · [🔐 Security](#-security) · [🔑 SSH Authentication](#-ssh-authentication) · [🐛 Debug](#-debug) · [❓ FAQ](./FAQ.md)
-
----
 
 ## ✨ Features
 
@@ -87,8 +90,10 @@ Introduced automatic versioned backups before every upload/sync, with a dedicate
 | 🔍 **Remote Explorer Filter** | Live client-side filter for files and folders already shown in the sidebar |
 | ⬆️⬇️ **Upload / Download** | Single files, folders, or entire projects |
 | 🔄 **Sync** | Bi-directional or one-way directory sync |
+| ✏️ **Rename / Move / Delete** | Manage remote files in place — renames and moves are server-side, so nothing is re-uploaded |
+| 🖱️ **Drag to Move** | Reorganize the server by dragging inside the Remote Explorer (opt-in) |
 | 💾 **Upload on Save** | Auto-push changes as you code |
-| 👁️ **File Watcher** | Auto-upload on external file changes |
+| 👁️ **File Watcher** | Auto-upload on external file changes — safe to combine with Upload on Save |
 | 🎭 **Profiles** | Switch between dev / staging / prod in one click |
 | 🔒 **Secure Storage** | Passwords saved in your OS keychain — never in `sftp.json` |
 | 📂 **Multi-Context** | Sync different local folders to different servers |
@@ -170,6 +175,27 @@ Switch between environments on the fly:
 
 Use `SFTP: Set Profile` to switch.
 
+A profile can override any top-level option, including `watcher` — useful when
+something outside VS Code edits your files (an AI coding tool, a build step) and
+you want those changes uploaded automatically on dev but never on prod:
+
+```json
+{
+  "username": "deploy",
+  "remotePath": "/app",
+  "watcher": { "files": "**/*", "autoUpload": false },
+  "profiles": {
+    "dev":  { "host": "dev.example.com",  "watcher": { "files": "**/*", "autoUpload": true } },
+    "prod": { "host": "prod.example.com", "watcher": { "files": "**/*", "autoUpload": false } }
+  },
+  "defaultProfile": "dev"
+}
+```
+
+Object options are replaced wholesale rather than merged key-by-key, so repeat
+`files` in each profile. Switching profiles rebuilds the watcher immediately —
+no reload needed.
+
 ### 📂 Multiple Contexts
 Sync different parts of your project to different places:
 
@@ -207,7 +233,125 @@ Reach a server through a bastion host:
 }
 ```
 
-> 📖 For the full list of options check the [Wiki](https://github.com/philipdaoud/sftp-neo/wiki/Configuration).
+### 📋 Every Option, With Defaults
+
+> For a complete, detailed list of all configuration options, see [options.md](/docs/options.md).
+
+
+
+You only need the handful of options your setup actually uses — the block below
+is a **reference**, not a starting point. Copy the lines you want, not the whole
+thing.
+
+
+
+<details>
+<summary>Show the full <code>sftp.json</code> reference</summary>
+
+```json
+{
+  "name": "My Server",
+  "context": ".",
+  "protocol": "sftp",
+
+  "host": "example.com",
+  "port": 22,
+  "username": "user",
+  "password": null,
+  "remotePath": "/var/www/html",
+  "connectTimeout": 10000,
+  "keepalive": 30000,
+  "concurrency": 4,
+
+  "privateKeyPath": "~/.ssh/id_rsa",
+  "passphrase": null,
+  "agent": null,
+  "interactiveAuth": false,
+  "sshConfigPath": "~/.ssh/config",
+
+  "uploadOnSave": false,
+  "conflictCheck": false,
+  "downloadOnOpen": false,
+  "useTempFile": false,
+  "openSsh": false,
+
+  "ignore": [".vscode", ".git", ".DS_Store"],
+  "ignoreFile": ".gitignore",
+
+  "watcher": {
+    "files": "**/*",
+    "autoUpload": false,
+    "autoDelete": false,
+    "autoRename": false
+  },
+
+  "syncOption": {
+    "delete": false,
+    "skipCreate": false,
+    "ignoreExisting": false,
+    "update": false
+  },
+
+  "backup": {
+    "enabled": false,
+    "location": "remote",
+    "folder": ".vscode/sftp-backup",
+    "versions": 100,
+    "onDelete": false
+  },
+
+  "remoteExplorer": {
+    "filesExclude": [],
+    "order": 0,
+    "enableDragAndDrop": false
+  },
+
+  "hooks": {
+    "preUpload": "",
+    "postUpload": "",
+    "preDownload": "",
+    "postDownload": "",
+    "preSync": "",
+    "postSync": ""
+  },
+
+  "filePerm": 644,
+  "dirPerm": 755,
+  "remoteTimeOffsetInHours": 0,
+  "limitOpenFilesOnRemote": false,
+
+  "profiles": {
+    "dev": { "host": "dev.example.com" },
+    "prod": { "host": "prod.example.com" }
+  },
+  "defaultProfile": "dev"
+}
+```
+
+FTP-only options: `secure`, `secureOptions`, `passive`, plus the legacy fork
+overrides `ftpKeepAliveInterval` and `ftpReconnectAttempts`. SFTP-only extras:
+`algorithms`, `sshCustomParams`, and `hop` (bastion hosts — see above).
+
+`sftp.json` is strict JSON — **comments are not supported**, so don't paste `//`
+notes into it.
+
+Drop `privateKeyPath` / `passphrase` / `agent` if you authenticate with a
+password, and drop `password` if you don't (you'll be prompted once and can save
+it to your OS keychain).
+
+The four options worth understanding before switching on:
+
+| Option | Default | Why it's off |
+|---|---|---|
+| `watcher.autoUpload` | `false` | Uploads on any change the watcher sees, including from tools outside VS Code. Pair with `uploadOnSave` freely — a Ctrl+S will not upload twice. |
+| `watcher.autoDelete` | `false` | **Destructive.** Deletes on the server when a local file disappears. A branch switch or a too-broad `ignore` can remove remote content. Folder deletes are recursive. |
+| `watcher.autoRename` | `false` | Turns a rename into a server-side rename instead of a re-upload. Only covers renames made **through VS Code** — `mv` in a terminal still looks like delete + create. |
+| `backup.onDelete` | `false` | Makes deletes recoverable, but copies file contents, so deleting a large folder moves a lot of data. |
+
+> 📖 **Every option explained** — types, defaults, and behaviour — in
+> [docs/options.md](./docs/options.md).
+
+</details>
 
 ---
 
@@ -444,6 +588,13 @@ Need to troubleshoot?
 2. Search for `sftp.debug` and set it to `true`.
 3. Reload VS Code.
 4. View logs in **Output → SFTP**.
+
+---
+
+## 📖 Configuration Reference
+
+See [docs/options.md](./docs/options.md) for every `sftp.json` option — types,
+defaults, and behaviour.
 
 ---
 

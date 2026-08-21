@@ -1,33 +1,12 @@
 import { Client } from 'basic-ftp';
 import RemoteClient, { ConnectOption } from './remoteClient';
-
-const DEFAULT_KEEPALIVE_INTERVAL = 0;
-const DEFAULT_RECONNECT_ATTEMPTS = 1;
-const RETRYABLE_METHODS = new Set([
-  'cd',
-  'cdup',
-  'ensureDir',
-  'features',
-  'lastMod',
-  'list',
-  'pwd',
-  'size',
-]);
-
-type Reconnect = () => Promise<void>;
-
-function canRetry(methodName: string, args: any[]): boolean {
-  return RETRYABLE_METHODS.has(methodName) || (methodName === 'send' && args[0] === 'NOOP');
-}
+import logger from '../../logger';
 
 /**
  * basic-ftp does not support concurrent commands on a single control connection.
- * Wrap the client so every method call is queued and executed one at a time. If
- * the control connection is already closed, reconnect before starting the next
- * operation. Only retry operations that are safe to repeat after a mid-command
- * disconnect; streams and mutating file operations are deliberately excluded.
+ * Wrap the client so every method call is queued and executed one at a time.
  */
-function createSerializedClient(client: Client, reconnect: Reconnect): Client {
+function createSerializedClient(client: Client): Client {
   let queue: Promise<unknown> = Promise.resolve();
 
   const enqueue = <T>(task: () => Promise<T>): Promise<T> => {
@@ -47,29 +26,7 @@ function createSerializedClient(client: Client, reconnect: Reconnect): Client {
       const value = target[prop];
       if (typeof value === 'function') {
         return function (...args: any[]) {
-          return enqueue(async () => {
-            const methodName = String(prop);
-            const manageConnection = methodName !== 'access' && methodName !== 'close';
-
-            if (manageConnection && target.closed) {
-              await reconnect();
-            }
-
-            try {
-              return await value.apply(target, args);
-            } catch (error) {
-              if (!manageConnection || !target.closed) {
-                throw error;
-              }
-
-              await reconnect();
-              if (!canRetry(methodName, args)) {
-                throw error;
-              }
-
-              return value.apply(target, args);
-            }
-          });
+          return enqueue(() => value.apply(target, args));
         };
       }
       return value;
@@ -77,36 +34,33 @@ function createSerializedClient(client: Client, reconnect: Reconnect): Client {
   }) as Client;
 }
 
+const DEFAULT_KEEPALIVE_MS = 30 * 1000;
+
 export default class FTPClient extends RemoteClient {
-  private _rawClient: Client;
-  private _connectOption?: ConnectOption;
-  private _keepAliveTimer?: ReturnType<typeof setInterval>;
-  private _ending: boolean = false;
+  private _keepaliveTimer?: ReturnType<typeof setInterval>;
+  private _onDisconnectedCb?: (reason: string) => void;
+  private _socketListenersAttached = false;
 
   _initClient() {
-    this._rawClient = new Client(this._option.connectTimeout || 10000);
-    return createSerializedClient(this._rawClient, () => this._reconnect());
+    const client = new Client(this._option.connectTimeout || 10000);
+    return createSerializedClient(client);
   }
 
   _hasProvideAuth(connectOption: ConnectOption) {
     return connectOption.password != undefined;
   }
 
-  onDisconnected(_cb: (reason: string) => void) {
-    // A failed reconnect only applies to the current FTP operation. Keep the
-    // shared filesystem alive so the next queued operation can reconnect and
-    // continue a batch instead of being poisoned by one transient timeout.
+  isClosed() {
+    return this._client.closed;
+  }
+
+  onDisconnected(cb: (reason: string) => void) {
+    this._onDisconnectedCb = cb;
+    this._attachSocketListeners();
   }
 
   async _doConnect(connectOption: ConnectOption): Promise<void> {
-    this._ending = false;
-    this._connectOption = { ...connectOption };
-    await this._access(this._connectOption);
-    this._startKeepAlive();
-  }
-
-  private async _access(connectOption: ConnectOption): Promise<void> {
-    const client = this._rawClient;
+    const client = this._client as Client;
 
     // Map secure option
     let secure: boolean | 'implicit' = false;
@@ -139,81 +93,63 @@ export default class FTPClient extends RemoteClient {
       secure,
       secureOptions: connectOption.secureOptions as any,
     });
-  }
 
-  private _startKeepAlive() {
-    this._stopKeepAlive();
-
-    const interval = this._connectOption?.ftpKeepAliveInterval ?? DEFAULT_KEEPALIVE_INTERVAL;
-    if (!Number.isFinite(interval) || interval <= 0) {
-      return;
-    }
-
-    this._keepAliveTimer = setInterval(() => {
-      void this._sendKeepAlive();
-    }, interval);
-    this._keepAliveTimer.unref?.();
-  }
-
-  private _stopKeepAlive() {
-    if (this._keepAliveTimer) {
-      clearInterval(this._keepAliveTimer);
-      this._keepAliveTimer = undefined;
-    }
-  }
-
-  private async _sendKeepAlive(): Promise<void> {
-    if (this._ending || !this._connectOption) {
-      return;
-    }
-
-    try {
-      await (this._client as Client).send('NOOP');
-    } catch {
-      if (!this._rawClient.closed) {
-        this._logStatus('FTP server rejected NOOP; keepalive disabled.');
-        this._stopKeepAlive();
-      }
-    }
-  }
-
-  private async _reconnect(): Promise<void> {
-    if (this._ending || !this._connectOption) {
-      throw new Error('FTP client cannot reconnect after it has been closed.');
-    }
-
-    const configuredAttempts = this._connectOption.ftpReconnectAttempts ?? DEFAULT_RECONNECT_ATTEMPTS;
-    const attempts = Number.isFinite(configuredAttempts)
-      ? Math.max(0, Math.floor(configuredAttempts))
-      : DEFAULT_RECONNECT_ATTEMPTS;
-    let lastError: unknown = new Error('FTP reconnect is disabled.');
-
-    for (let attempt = 1; attempt <= attempts; attempt++) {
-      try {
-        this._logStatus(`reconnecting FTP session (${attempt}/${attempts})...`);
-        await this._access(this._connectOption);
-        this._logStatus('FTP session reconnected.');
-        return;
-      } catch (error) {
-        lastError = error;
-      }
-    }
-
-    this._logStatus('FTP reconnect attempts exhausted; a later operation may retry.');
-    throw lastError;
-  }
-
-  private _logStatus(message: string) {
-    this._connectOption?.debug(`[connection] > ${message}`);
+    this._attachSocketListeners();
+    this._startKeepalive(
+      connectOption.ftpKeepAliveInterval ?? connectOption.keepalive
+    );
   }
 
   end() {
-    this._ending = true;
-    this._stopKeepAlive();
-    this._rawClient.close();
+    if (this._keepaliveTimer) {
+      clearInterval(this._keepaliveTimer);
+      this._keepaliveTimer = undefined;
+    }
+    this._client.close();
   }
 
   getFsClient() {
     return this._client;
+  }
+
+  private _attachSocketListeners() {
+    const socket = this._client.ftp.socket;
+    if (!socket || this._socketListenersAttached) {
+      return;
+    }
+
+    this._socketListenersAttached = true;
+    const notify = (reason: string) => {
+      if (this._onDisconnectedCb) {
+        this._onDisconnectedCb(reason);
+      }
+    };
+
+    socket.once('end', () => notify('end'));
+    socket.once('close', () => notify('close'));
+    socket.once('error', () => notify('error'));
+  }
+
+  private _startKeepalive(keepalive?: number) {
+    if (keepalive === 0) {
+      return;
+    }
+
+    const interval = keepalive && keepalive > 0 ? keepalive : DEFAULT_KEEPALIVE_MS;
+    if (this._keepaliveTimer) {
+      clearInterval(this._keepaliveTimer);
+    }
+
+    this._keepaliveTimer = setInterval(() => {
+      if (this._client.closed) {
+        return;
+      }
+
+      // Fire-and-forget NOOP to keep the control connection alive.
+      this._client.sendIgnoringError('NOOP').catch((err: unknown) => {
+        logger.debug(`FTP keepalive NOOP failed: ${(err as Error).message || err}`);
+      });
+    }, interval);
+    this._keepaliveTimer.unref();
   }
 }

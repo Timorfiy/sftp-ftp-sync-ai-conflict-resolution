@@ -56,6 +56,7 @@ interface ServiceOption {
   remoteExplorer: {
     filesExclude?: string[];
     order: number;
+    enableDragAndDrop?: boolean;
   };
   remoteTimeOffsetInHours: number;
   limitOpenFilesOnRemote: number | true;
@@ -65,6 +66,7 @@ interface WatcherConfig {
   files: false | string;
   autoUpload: boolean;
   autoDelete: boolean;
+  autoRename: boolean;
 }
 
 export interface BackupConfig {
@@ -72,6 +74,7 @@ export interface BackupConfig {
   location?: 'local' | 'remote';
   folder: string;
   versions: number;
+  onDelete: boolean;
 }
 
 interface SftpOption {
@@ -90,6 +93,8 @@ interface SftpOption {
 interface FtpOption {
   secure: boolean | 'control' | 'implicit';
   secureOptions: any;
+  ftpKeepAliveInterval?: number;
+  ftpReconnectAttempts?: number;
 }
 
 export interface FileServiceConfig
@@ -121,7 +126,11 @@ export interface ServiceConfig
 }
 
 export interface WatcherService {
-  create(watcherBase: string, watcherConfig: WatcherConfig): any;
+  create(
+    watcherBase: string,
+    watcherConfig: WatcherConfig,
+    ignore?: (fsPath: string) => boolean
+  ): any;
   dispose(watcherBase: string): void;
 }
 
@@ -317,6 +326,10 @@ function mergeConfigWithExternalRefer(
       if (value !== undefined) {
         if (key === 'host') {
           copyed[key] = value;
+        } else if (key === 'keepalive') {
+          // ServerAliveInterval in ssh_config is seconds; convert to milliseconds.
+          const ms = parseInt(value, 10) * 1000;
+          setConfigValue(copyed, key, ms);
         } else {
           setConfigValue(copyed, key, value);
         }
@@ -425,7 +438,6 @@ let id = 0;
 export default class FileService {
   private _eventEmitter: EventEmitter = new EventEmitter();
   private _name: string;
-  private _watcherConfig: WatcherConfig;
   private _profiles: string[];
   private _pendingTransferTasks: Set<TransferTask> = new Set();
   private _transferSchedulers: TransferScheduler[] = [];
@@ -447,7 +459,6 @@ export default class FileService {
     this.id = ++id;
     this.workspace = workspace;
     this.baseDir = baseDir;
-    this._watcherConfig = config.watcher;
     this._config = config;
     if (config.profiles) {
       this._profiles = Object.keys(config.profiles);
@@ -472,6 +483,21 @@ export default class FileService {
     }
 
     this._watcherService = watcherService;
+    this._createWatcher();
+  }
+
+  /**
+   * Rebuild the file watcher from the currently active profile.
+   *
+   * The watcher config is resolved through `getConfig`, so switching profiles
+   * has no effect until the watcher is recreated.
+   */
+  reloadWatcher() {
+    if (!this._watcherService) {
+      return;
+    }
+
+    this._disposeWatcher();
     this._createWatcher();
   }
 
@@ -624,6 +650,10 @@ export default class FileService {
     return createRemoteIfNoneExist(hostInfo);
   }
 
+  clearRemoteFileSystem(config: ServiceConfig): void {
+    removeRemoteFs(getHostInfo(config));
+  }
+
   getConfig(useProfile = app.state.profile): ServiceConfig {
     let config = this._config;
     const hasProfile =
@@ -723,7 +753,10 @@ export default class FileService {
   }
 
   private _createWatcher() {
-    this._watcherService.create(this.baseDir, this._watcherConfig);
+    // Read from the profile-merged config, so a profile can override the
+    // watcher the same way it overrides everything else.
+    const config = this.getConfig();
+    this._watcherService.create(this.baseDir, config.watcher, config.ignore || undefined);
   }
 
   private _disposeWatcher() {
