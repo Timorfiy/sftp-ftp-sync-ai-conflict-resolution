@@ -5,6 +5,7 @@ const path = require('path');
 const TransferTask = require('../../src/core/transferTask').default;
 const { TransferDirection } = require('../../src/core/transferTask');
 const { FileType } = require('../../src/core/fs');
+const { transfer } = require('../../src/fileHandlers/transfer/transfer');
 const LocalRemoteFileSystem = require('../../test/helper/localRemoteFs').default;
 const localfs = require('../../src/core/localFs').default;
 
@@ -113,5 +114,50 @@ describe('backup during upload', () => {
 
     // No remote backup should have been created.
     expect(vol.existsSync('/var/www/.vscode/sftp-backup')).toBe(false);
+  });
+
+  test('confirmed conflict overwrite creates a priority backup marker', async () => {
+    vol.fromJSON({
+      '/workspace/index.php': 'new local content',
+      '/var/www/index.php': 'old remote content',
+    }, '/');
+
+    const remoteFs = createRemoteFs();
+    const tasks = [];
+    await transfer(
+      {
+        srcFsPath: '/workspace/index.php',
+        srcFs: localfs,
+        targetFsPath: '/var/www/index.php',
+        targetFs: remoteFs,
+        transferDirection: TransferDirection.LOCAL_TO_REMOTE,
+        transferOption: {
+          perserveTargetMode: false,
+          backup: {
+            enabled: true,
+            folder: '.vscode/sftp-backup',
+            versions: 100,
+          },
+          remotePath: '/var/www',
+          beforeFileTransfer: async context => {
+            context.conflictOverwrite = true;
+          },
+        },
+      },
+      task => tasks.push(task)
+    );
+
+    expect(tasks).toHaveLength(1);
+    try {
+      await tasks[0].run();
+    } catch (error) {
+      // The mock filesystem can throw on descriptor close after the transfer completed.
+    }
+
+    const backupDir = '/var/www/.vscode/sftp-backup';
+    const backups = Object.keys(vol.toJSON(backupDir)).filter(p => p.endsWith('.bak'));
+    expect(backups).toHaveLength(1);
+    expect(backups[0]).toContain('.conflict.bak');
+    expect(vol.readFileSync(backups[0], 'utf8')).toBe('old remote content');
   });
 });

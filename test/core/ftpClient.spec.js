@@ -115,7 +115,7 @@ describe('FTPClient', () => {
     expect(mockClient.uploadFrom).toHaveBeenCalledTimes(1);
   });
 
-  test('notifies the filesystem when reconnect attempts are exhausted', async () => {
+  test('keeps the shared client reusable when one reconnect attempt is exhausted', async () => {
     const client = await connect();
     const disconnected = jest.fn();
     ftpClient.onDisconnected(disconnected);
@@ -124,7 +124,22 @@ describe('FTPClient', () => {
 
     await expect(client.ensureDir('/public_html/local')).rejects.toThrow('FTP server is unavailable');
 
-    expect(disconnected).toHaveBeenCalledWith('reconnect-failed');
+    await client.ensureDir('/public_html/next');
+
+    expect(disconnected).not.toHaveBeenCalled();
+    expect(mockClient.access).toHaveBeenCalledTimes(3);
+    expect(mockClient.ensureDir).toHaveBeenCalledTimes(1);
+    expect(mockClient.ensureDir).toHaveBeenCalledWith('/public_html/next');
+  });
+
+  test('does not reconnect after the client is explicitly ended', async () => {
+    const client = await connect();
+    ftpClient.end();
+
+    await expect(client.ensureDir('/public_html/local')).rejects.toThrow(
+      'FTP client cannot reconnect after it has been closed.'
+    );
+
     expect(mockClient.ensureDir).not.toHaveBeenCalled();
   });
 });

@@ -1,15 +1,17 @@
+import * as vscode from 'vscode';
+import { TransferTask } from '../../core';
 import { refreshRemoteExplorer } from '../shared';
 import createFileHandler, { FileHandlerContext } from '../createFileHandler';
 import { transfer, sync, TransferOption, SyncOption, TransferDirection } from './transfer';
 import { runHook } from '../../modules/hooks';
 import { remoteBackupsProvider } from '../../modules/remoteBackups';
+import { createConflictLifecycle, UploadConflictAbortError } from './conflictCheck';
 
 function createTransferHandle(direction: TransferDirection) {
   return async function handle(this: FileHandlerContext, option) {
     const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
     const localFs = this.fileService.getLocalFileSystem();
     const { localFsPath, remoteFsPath } = this.target;
-    const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
     const hooks = this.config.hooks;
     const hookCtx = {
       localPath: localFsPath,
@@ -22,6 +24,7 @@ function createTransferHandle(direction: TransferDirection) {
     const isUpload = direction === TransferDirection.LOCAL_TO_REMOTE;
     const preHook = isUpload ? 'preUpload' : 'preDownload';
     const postHook = isUpload ? 'postUpload' : 'postDownload';
+    const lifecycle = createConflictLifecycle(this);
 
     await runHook(preHook, hooks, hookCtx, workspacePath);
 
@@ -32,7 +35,10 @@ function createTransferHandle(direction: TransferDirection) {
         srcFs: remoteFs,
         targetFsPath: localFsPath,
         targetFs: localFs,
-        transferOption: option,
+        transferOption: {
+          ...option,
+          ...lifecycle,
+        },
         transferDirection: TransferDirection.REMOTE_TO_LOCAL,
       };
     } else {
@@ -41,14 +47,28 @@ function createTransferHandle(direction: TransferDirection) {
         srcFs: localFs,
         targetFsPath: remoteFsPath,
         targetFs: remoteFs,
-        transferOption: option,
+        transferOption: {
+          ...option,
+          ...lifecycle,
+        },
         filePerm: this.config.filePerm,
         dirPerm: this.config.dirPerm,
         transferDirection: TransferDirection.LOCAL_TO_REMOTE,
       };
     }
     // todo: abort at here. we should stop collect task
-    await transfer(transferConfig, t => scheduler.add(t));
+    const tasks: TransferTask[] = [];
+    try {
+      await transfer(transferConfig, task => tasks.push(task));
+    } catch (error) {
+      if (error instanceof UploadConflictAbortError) {
+        return;
+      }
+      throw error;
+    }
+
+    const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
+    tasks.forEach(task => scheduler.add(task));
     await scheduler.run();
 
     if (isUpload) {
@@ -68,7 +88,6 @@ export const sync2Remote = createFileHandler<SyncOption>({
     const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
     const localFs = this.fileService.getLocalFileSystem();
     const { localFsPath, remoteFsPath } = this.target;
-    const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
     const hooks = this.config.hooks;
     const hookCtx = {
       localPath: localFsPath,
@@ -78,22 +97,48 @@ export const sync2Remote = createFileHandler<SyncOption>({
     };
     const workspacePath = this.fileService.workspace;
 
+    if (this.config.conflictCheck && option.delete) {
+      await vscode.window.showWarningMessage(
+        'SFTP Neo blocked Sync Local → Remote.',
+        {
+          modal: true,
+          detail:
+            'conflictCheck cannot safely be combined with syncOption.delete. Disable delete or use Upload File/Folder.',
+        }
+      );
+      return;
+    }
+
     await runHook('preSync', hooks, hookCtx, workspacePath);
 
     // Attach filePerm and dirPerm to transferOption
     option.filePerm = this.config.filePerm;
     option.dirPerm = this.config.dirPerm;
-    await sync(
-      {
-        srcFsPath: localFsPath,
-        srcFs: localFs,
-        targetFsPath: remoteFsPath,
-        targetFs: remoteFs,
-        transferOption: option,
-        transferDirection: TransferDirection.LOCAL_TO_REMOTE,
-      },
-      t => scheduler.add(t)
-    );
+    const tasks: TransferTask[] = [];
+    try {
+      await sync(
+        {
+          srcFsPath: localFsPath,
+          srcFs: localFs,
+          targetFsPath: remoteFsPath,
+          targetFs: remoteFs,
+          transferOption: {
+            ...option,
+            ...createConflictLifecycle(this),
+          },
+          transferDirection: TransferDirection.LOCAL_TO_REMOTE,
+        },
+        task => tasks.push(task)
+      );
+    } catch (error) {
+      if (error instanceof UploadConflictAbortError) {
+        return;
+      }
+      throw error;
+    }
+
+    const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
+    tasks.forEach(task => scheduler.add(task));
     await scheduler.run();
 
     remoteBackupsProvider.refresh();
@@ -129,7 +174,6 @@ export const sync2Local = createFileHandler<SyncOption>({
     const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
     const localFs = this.fileService.getLocalFileSystem();
     const { localFsPath, remoteFsPath } = this.target;
-    const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
     const hooks = this.config.hooks;
     const hookCtx = {
       localPath: localFsPath,
@@ -141,17 +185,24 @@ export const sync2Local = createFileHandler<SyncOption>({
 
     await runHook('preSync', hooks, hookCtx, workspacePath);
 
+    const tasks: TransferTask[] = [];
     await sync(
       {
         srcFsPath: remoteFsPath,
         srcFs: remoteFs,
         targetFsPath: localFsPath,
         targetFs: localFs,
-        transferOption: option,
+        transferOption: {
+          ...option,
+          ...createConflictLifecycle(this),
+        },
         transferDirection: TransferDirection.REMOTE_TO_LOCAL,
       },
-      t => scheduler.add(t)
+      task => tasks.push(task)
     );
+
+    const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
+    tasks.forEach(task => scheduler.add(task));
     await scheduler.run();
 
     await runHook('postSync', hooks, hookCtx, workspacePath);

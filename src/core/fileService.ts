@@ -38,6 +38,7 @@ interface ServiceOption {
   protocol: string;
   remote?: string;
   uploadOnSave: boolean;
+  conflictCheck: boolean;
   useTempFile: boolean;
   openSsh: boolean;
   downloadOnOpen: boolean | 'confirm';
@@ -184,6 +185,7 @@ function getHostInfo(config) {
     'name',
     'remotePath',
     'uploadOnSave',
+    'conflictCheck',
     'useTempFile',
     'openSsh',
     'downloadOnOpen',

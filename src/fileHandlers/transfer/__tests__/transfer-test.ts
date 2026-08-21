@@ -409,6 +409,96 @@ describe('transfer algorithm', () => {
       );
     });
 
+    test('sync remote to local resolves an exact source mtime before update comparison', async () => {
+      fillFs({
+        local: {
+          a: file('old', 0),
+        },
+        remote: {
+          a: file('new', 2),
+        },
+      });
+
+      const list = localFs.list.bind(localFs);
+      const remoteFs = Object.create(localFs);
+      remoteFs.pathResolver = path;
+      remoteFs.list = jest.fn(async dir =>
+        (await list(dir)).map(entry => ({
+          ...entry,
+          mtime: 0,
+          atime: 0,
+        }))
+      );
+      remoteFs.ensureAccurateMtime = jest.fn(async entry => {
+        const stat = await localFs.lstat(entry.fspath);
+        return {
+          ...entry,
+          mtime: stat.mtime,
+          atime: stat.atime,
+        };
+      });
+
+      const tasks: TransferTask[] = [];
+      await sync(
+        {
+          srcFsPath: '/remote',
+          srcFs: remoteFs,
+          targetFs: localFs,
+          targetFsPath: '/local',
+          transferDirection: TransferDirection.REMOTE_TO_LOCAL,
+          transferOption: {
+            update: true,
+            perserveTargetMode: false,
+          },
+        },
+        task => tasks.push(task)
+      );
+
+      expect(remoteFs.ensureAccurateMtime).toHaveBeenCalled();
+      expect(mapList(tasks, 'targetFsPath')).toEqual(['/local/a'].formatSep());
+    });
+
+    test('sync update falls back to size when an exact source mtime is unavailable', async () => {
+      fillFs({
+        local: {
+          a: file('old', 0),
+        },
+        remote: {
+          a: file('new content', 2),
+        },
+      });
+
+      const list = localFs.list.bind(localFs);
+      const remoteFs = Object.create(localFs);
+      remoteFs.pathResolver = path;
+      remoteFs.list = jest.fn(async dir =>
+        (await list(dir)).map(entry => ({
+          ...entry,
+          mtime: 0,
+          atime: 0,
+        }))
+      );
+      remoteFs.ensureAccurateMtime = jest.fn(async entry => entry);
+
+      const tasks: TransferTask[] = [];
+      await sync(
+        {
+          srcFsPath: '/remote',
+          srcFs: remoteFs,
+          targetFs: localFs,
+          targetFsPath: '/local',
+          transferDirection: TransferDirection.REMOTE_TO_LOCAL,
+          transferOption: {
+            update: true,
+            perserveTargetMode: false,
+          },
+        },
+        task => tasks.push(task)
+      );
+
+      expect(mapList(tasks, 'targetFsPath')).toEqual(['/local/a'].formatSep());
+    });
+
     test('sync both direction"', async () => {
       fillFs({
         local: {

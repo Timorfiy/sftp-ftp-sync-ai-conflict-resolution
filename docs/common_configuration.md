@@ -48,6 +48,13 @@ Use this when you want to map a subfolder to the `remotePath`.
 
 **default**: false
 
+## conflictCheck
+*boolean*: Protect uploads with optimistic conflict detection. SFTP Neo stores the last observed remote modification time and byte size in VS Code workspace state. Before Upload File, Upload Folder, `uploadOnSave`, watcher upload, or non-deleting Sync Local → Remote, every existing remote file is checked. Changed files are blocked and offer Overwrite, Overwrite All, Open Diff, or cancel.
+
+The check reads metadata only; it does not download remote file contents. If an FTP server cannot provide an exact timestamp with `MDTM`, the upload requires confirmation rather than silently continuing. Sync Local → Remote is blocked when both `conflictCheck` and `syncOption.delete` are enabled.
+
+**default**: false
+
 ## useTempFile
 *boolean*: Upload temp file on every save operation of VSCode to avoid breaking a webpage when a user acceses it while the file is still being uploaded (is incomplete).
 
@@ -136,7 +143,7 @@ Set to true for using default `limit(222)`. Do not set this unless you have to.
 **default**: false
 
 ## backup
-*object*: Configure file backups. Before a remote file is overwritten by an upload or sync-to-remote operation, a copy is stored in the configured folder. The copy can be kept on the remote server or in the local workspace.
+*object*: Configure text-file backups. Before a remote text file is overwritten by an upload or sync-to-remote operation, a copy is stored in the configured folder. SVG is treated as text. Known images, media, fonts, PDFs, archives, and other binary formats are skipped; unknown extensions are sampled for binary content. The copy can be kept on the remote server or in the local workspace.
 
 **default**:
 ```json
@@ -145,7 +152,7 @@ Set to true for using default `limit(222)`. Do not set this unless you have to.
     "enabled": false,
     "location": "remote",
     "folder": ".vscode/sftp-backup",
-    "versions": 5
+    "versions": 100
   }
 }
 ```
@@ -168,6 +175,6 @@ Set to true for using default `limit(222)`. Do not set this unless you have to.
 **default**: `.vscode/sftp-backup`
 
 ## backup.versions
-*number*: Maximum number of backup versions to keep per file. Set to `0` to disable backups even when `enabled` is `true`.
+*number*: Maximum number of backup versions to keep per source file. When pruning is required, SFTP Neo preserves the oldest historical anchor, the latest 50 versions, up to 5 newest confirmed conflict-overwrite backups, and fills remaining slots with evenly distributed middle-history versions. Conflict backups count toward the same hard limit. Set to `0` to disable backups even when `enabled` is `true`.
 
-**default**: 5
+**default / recommended**: 100

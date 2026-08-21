@@ -6,9 +6,36 @@ import { Task } from './scheduler';
 import logger from '../logger';
 import { BackupConfig } from './fileService';
 import localFs from './localFs';
-import { createBackup, BackupStorage } from './backup';
+import { createBackup, BackupPriority, BackupStorage } from './backup';
 
 let hasWarnedModifedTimePermission = false;
+
+const REMOTE_DOWNLOAD_RETRY_LIMIT = 1;
+const TRANSIENT_TRANSFER_ERROR_CODES = new Set([
+  'ECONNABORTED',
+  'ECONNREFUSED',
+  'ECONNRESET',
+  'EHOSTUNREACH',
+  'ENETDOWN',
+  'ENETUNREACH',
+  'EPIPE',
+  'ETIMEDOUT',
+]);
+
+function isTransientTransferError(error: unknown): boolean {
+  const code =
+    typeof error === 'object' && error !== null && 'code' in error
+      ? String((error as { code?: unknown }).code || '')
+      : '';
+  if (TRANSIENT_TRANSFER_ERROR_CODES.has(code.toUpperCase())) {
+    return true;
+  }
+
+  const message = error instanceof Error ? error.message : String(error);
+  return /(?:socket hang up|timed?\s*out|connection.+(?:closed|lost|reset)|server sent fin)/i.test(
+    message
+  );
+}
 
 export enum TransferDirection {
   LOCAL_TO_REMOTE = 'local ➞ remote',
@@ -33,6 +60,8 @@ export interface TransferOption {
   backup?: BackupConfig;
   remotePath?: string;
   localBasePath?: string;
+  backupPriority?: BackupPriority;
+  onTransferSuccess?: () => Promise<void>;
 }
 
 export default class TransferTask implements Task {
@@ -92,7 +121,7 @@ export default class TransferTask implements Task {
     const targetFs = this._targetFs;
     switch (this.fileType) {
       case FileType.File:
-        await this._transferFile();
+        await this._transferFileWithRetry();
         break;
       case FileType.SymbolicLink:
         await fileOperations.transferSymlink(
@@ -106,6 +135,10 @@ export default class TransferTask implements Task {
       default:
         logger.warn(`Unsupported file type (type = ${this.fileType}). File ${src}`);
     }
+
+    if (this._TransferOption.onTransferSuccess) {
+      await this._TransferOption.onTransferSuccess();
+    }
   }
 
   cancel() {
@@ -117,6 +150,31 @@ export default class TransferTask implements Task {
 
   isCancelled(): boolean {
     return this._cancelled;
+  }
+
+  private async _transferFileWithRetry() {
+    let retryCount = 0;
+
+    while (true) {
+      try {
+        await this._transferFile();
+        return;
+      } catch (error) {
+        const canRetry =
+          this._transferDirection === TransferDirection.REMOTE_TO_LOCAL &&
+          !this._cancelled &&
+          retryCount < REMOTE_DOWNLOAD_RETRY_LIMIT &&
+          isTransientTransferError(error);
+        if (!canRetry) {
+          throw error;
+        }
+
+        retryCount += 1;
+        logger.warn(
+          `Retrying remote download after a transient connection error (${retryCount}/${REMOTE_DOWNLOAD_RETRY_LIMIT}): ${this._srcFsPath}`
+        );
+      }
+    }
   }
 
   private async _transferFile() {
@@ -153,7 +211,14 @@ export default class TransferTask implements Task {
           pathResolver: path,
         };
       }
-      await createBackup(target, targetFs, this._TransferOption.backup, this._TransferOption.remotePath, storage);
+      await createBackup(
+        target,
+        targetFs,
+        this._TransferOption.backup,
+        this._TransferOption.remotePath,
+        storage,
+        { priority: this._TransferOption.backupPriority }
+      );
     }
 
     // Set the mode if it's specified in the config, otherwise get mode from server.

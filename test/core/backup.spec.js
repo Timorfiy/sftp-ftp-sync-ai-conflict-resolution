@@ -7,6 +7,8 @@ const {
   getBackupDirForTarget,
   getBackupPath,
   parseBackupPath,
+  classifyBackupPath,
+  isBinaryContentSample,
   createBackup,
   pruneBackups,
 } = require('../../src/core/backup');
@@ -46,6 +48,15 @@ describe('backup path utilities', () => {
     expect(info).not.toBeNull();
     expect(info.originalPath).toBe('/var/www/css/main.css');
     expect(info.timestamp.toISOString()).toBe('2026-06-12T19:42:02.123Z');
+    expect(info.priority).toBe('normal');
+  });
+
+  test('parseBackupPath recognizes conflict-priority backups', () => {
+    const backupPath = '/var/www/.vscode/sftp-backup/css/main.css.20260612194202123.conflict.bak';
+    const info = parseBackupPath(backupPath, '.vscode/sftp-backup', '/var/www');
+    expect(info).not.toBeNull();
+    expect(info.originalPath).toBe('/var/www/css/main.css');
+    expect(info.priority).toBe('conflict');
   });
 
   test('parseBackupPath returns null for non-backup paths', () => {
@@ -77,6 +88,41 @@ describe('backup path utilities', () => {
   });
 });
 
+describe('backup file classification', () => {
+  test.each([
+    '/var/www/index.php',
+    '/var/www/site.css',
+    '/var/www/app.js',
+    '/var/www/app.ts',
+    '/var/www/data.json',
+    '/var/www/page.html',
+    '/var/www/data.xml',
+    '/var/www/icon.svg',
+    '/var/www/.env.local',
+    '/var/www/.htaccess',
+  ])('classifies %s as text', targetPath => {
+    expect(classifyBackupPath(targetPath)).toBe('text');
+  });
+
+  test.each([
+    '/var/www/image.png',
+    '/var/www/image.jpg',
+    '/var/www/image.webp',
+    '/var/www/video.mp4',
+    '/var/www/audio.mp3',
+    '/var/www/font.woff2',
+    '/var/www/document.pdf',
+    '/var/www/archive.zip',
+  ])('classifies %s as binary', targetPath => {
+    expect(classifyBackupPath(targetPath)).toBe('binary');
+  });
+
+  test('detects binary content for an unknown extension', () => {
+    expect(isBinaryContentSample(Buffer.from([0x41, 0x00, 0x42, 0x01]))).toBe(true);
+    expect(isBinaryContentSample(Buffer.from('plain text\nwith unicode: Привет'))).toBe(false);
+  });
+});
+
 describe('backup lifecycle', () => {
   afterEach(() => {
     vol.reset();
@@ -99,6 +145,70 @@ describe('backup lifecycle', () => {
     expect(vol.readFileSync(backupPath, 'utf8')).toBe('original content');
   });
 
+  test.each([
+    ['index.php', '<? echo "ok";'],
+    ['styles.css', '.button { color: red; }'],
+    ['icon.svg', '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0"/></svg>'],
+  ])('createBackup stores text file %s', async (filename, content) => {
+    const targetPath = `/var/www/${filename}`;
+    vol.fromJSON({ [targetPath]: content }, '/');
+    const fs = createRemoteFs();
+
+    const backupPath = await createBackup(targetPath, fs, {
+      enabled: true,
+      folder: '.vscode/sftp-backup',
+      versions: 100,
+    }, '/var/www');
+
+    expect(backupPath).not.toBeNull();
+    expect(vol.readFileSync(backupPath, 'utf8')).toBe(content);
+  });
+
+  test.each(['image.png', 'image.jpg', 'image.webp', 'video.mp4', 'font.woff2', 'file.pdf']) (
+    'createBackup skips known binary file %s',
+    async filename => {
+      const targetPath = `/var/www/${filename}`;
+      vol.fromJSON({ [targetPath]: Buffer.from([0x00, 0x01, 0x02, 0x03]) }, '/');
+      const fs = createRemoteFs();
+
+      const backupPath = await createBackup(targetPath, fs, {
+        enabled: true,
+        folder: '.vscode/sftp-backup',
+        versions: 100,
+      }, '/var/www');
+
+      expect(backupPath).toBeNull();
+      expect(vol.existsSync('/var/www/.vscode/sftp-backup')).toBe(false);
+    }
+  );
+
+  test('createBackup sniffs unknown extensions and skips binary content', async () => {
+    vol.fromJSON({ '/var/www/payload.asset': Buffer.from([0x41, 0x00, 0x42, 0x01]) }, '/');
+    const fs = createRemoteFs();
+
+    const backupPath = await createBackup('/var/www/payload.asset', fs, {
+      enabled: true,
+      folder: '.vscode/sftp-backup',
+      versions: 100,
+    }, '/var/www');
+
+    expect(backupPath).toBeNull();
+  });
+
+  test('createBackup stores unknown extensions when sampled content is text', async () => {
+    vol.fromJSON({ '/var/www/template.custom': 'custom text template' }, '/');
+    const fs = createRemoteFs();
+
+    const backupPath = await createBackup('/var/www/template.custom', fs, {
+      enabled: true,
+      folder: '.vscode/sftp-backup',
+      versions: 100,
+    }, '/var/www');
+
+    expect(backupPath).not.toBeNull();
+    expect(vol.readFileSync(backupPath, 'utf8')).toBe('custom text template');
+  });
+
   test('createBackup keeps only the configured number of versions', async () => {
     vol.fromJSON({ '/var/www/index.php': 'v1' }, '/');
     const fs = createRemoteFs();
@@ -108,22 +218,18 @@ describe('backup lifecycle', () => {
       versions: 3,
     };
 
-    const paths = [];
     for (let i = 0; i < 5; i++) {
       vol.writeFileSync('/var/www/index.php', `v${i + 1}`);
-      const backupPath = await createBackup('/var/www/index.php', fs, backupConfig, '/var/www');
-      paths.push(backupPath);
+      await createBackup('/var/www/index.php', fs, backupConfig, '/var/www');
     }
 
     const remaining = vol.toJSON('/var/www/.vscode/sftp-backup');
     const backupFiles = Object.keys(remaining).filter(p => p.endsWith('.bak'));
     expect(backupFiles.length).toBe(3);
 
-    // Because each backup now gets a unique millisecond timestamp, none overwrite each other.
-    // Prune keeps the 3 newest.
-    expect(vol.existsSync(paths[2])).toBe(true);
-    expect(vol.existsSync(paths[3])).toBe(true);
-    expect(vol.existsSync(paths[4])).toBe(true);
+    // Small limits still preserve the historical anchor, then newest versions.
+    expect(Object.values(remaining)).toEqual(expect.arrayContaining(['v1', 'v4', 'v5']));
+    expect(Object.values(remaining)).not.toContain('v3');
   });
 
   test('createBackup copies remote file to local backup folder', async () => {
@@ -164,20 +270,17 @@ describe('backup lifecycle', () => {
       versions: 3,
     };
 
-    const paths = [];
     for (let i = 0; i < 5; i++) {
       vol.writeFileSync('/var/www/index.php', `v${i + 1}`);
-      const backupPath = await createBackup('/var/www/index.php', remoteFs, backupConfig, '/var/www', storage);
-      paths.push(backupPath);
+      await createBackup('/var/www/index.php', remoteFs, backupConfig, '/var/www', storage);
     }
 
     const remaining = vol.toJSON(path.join('/workspace', '.vscode/sftp-backup'));
     const backupFiles = Object.keys(remaining).filter(p => p.endsWith('.bak'));
     expect(backupFiles.length).toBe(3);
 
-    expect(vol.existsSync(paths[2])).toBe(true);
-    expect(vol.existsSync(paths[3])).toBe(true);
-    expect(vol.existsSync(paths[4])).toBe(true);
+    expect(Object.values(remaining)).toEqual(expect.arrayContaining(['v1', 'v4', 'v5']));
+    expect(Object.values(remaining)).not.toContain('v3');
   });
 
   test('pruneBackups deletes local files beyond the version limit', async () => {
@@ -205,8 +308,58 @@ describe('backup lifecycle', () => {
     const remaining = vol.toJSON(path.join('/workspace', '.vscode/sftp-backup'));
     const backupFiles = Object.keys(remaining).filter(p => p.endsWith('.bak'));
     expect(backupFiles.length).toBe(2);
-    expect(vol.existsSync(path.join('/workspace', '.vscode/sftp-backup', 'index.php.20260604000000.bak'))).toBe(true);
+    expect(vol.existsSync(path.join('/workspace', '.vscode/sftp-backup', 'index.php.20260601000000.bak'))).toBe(true);
+    expect(vol.existsSync(path.join('/workspace', '.vscode/sftp-backup', 'index.php.20260604000000.bak'))).toBe(false);
     expect(vol.existsSync(path.join('/workspace', '.vscode/sftp-backup', 'index.php.20260605000000.bak'))).toBe(true);
     expect(vol.existsSync(path.join('/workspace', '.vscode/sftp-backup', 'index.php.20260603000000.bak'))).toBe(false);
+  });
+
+  test('pruneBackups keeps oldest anchor, latest 50, newest conflict backups, and limit 100', async () => {
+    const backupRoot = path.join('/workspace', '.vscode/sftp-backup');
+    const files = {};
+    const allPaths = [];
+    const conflictIndexes = new Set([10, 20, 30, 40, 50, 60]);
+    const conflictPaths = new Map();
+
+    for (let index = 0; index < 120; index++) {
+      const timestamp = new Date(Date.UTC(2026, 0, 1, 0, 0, 0, index));
+      const priority = conflictIndexes.has(index) ? 'conflict' : 'normal';
+      const backupPath = getBackupPath(
+        '/var/www/index.php',
+        '.vscode/sftp-backup',
+        '/var/www',
+        timestamp,
+        backupRoot,
+        path,
+        priority
+      );
+      files[backupPath] = `backup ${index}`;
+      allPaths.push(backupPath);
+      if (priority === 'conflict') {
+        conflictPaths.set(index, backupPath);
+      }
+    }
+    vol.fromJSON(files, '/');
+
+    const remoteFs = createRemoteFs();
+    const storage = {
+      fs: localfs,
+      root: backupRoot,
+      pathResolver: path,
+    };
+    await pruneBackups('/var/www/index.php', remoteFs, {
+      enabled: true,
+      location: 'local',
+      folder: '.vscode/sftp-backup',
+      versions: 100,
+    }, '/var/www', storage);
+
+    const remaining = Object.keys(vol.toJSON(backupRoot)).filter(p => p.endsWith('.bak'));
+    expect(remaining).toHaveLength(100);
+    expect(vol.existsSync(allPaths[0])).toBe(true);
+    allPaths.slice(-50).forEach(backupPath => expect(vol.existsSync(backupPath)).toBe(true));
+    [20, 30, 40, 50, 60].forEach(index =>
+      expect(vol.existsSync(conflictPaths.get(index))).toBe(true)
+    );
   });
 });

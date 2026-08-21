@@ -55,6 +55,11 @@
         "description": "True to upload on every save operation of VS Code.",
         "default": false
       },
+      "conflictCheck": {
+        "type": "boolean",
+        "description": "Before uploading an existing remote file, compare its exact modification time and byte size with the last observed remote baseline. Block and prompt when the remote file changed or no safe baseline exists.",
+        "default": false
+      },
       "useTempFile": {
         "type": "boolean",
         "description": "True to upload temp file on every save operation of VS Code to avoid breaking a webpage when a user acceses it while the file is still being uploaded (is incomplete).",
@@ -117,8 +122,8 @@
           },
           "versions": {
             "type": "number",
-            "description": "Maximum number of backup versions to keep per file. Set to 0 to disable backups even when enabled is true.",
-            "default": 5,
+            "description": "Maximum number of text-file backup versions to keep per source file. Retention preserves the oldest anchor, the latest 50 versions, up to 5 newest confirmed conflict-overwrite backups, and evenly distributed middle-history versions. Set to 0 to disable backups even when enabled is true.",
+            "default": 100,
             "minimum": 0
           }
         },
@@ -126,7 +131,7 @@
           "enabled": false,
           "location": "remote",
           "folder": ".vscode/sftp-backup",
-          "versions": 5
+          "versions": 100
         }
       },
       "ignore": {

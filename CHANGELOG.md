@@ -1,3 +1,16 @@
+## 3.2.5 - 2026-08-21
+* **FTP recovery:** A failed reconnect no longer permanently closes the shared FTP filesystem used by the rest of a batch. Later queued files can establish a fresh session instead of failing with `FTP client cannot reconnect after it has been closed`.
+* **Download retry:** Remote-to-local file transfers retry once after transient network failures such as `ETIMEDOUT`. Uploads are never replayed automatically.
+
+## 3.2.4 - 2026-08-21
+* **Smart text-only backups:** Backups are created for PHP, CSS, JavaScript/TypeScript, JSON, HTML/XML, SVG, configuration files, and other known text formats. Known binary images, media, fonts, PDFs, archives, and executables are skipped without blocking uploads; unknown extensions are sampled for binary content.
+* **Retention:** The default and recommended `backup.versions` limit is now 100. Pruning keeps the oldest historical anchor, the latest 50 versions, up to 5 newest backups made before confirmed conflict overwrites, and evenly distributed versions from the remaining history. All versions share the same hard per-file limit.
+* **Conflict integration:** Choosing Overwrite or Overwrite All for a confirmed changed-remote conflict marks the pre-overwrite backup as priority for pruning.
+
+## 3.2.3 - 2026-08-21
+* **Fix:** FTP Sync Remote → Local now requests exact file modification times with `MDTM` when `LIST` does not provide `modifiedAt`. This prevents `syncOption.update` from treating remote timestamps as zero and silently skipping changed existing files. If `MDTM` is unavailable, update comparison falls back to byte size instead of skipping every existing destination file.
+* **Safety:** Added opt-in `conflictCheck`. Before file, folder, save, watcher, or non-deleting sync uploads, each existing remote file is compared by exact modification time and byte size against a workspace-scoped remote baseline. Changed files are blocked with Overwrite, Overwrite All, Open Diff, or cancel actions. No remote content download is required for the check.
+
 ## 3.2.2 - 2026-07-14
 * **Change:** FTP keepalive is now opt-in. `ftpKeepAliveInterval` defaults to `0` (disabled); set it explicitly to a positive interval for servers that close idle FTP sessions. Automatic reconnect remains enabled with one attempt by default.
 

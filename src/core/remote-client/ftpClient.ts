@@ -81,9 +81,7 @@ export default class FTPClient extends RemoteClient {
   private _rawClient: Client;
   private _connectOption?: ConnectOption;
   private _keepAliveTimer?: ReturnType<typeof setInterval>;
-  private _disconnectHandlers: Array<(reason: string) => void> = [];
   private _ending: boolean = false;
-  private _disconnectedNotified: boolean = false;
 
   _initClient() {
     this._rawClient = new Client(this._option.connectTimeout || 10000);
@@ -94,15 +92,16 @@ export default class FTPClient extends RemoteClient {
     return connectOption.password != undefined;
   }
 
-  onDisconnected(cb: (reason: string) => void) {
-    this._disconnectHandlers.push(cb);
+  onDisconnected(_cb: (reason: string) => void) {
+    // A failed reconnect only applies to the current FTP operation. Keep the
+    // shared filesystem alive so the next queued operation can reconnect and
+    // continue a batch instead of being poisoned by one transient timeout.
   }
 
   async _doConnect(connectOption: ConnectOption): Promise<void> {
     this._ending = false;
     this._connectOption = { ...connectOption };
     await this._access(this._connectOption);
-    this._disconnectedNotified = false;
     this._startKeepAlive();
   }
 
@@ -193,7 +192,6 @@ export default class FTPClient extends RemoteClient {
       try {
         this._logStatus(`reconnecting FTP session (${attempt}/${attempts})...`);
         await this._access(this._connectOption);
-        this._disconnectedNotified = false;
         this._logStatus('FTP session reconnected.');
         return;
       } catch (error) {
@@ -201,18 +199,8 @@ export default class FTPClient extends RemoteClient {
       }
     }
 
-    this._notifyDisconnected('reconnect-failed');
+    this._logStatus('FTP reconnect attempts exhausted; a later operation may retry.');
     throw lastError;
-  }
-
-  private _notifyDisconnected(reason: string) {
-    if (this._disconnectedNotified) {
-      return;
-    }
-
-    this._disconnectedNotified = true;
-    this._stopKeepAlive();
-    this._disconnectHandlers.forEach(handler => handler(reason));
   }
 
   private _logStatus(message: string) {

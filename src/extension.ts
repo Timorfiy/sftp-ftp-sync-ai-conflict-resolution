@@ -14,6 +14,7 @@ import { initSecrets } from './modules/secrets';
 import { transferQueueProvider } from './modules/transferQueue';
 import { remoteBackupsProvider, backupContentProvider, BACKUP_SCHEME } from './modules/remoteBackups';
 import { registerCommand } from './host';
+import { initRemoteBaselineStore } from './fileHandlers/transfer/remoteBaseline';
 import {
   COMMAND_TRANSFER_QUEUE_CANCEL,
   COMMAND_TRANSFER_QUEUE_CLEAR,
@@ -36,6 +37,7 @@ function setup(workspaceFolders: readonly vscode.WorkspaceFolder[]) {
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
+  initRemoteBaselineStore(context.workspaceState);
   initSecrets(context);
 
   try {

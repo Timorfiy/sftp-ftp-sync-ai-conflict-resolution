@@ -35,6 +35,7 @@ const configScheme = z.object({
 
   remotePath: z.string(),
   uploadOnSave: z.boolean().optional(),
+  conflictCheck: z.boolean().optional(),
   useTempFile: z.boolean().optional(),
   openSsh: z.boolean().optional(),
   downloadOnOpen: z.union([z.boolean(), z.literal('confirm')]).optional(),
@@ -89,6 +90,7 @@ const defaultConfig = {
   // name: undefined,
   remotePath: './',
   uploadOnSave: false,
+  conflictCheck: false,
   useTempFile: false,
   openSsh: false,
   downloadOnOpen: false,
@@ -134,7 +136,7 @@ const defaultConfig = {
     enabled: false,
     location: 'remote',
     folder: '.vscode/sftp-backup',
-    versions: 5,
+    versions: 100,
   },
 };
 
@@ -142,6 +144,10 @@ function mergedDefault(config) {
   return {
     ...defaultConfig,
     ...config,
+    backup: {
+      ...defaultConfig.backup,
+      ...config.backup,
+    },
   };
 }
 
@@ -216,7 +222,7 @@ export function newConfig(basePath) {
               enabled: false,
               location: 'remote',
               folder: '.vscode/sftp-backup',
-              versions: 5,
+              versions: 100,
             },
           },
           { spaces: 4 }

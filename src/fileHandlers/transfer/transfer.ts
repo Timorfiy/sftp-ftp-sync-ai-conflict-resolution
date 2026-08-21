@@ -12,11 +12,42 @@ import { flatten } from '../../utils';
 import logger from '../../logger';
 import { getOpenTextDocuments } from '../../host';
 
-interface InternalTransferOption extends FileHandleOption, TransferTaskTransferOption {}
+export interface FileTransferContext {
+  srcFsPath: string;
+  targetFsPath: string;
+  srcFs: FileSystem;
+  targetFs: FileSystem;
+  fileType: FileType;
+  transferDirection: TransferDirection;
+  sourceMtime: number;
+  sourceSize: number;
+  conflictOverwrite?: boolean;
+}
+
+export interface TransferLifecycleOption {
+  beforeFileTransfer?: (context: FileTransferContext) => Promise<void>;
+  afterFileTransfer?: (context: FileTransferContext) => Promise<void>;
+}
+
+interface InternalTransferOption
+  extends FileHandleOption,
+    TransferTaskTransferOption,
+    TransferLifecycleOption {
+  sourceSize?: number;
+}
 
 type ExternalTransferOption<T extends InternalTransferOption> = Pick<
   T,
-  Exclude<keyof T, 'mtime' | 'atime' | 'mode' | 'fallbackMode'>
+  Exclude<
+    keyof T,
+    | 'mtime'
+    | 'atime'
+    | 'mode'
+    | 'fallbackMode'
+    | 'sourceSize'
+    | 'backupPriority'
+    | 'onTransferSuccess'
+  >
 >;
 
 type TransferOption = ExternalTransferOption<InternalTransferOption>;
@@ -36,6 +67,8 @@ interface SyncOption extends TransferOption {
   // make newest file to be present in both locations.
   bothDiretions?: boolean;
 }
+
+let hasWarnedUnknownMtimeDuringSync = false;
 
 interface BaseTransferHandleConfig {
   srcFsPath: string;
@@ -60,6 +93,17 @@ function getAltDirection(direction: TransferDirection) {
 function isFileModified(a: FileEntry, b: FileEntry): boolean {
   // compare time at seconds
   return Math.floor(a.mtime / 1000) !== Math.floor(b.mtime / 1000) || a.size !== b.size;
+}
+
+async function ensureAccurateFileEntry<T extends FileEntry>(entry: T, fs: FileSystem): Promise<T> {
+  if (entry.type !== FileType.File) {
+    return entry;
+  }
+  const accurateEntry = await fs.ensureAccurateMtime(entry);
+  return {
+    ...entry,
+    ...accurateEntry,
+  };
 }
 
 function toHash<T, R = T>(items: T[], key: string, transform?: (a: T) => R): { [key: string]: R } {
@@ -91,23 +135,25 @@ async function transferFolder(
 
   const fileEntries = await srcFs.list(srcFsPath);
   await Promise.all(
-    fileEntries.map(file =>
-      transferWithType(
+    fileEntries.map(async file => {
+      const accurateFile = await ensureAccurateFileEntry(file, srcFs);
+      return transferWithType(
         {
           ...config,
           transferOption: {
             ...config.transferOption,
-            mtime: file.mtime,
-            atime: file.atime,
+            mtime: accurateFile.mtime,
+            atime: accurateFile.atime,
+            sourceSize: accurateFile.size,
           },
-          srcFsPath: file.fspath,
-          targetFsPath: targetFs.pathResolver.join(targetFsPath, file.name),
+          srcFsPath: accurateFile.fspath,
+          targetFsPath: targetFs.pathResolver.join(targetFsPath, accurateFile.name),
           ensureDirExist: false,
         },
-        file.type,
+        accurateFile.type,
         collect
-      )
-    )
+      );
+    })
   );
 
   logger.info('folder transfered.');
@@ -122,6 +168,29 @@ async function transferFile(
     return;
   }
 
+  const lifecycleContext: FileTransferContext = {
+    srcFsPath: config.srcFsPath,
+    targetFsPath: config.targetFsPath,
+    srcFs: config.srcFs,
+    targetFs: config.targetFs,
+    fileType,
+    transferDirection: config.transferDirection,
+    sourceMtime: config.transferOption.mtime || 0,
+    sourceSize: config.transferOption.sourceSize || 0,
+  };
+
+  if (config.transferOption.beforeFileTransfer) {
+    await config.transferOption.beforeFileTransfer(lifecycleContext);
+  }
+
+  const transferOption = {
+    ...config.transferOption,
+    backupPriority: lifecycleContext.conflictOverwrite ? 'conflict' as const : 'normal' as const,
+    onTransferSuccess: config.transferOption.afterFileTransfer
+      ? () => config.transferOption.afterFileTransfer!(lifecycleContext)
+      : undefined,
+  };
+
   collect(
     new TransferTask(
       {
@@ -135,7 +204,7 @@ async function transferFile(
       {
         fileType,
         transferDirection: config.transferDirection,
-        transferOption: config.transferOption,
+        transferOption,
       }
     )
   );
@@ -172,6 +241,7 @@ async function transferWithType(
           // Update mtime after file was saved
           const stat = await config.srcFs.lstat(config.srcFsPath);
           config.transferOption.mtime = stat.mtime;
+          config.transferOption.sourceSize = stat.size;
           logger.info('save before upload.');
         }
       }
@@ -233,16 +303,21 @@ async function _sync(
     const fileMissed: string[] = [];
     const dirMissed: string[] = [];
 
-    Object.keys(srcFileTable).forEach(id => {
-      const srcFile = srcFileTable[id];
-      const desFile = desFileTable[id];
+    for (const id of Object.keys(srcFileTable)) {
+      let srcFile = srcFileTable[id];
+      let desFile = desFileTable[id];
       delete desFileTable[id];
 
       // files exist on both side
       if (desFile) {
         if (transferOption.ignoreExisting) {
-          return;
+          continue;
         }
+
+        [srcFile, desFile] = await Promise.all([
+          ensureAccurateFileEntry(srcFile, srcFs),
+          ensureAccurateFileEntry(desFile, targetFs),
+        ]);
 
         let from: FileEntry = srcFile;
         let to: FileEntry = desFile;
@@ -263,8 +338,20 @@ async function _sync(
             }
 
             if (transferOption.update) {
-              if (from.mtime <= to.mtime) {
-                return;
+              const hasAccurateTimes = from.mtime > 0 && to.mtime > 0;
+              if (hasAccurateTimes && from.mtime <= to.mtime) {
+                continue;
+              }
+              if (!hasAccurateTimes) {
+                if (!hasWarnedUnknownMtimeDuringSync) {
+                  hasWarnedUnknownMtimeDuringSync = true;
+                  logger.warn(
+                    'Exact modification time is unavailable during sync; update comparison falls back to file size.'
+                  );
+                }
+                if (from.size === to.size) {
+                  continue;
+                }
               }
             }
 
@@ -279,6 +366,7 @@ async function _sync(
                   mode: to.mode, // prefer target mode
                   mtime: from.mtime,
                   atime: from.atime,
+                  sourceSize: from.size,
                 },
               ]);
             }
@@ -286,13 +374,15 @@ async function _sync(
           default:
           // do not process
         }
-        return;
+        continue;
       }
 
       // files exist only on src
       if (transferOption.skipCreate) {
-        return;
+        continue;
       }
+
+      srcFile = await ensureAccurateFileEntry(srcFile, srcFs);
 
       const fspath = targetFs.pathResolver.join(targetFsPath, srcFile.name);
       switch (srcFile.type) {
@@ -310,13 +400,14 @@ async function _sync(
               fallbackMode: srcFile.mode,
               mtime: srcFile.mtime,
               atime: srcFile.atime,
+              sourceSize: srcFile.size,
             },
           ]);
           break;
         default:
         // do not process
       }
-    });
+    }
 
     // files exist only on target
     if (transferOption.bothDiretions) {
@@ -339,6 +430,7 @@ async function _sync(
                   fallbackMode: file.mode,
                   mtime: file.mtime,
                   atime: file.atime,
+                  sourceSize: file.size,
                 },
               ]);
               break;
@@ -438,6 +530,7 @@ export async function transfer(
     fallbackMode: stat.mode,
     mtime: stat.mtime,
     atime: stat.atime,
+    sourceSize: stat.size,
     filePerm: config?.filePerm,
     dirPerm: config?.dirPerm
   };
