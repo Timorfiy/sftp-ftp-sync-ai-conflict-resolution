@@ -70,6 +70,11 @@ Set `"remoteExplorer": { "enableDragAndDrop": true }` and drag items around the 
 | **v3.0.5** | "Don't show again" on the plaintext-password warning, workspace-scoped SSH host keys |
 | **v3.0** | Automatic versioned backups before every upload, with a panel to browse and restore |
 
+### Fork hotfix in v3.4.2
+
+- FTP keepalive is opt-in again; an omitted interval no longer sends `NOOP` every 30 seconds.
+- Full FTP transfer retries are opt-in through `ftpReconnectAttempts`, preventing repeated connections and duplicate upload attempts while a host is unhealthy.
+
 ### Fork additions in v3.4.1
 
 - **Conflict-safe uploads:** optional `conflictCheck` compares the current remote `mtime` and byte size with the last observed baseline before overwriting an existing file.
@@ -331,6 +336,10 @@ thing.
 FTP-only options: `secure`, `secureOptions`, `passive`, plus the legacy fork
 overrides `ftpKeepAliveInterval` and `ftpReconnectAttempts`. SFTP-only extras:
 `algorithms`, `sshCustomParams`, and `hop` (bastion hosts — see above).
+
+FTP keepalive and full-transfer reconnect attempts are opt-in. Set `keepalive`
+or `ftpKeepAliveInterval` to a positive interval, and `ftpReconnectAttempts` to
+a positive retry count, only when the FTP server requires them.
 
 `sftp.json` is strict JSON — **comments are not supported**, so don't paste `//`
 notes into it.

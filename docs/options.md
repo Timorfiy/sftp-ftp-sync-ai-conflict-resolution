@@ -3,7 +3,7 @@
 This page lists the intentional `sftp.json` configuration options supported by
 the current SFTP Neo implementation.
 
-> Verified against fork version 3.4.1, based on upstream SFTP Neo 3.4.0.
+> Verified against fork version 3.4.2, based on upstream SFTP Neo 3.4.0.
 
 The example uses **JSONC** so each option can have an inline comment. **It is
 documentation, not a file to copy unchanged into `.vscode/sftp.json`: standard
@@ -36,7 +36,7 @@ copy only the options needed by your setup.
   "password": null,                         // Password. Default: Secret Storage, then prompt.
   "remotePath": "./",                       // Remote directory. Runtime default: "./".
   "connectTimeout": 10000,                  // Connection timeout in ms. Default: 10000.
-  "keepalive": 30000,                       // SSH config value or 30000 ms fallback; 0 disables it.
+  "keepalive": 30000,                       // SFTP fallback: 30000 ms. FTP: opt-in. 0 disables it.
 
   "agent": null,                            // ssh-agent socket or "pageant". Default: none.
   "privateKeyPath": null,                   // Key path; may come from SSH config. Fallback: none.
@@ -130,8 +130,8 @@ from the main reference. These are its connection-specific options:
   "secure": false,                          // false, true, "control", or "implicit". Default: false.
   "secureOptions": {},                      // Options passed to Node.js TLS. Default: none.
   "passive": false,                         // Accepted by validation but currently has no effect.
-  "ftpKeepAliveInterval": 0,                // Legacy fork override for keepalive; omit to use `keepalive`.
-  "ftpReconnectAttempts": 1,                // Legacy fork override for retry count; omit for the upstream default.
+  "ftpKeepAliveInterval": 0,                // Legacy fork override for keepalive; both options omitted means disabled.
+  "ftpReconnectAttempts": 0,                // Full-transfer retries after a lost FTP connection. Default: 0.
   "concurrency": 1                          // Forced to 1 for FTP.
 }
 ```
@@ -141,10 +141,11 @@ control-only TLS, `"control"` also enables full TLS. `"implicit"` selects
 implicit FTPS. `secureOptions` is passed through to the underlying TLS client;
 its available values and defaults therefore depend on Node.js/OpenSSL.
 
-`ftpKeepAliveInterval` and `ftpReconnectAttempts` are compatibility aliases
-from this fork. New configurations should use the common `keepalive` option and
-the upstream retry defaults. When explicitly present, the aliases take
-precedence for FTP only; `0` disables the corresponding behaviour.
+`ftpKeepAliveInterval` and `ftpReconnectAttempts` are compatibility options
+from this fork. `ftpKeepAliveInterval` takes precedence over the common
+`keepalive` option for FTP. FTP keepalive and full-transfer retries are disabled
+unless their corresponding value is explicitly greater than `0`; this avoids
+amplifying connection failures on shared hosting.
 
 ### Local
 

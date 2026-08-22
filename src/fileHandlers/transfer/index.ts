@@ -7,22 +7,13 @@ import { remoteBackupsProvider } from '../../modules/remoteBackups';
 import { isConnectionError, withRetry } from '../../helper';
 import logger from '../../logger';
 import { createConflictLifecycle, UploadConflictAbortError } from './conflictCheck';
-
-const DEFAULT_TRANSFER_RETRY_ATTEMPTS = 3;
-
-function getTransferRetryAttempts(context: FileHandlerContext): number {
-  if (
-    context.config.protocol !== 'ftp' ||
-    context.config.ftpReconnectAttempts === undefined
-  ) {
-    return DEFAULT_TRANSFER_RETRY_ATTEMPTS;
-  }
-
-  return Math.max(1, Math.floor(context.config.ftpReconnectAttempts) + 1);
-}
+import { getTransferRetryAttempts } from './retryPolicy';
 
 function createRetryOptions(context: FileHandlerContext) {
-  const maxAttempts = getTransferRetryAttempts(context);
+  const maxAttempts = getTransferRetryAttempts(
+    context.config.protocol,
+    context.config.ftpReconnectAttempts
+  );
   return {
     maxAttempts,
     shouldRetry: isConnectionError,

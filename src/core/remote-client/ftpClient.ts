@@ -34,8 +34,6 @@ function createSerializedClient(client: Client): Client {
   }) as Client;
 }
 
-const DEFAULT_KEEPALIVE_MS = 30 * 1000;
-
 export default class FTPClient extends RemoteClient {
   private _keepaliveTimer?: ReturnType<typeof setInterval>;
   private _onDisconnectedCb?: (reason: string) => void;
@@ -131,11 +129,12 @@ export default class FTPClient extends RemoteClient {
   }
 
   private _startKeepalive(keepalive?: number) {
-    if (keepalive === 0) {
+    // FTP keepalive is opt-in. Some shared hosts react badly to unsolicited
+    // NOOP commands, and a default timer can amplify a degraded connection.
+    if (!keepalive || keepalive <= 0) {
       return;
     }
 
-    const interval = keepalive && keepalive > 0 ? keepalive : DEFAULT_KEEPALIVE_MS;
     if (this._keepaliveTimer) {
       clearInterval(this._keepaliveTimer);
     }
@@ -149,7 +148,7 @@ export default class FTPClient extends RemoteClient {
       this._client.sendIgnoringError('NOOP').catch((err: unknown) => {
         logger.debug(`FTP keepalive NOOP failed: ${(err as Error).message || err}`);
       });
-    }, interval);
+    }, keepalive);
     this._keepaliveTimer.unref();
   }
 }

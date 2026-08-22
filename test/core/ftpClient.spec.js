@@ -67,14 +67,21 @@ describe('FTPClient', () => {
     expect(mockClient.sendIgnoringError).toHaveBeenCalledWith('NOOP');
   });
 
-  test('uses the upstream 30-second keepalive by default', async () => {
+  test('sends NOOP when common keepalive is explicitly enabled for FTP', async () => {
+    await connect({ keepalive: 1000 });
+
+    await jest.advanceTimersByTimeAsync(1000);
+
+    expect(mockClient.sendIgnoringError).toHaveBeenCalledTimes(1);
+    expect(mockClient.sendIgnoringError).toHaveBeenCalledWith('NOOP');
+  });
+
+  test('does not send FTP keepalive commands by default', async () => {
     await connect();
 
-    await jest.advanceTimersByTimeAsync(29999);
-    expect(mockClient.sendIgnoringError).not.toHaveBeenCalled();
+    await jest.advanceTimersByTimeAsync(180000);
 
-    await jest.advanceTimersByTimeAsync(1);
-    expect(mockClient.sendIgnoringError).toHaveBeenCalledTimes(1);
+    expect(mockClient.sendIgnoringError).not.toHaveBeenCalled();
   });
 
   test('allows the common keepalive option to disable NOOP', async () => {
