@@ -24,6 +24,7 @@ export interface ConnectOption {
   keepalive?: number;
 
   // ftp-only
+  networkInterface?: string | null;
   secure?: any;
   secureOptions?: object;
   passive?: boolean;

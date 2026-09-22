@@ -1,29 +1,29 @@
-import * as path from 'path';
-import * as vscode from 'vscode';
+import { randomUUID } from 'crypto';
 import { FileType } from '../../core/fs/fileSystem';
 import type { FileStats } from '../../core/fs/fileSystem';
 import { TransferDirection } from '../../core/transferTask';
 import logger from '../../logger';
-import { diff } from '../diff';
 import type { FileHandlerContext } from '../createFileHandler';
 import type {
   FileTransferContext,
   TransferLifecycleOption,
 } from './transfer';
 import {
+  acceptBatchOverwrite,
+  captureConflict,
+  markConflictFailed,
+  markConflictUploaded,
+  markConflictUploading,
+  waitForConflictDecision,
+} from './conflictBridge';
+import type { UploadConflictReason } from './conflictBridge';
+import {
   getRemoteBaseline,
   recordRemoteBaseline,
   RemoteBaseline,
 } from './remoteBaseline';
 
-const OVERWRITE = 'Overwrite';
-const OVERWRITE_ALL = 'Overwrite All';
-const OPEN_DIFF = 'Open Diff';
-
-export type UploadConflictReason =
-  | 'remote-changed'
-  | 'baseline-missing'
-  | 'timestamp-unavailable';
+export type { UploadConflictReason } from './conflictBridge';
 
 export class UploadConflictAbortError extends Error {
   constructor() {
@@ -73,17 +73,6 @@ async function remoteStatOrUndefined(
   }
 }
 
-function conflictDetail(reason: UploadConflictReason): string {
-  switch (reason) {
-    case 'remote-changed':
-      return 'The remote modification time or byte size no longer matches the last observed version.';
-    case 'baseline-missing':
-      return 'This existing remote file differs from local metadata, but no previous remote baseline is stored yet.';
-    case 'timestamp-unavailable':
-      return 'The FTP server did not provide an exact remote modification time, so a safe comparison is not possible.';
-  }
-}
-
 export function createConflictLifecycle(
   handlerContext: FileHandlerContext
 ): TransferLifecycleOption {
@@ -92,6 +81,7 @@ export function createConflictLifecycle(
   }
 
   let overwriteAll = false;
+  const batchId = randomUUID();
 
   return {
     async beforeFileTransfer(context) {
@@ -116,42 +106,47 @@ export function createConflictLifecycle(
       if (!reason) {
         return;
       }
-      if (overwriteAll) {
-        context.conflictOverwrite = reason === 'remote-changed';
-        return;
-      }
 
-      const choice = await vscode.window.showWarningMessage(
-        `SFTP Neo blocked upload of ${path.basename(context.srcFsPath)}.`,
-        {
-          modal: true,
-          detail: `${conflictDetail(reason)}\n\nRemote: ${context.targetFsPath}`,
-        },
-        OVERWRITE,
-        OVERWRITE_ALL,
-        OPEN_DIFF
+      const session = await captureConflict(
+        handlerContext.fileService.workspace,
+        batchId,
+        context,
+        reason,
+        remote,
+        baseline
       );
 
-      if (choice === OVERWRITE) {
-        context.conflictOverwrite = reason === 'remote-changed';
-        return;
-      }
-      if (choice === OVERWRITE_ALL) {
-        overwriteAll = true;
-        context.conflictOverwrite = reason === 'remote-changed';
-        return;
-      }
-      if (choice === OPEN_DIFF) {
-        await diff(vscode.Uri.file(context.srcFsPath));
+      if (overwriteAll) {
+        const accepted = await acceptBatchOverwrite(session, context);
+        if (!accepted) {
+          overwriteAll = false;
+        } else {
+          context.conflictOverwrite = reason === 'remote-changed';
+          context.kentConflictReport = await markConflictUploading(session);
+          return;
+        }
       }
 
-      logger.info(`Upload blocked by conflict check: ${context.targetFsPath}`);
-      throw new UploadConflictAbortError();
+      const decision = await waitForConflictDecision(session, context);
+      if (decision === 'cancel') {
+        logger.info(`Upload blocked by conflict check: ${context.targetFsPath}`);
+        throw new UploadConflictAbortError();
+      }
+      if (decision === 'overwrite_all') {
+        overwriteAll = true;
+      }
+
+      context.conflictOverwrite = reason === 'remote-changed';
+      context.kentConflictReport = await markConflictUploading(session);
     },
 
     async afterFileTransfer(context) {
       if (context.fileType !== FileType.File) {
         return;
+      }
+
+      if (context.kentConflictReport) {
+        await markConflictUploaded(context.kentConflictReport);
       }
 
       try {
@@ -166,6 +161,12 @@ export function createConflictLifecycle(
         }
       } catch (error) {
         logger.warn(`Could not record remote baseline for ${context.targetFsPath}: ${error.message}`);
+      }
+    },
+
+    async afterFileTransferError(context, error) {
+      if (context.kentConflictReport) {
+        await markConflictFailed(context.kentConflictReport, error);
       }
     },
   };

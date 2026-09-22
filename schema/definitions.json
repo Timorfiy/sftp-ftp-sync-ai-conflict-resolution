@@ -148,12 +148,28 @@
       },
       "ignore": {
         "type": "array",
-        "description": "Files to ignore. Same behavior as gitignore.",
+        "description": "Files to ignore. Same behavior as gitignore. .vscode is always excluded at runtime regardless of this list.",
         "items": {
           "type": "string",
           "description": "Ignore pattern."
         },
-        "default": [".vscode", ".git", ".DS_Store"]
+        "default": [
+          ".vscode",
+          ".git",
+          ".github",
+          ".DS_Store",
+          "Thumbs.db",
+          "src",
+          ".env",
+          ".env.*",
+          "AGENTS.md",
+          "CLAUDE.md",
+          ".claude",
+          ".cursor",
+          "*.log",
+          "*.tmp",
+          "*.bak"
+        ]
       },
       "ignoreFile": {
         "type": "string",
@@ -485,6 +501,14 @@
             "description": "Optional opaque identifier used by servers to ensure session state is not shared between applications. Unused by clients. Note: tls.createServer() uses a 128 bit truncated SHA1 hash value generated from process.argv, other APIs that create secure contexts have no default value."
           }
         }
+      },
+      "networkInterface": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "minLength": 1,
+        "description": "FTP only: bind control and passive data connections to an adapter name (for example Ethernet). Requires a usable IPv4 address. Omit or use null for system routing. No fallback if the selected adapter is unavailable."
       }
     }
   }

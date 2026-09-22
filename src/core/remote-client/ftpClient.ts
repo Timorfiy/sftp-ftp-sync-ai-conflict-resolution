@@ -1,6 +1,7 @@
 import { Client } from 'basic-ftp';
 import RemoteClient, { ConnectOption } from './remoteClient';
 import logger from '../../logger';
+import { bindFTPNetworkInterface, FTPNetworkBinding } from './ftpNetworkBinding';
 
 /**
  * basic-ftp does not support concurrent commands on a single control connection.
@@ -38,6 +39,7 @@ export default class FTPClient extends RemoteClient {
   private _keepaliveTimer?: ReturnType<typeof setInterval>;
   private _onDisconnectedCb?: (reason: string) => void;
   private _socketListenersAttached = false;
+  private _networkBinding?: FTPNetworkBinding;
 
   _initClient() {
     const client = new Client(this._option.connectTimeout || 10000);
@@ -49,7 +51,7 @@ export default class FTPClient extends RemoteClient {
   }
 
   isClosed() {
-    return this._client.closed;
+    return this._client.closed || !!(this._networkBinding && !this._networkBinding.isAvailable());
   }
 
   onDisconnected(cb: (reason: string) => void) {
@@ -59,6 +61,13 @@ export default class FTPClient extends RemoteClient {
 
   async _doConnect(connectOption: ConnectOption): Promise<void> {
     const client = this._client as Client;
+    this._socketListenersAttached = false;
+    this._networkBinding?.dispose();
+    this._networkBinding = undefined;
+    if (connectOption.networkInterface) {
+      this._networkBinding = bindFTPNetworkInterface(client, connectOption.networkInterface);
+      logger.info(`FTP via ${this._networkBinding.name} (${this._networkBinding.address})`);
+    }
 
     // Map secure option
     let secure: boolean | 'implicit' = false;
@@ -89,7 +98,13 @@ export default class FTPClient extends RemoteClient {
       user: connectOption.username,
       password: connectOption.password,
       secure,
-      secureOptions: connectOption.secureOptions as any,
+      // Implicit TLS creates its own control socket instead of using _newSocket.
+      // Explicit TLS upgrades an already bound socket; PASV/EPSV use the factory.
+      secureOptions: this._networkBinding ? {
+        ...connectOption.secureOptions,
+        localAddress: this._networkBinding.address,
+        family: 4,
+      } : connectOption.secureOptions as any,
     });
 
     this._attachSocketListeners();

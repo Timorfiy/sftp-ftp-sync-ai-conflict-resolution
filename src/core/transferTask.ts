@@ -62,6 +62,7 @@ export interface TransferOption {
   localBasePath?: string;
   backupPriority?: BackupPriority;
   onTransferSuccess?: () => Promise<void>;
+  onTransferError?: (error: unknown) => Promise<void>;
 }
 
 export default class TransferTask implements Task {
@@ -115,29 +116,36 @@ export default class TransferTask implements Task {
   }
 
   async run() {
-    const src = this._srcFsPath;
-    const target = this._targetFsPath;
-    const srcFs = this._srcFs;
-    const targetFs = this._targetFs;
-    switch (this.fileType) {
-      case FileType.File:
-        await this._transferFileWithRetry();
-        break;
-      case FileType.SymbolicLink:
-        await fileOperations.transferSymlink(
-          src,
-          target,
-          srcFs,
-          targetFs,
-          this._TransferOption
-        );
-        break;
-      default:
-        logger.warn(`Unsupported file type (type = ${this.fileType}). File ${src}`);
-    }
+    try {
+      const src = this._srcFsPath;
+      const target = this._targetFsPath;
+      const srcFs = this._srcFs;
+      const targetFs = this._targetFs;
+      switch (this.fileType) {
+        case FileType.File:
+          await this._transferFileWithRetry();
+          break;
+        case FileType.SymbolicLink:
+          await fileOperations.transferSymlink(
+            src,
+            target,
+            srcFs,
+            targetFs,
+            this._TransferOption
+          );
+          break;
+        default:
+          logger.warn(`Unsupported file type (type = ${this.fileType}). File ${src}`);
+      }
 
-    if (this._TransferOption.onTransferSuccess) {
-      await this._TransferOption.onTransferSuccess();
+      if (this._TransferOption.onTransferSuccess) {
+        await this._TransferOption.onTransferSuccess();
+      }
+    } catch (error) {
+      if (this._TransferOption.onTransferError) {
+        await this._TransferOption.onTransferError(error);
+      }
+      throw error;
     }
   }
 

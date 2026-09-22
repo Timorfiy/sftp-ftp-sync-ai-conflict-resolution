@@ -298,3 +298,17 @@ describe("validation config", () => {
     });
   });
 });
+
+
+describe('networkInterface validation', () => {
+  const base = { host: 'host', username: 'user', remotePath: '/', protocol: 'ftp' };
+  test.each(['Ethernet', null, undefined])('accepts %s for FTP', value => {
+    expect(validateConfig({ ...base, networkInterface: value })).toBeNull();
+  });
+  test.each(['', '   ', true, 42])('rejects invalid interface %s', value => {
+    expect(validateConfig({ ...base, networkInterface: value })).toBeInstanceOf(Error);
+  });
+  test('does not silently ignore the selection on SFTP', () => {
+    expect(validateConfig({ ...base, protocol: 'sftp', networkInterface: 'Ethernet' })).toBeInstanceOf(Error);
+  });
+});
