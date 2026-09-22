@@ -16,6 +16,10 @@ import { remoteBackupsProvider, backupContentProvider, BACKUP_SCHEME } from './m
 import { registerCommand } from './host';
 import { initRemoteBaselineStore } from './fileHandlers/transfer/remoteBaseline';
 import {
+  disposeConflictBridge,
+  initializeConflictBridge,
+} from './fileHandlers/transfer/conflictBridge';
+import {
   COMMAND_TRANSFER_QUEUE_CANCEL,
   COMMAND_TRANSFER_QUEUE_CLEAR,
 } from './constants';
@@ -50,6 +54,11 @@ export async function activate(context: vscode.ExtensionContext) {
   if (!workspaceFolders) {
     return;
   }
+
+  await initializeConflictBridge(
+    workspaceFolders.map(folder => folder.uri.fsPath),
+    String(context.extension.packageJSON.version || '3.5.0')
+  );
 
   setContextValue('enabled', true);
   app.sftpBarItem.show();
@@ -123,7 +132,8 @@ export async function activate(context: vscode.ExtensionContext) {
   }
 }
 
-export function deactivate() {
+export async function deactivate() {
   fileActivityMonitor.destory();
   getAllFileService().forEach(disposeFileService);
+  await disposeConflictBridge();
 }

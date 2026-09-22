@@ -11,6 +11,7 @@ import { FileHandleOption } from '../option';
 import { flatten } from '../../utils';
 import logger from '../../logger';
 import { getOpenTextDocuments } from '../../host';
+import type { ConflictReportRef } from './conflictBridge';
 
 export interface FileTransferContext {
   srcFsPath: string;
@@ -22,11 +23,16 @@ export interface FileTransferContext {
   sourceMtime: number;
   sourceSize: number;
   conflictOverwrite?: boolean;
+  kentConflictReport?: ConflictReportRef;
 }
 
 export interface TransferLifecycleOption {
   beforeFileTransfer?: (context: FileTransferContext) => Promise<void>;
   afterFileTransfer?: (context: FileTransferContext) => Promise<void>;
+  afterFileTransferError?: (
+    context: FileTransferContext,
+    error: unknown
+  ) => Promise<void>;
 }
 
 interface InternalTransferOption
@@ -47,6 +53,7 @@ type ExternalTransferOption<T extends InternalTransferOption> = Pick<
     | 'sourceSize'
     | 'backupPriority'
     | 'onTransferSuccess'
+    | 'onTransferError'
   >
 >;
 
@@ -188,6 +195,9 @@ async function transferFile(
     backupPriority: lifecycleContext.conflictOverwrite ? 'conflict' as const : 'normal' as const,
     onTransferSuccess: config.transferOption.afterFileTransfer
       ? () => config.transferOption.afterFileTransfer!(lifecycleContext)
+      : undefined,
+    onTransferError: config.transferOption.afterFileTransferError
+      ? (error: unknown) => config.transferOption.afterFileTransferError!(lifecycleContext, error)
       : undefined,
   };
 

@@ -30,6 +30,7 @@ const configScheme = z.object({
   secure: z.union([z.boolean(), z.literal('control'), z.literal('implicit')]).optional(),
   secureOptions: z.record(z.string(), z.any()).optional().nullable(),
   passive: z.boolean().optional(),
+  networkInterface: z.string().trim().min(1).optional().nullable(),
   ftpKeepAliveInterval: z.number().int().min(0).optional(),
   ftpReconnectAttempts: z.number().int().min(0).optional(),
 
@@ -166,6 +167,9 @@ export function validateConfig(config) {
     );
     return new Error(messages.join(', '));
   }
+  if (config.networkInterface && config.protocol !== 'ftp') {
+    return new Error('networkInterface is supported only for FTP connections.');
+  }
   return null;
 }
 
@@ -222,6 +226,26 @@ export function newConfig(basePath) {
             useTempFile: false,
             openSsh: false,
             concurrency: 4,
+            ignore: [
+              '.vscode',
+              '.git',
+              '.github',
+              '.DS_Store',
+              'Thumbs.db',
+
+              'src',
+              '.env',
+              '.env.*',
+
+              'AGENTS.md',
+              'CLAUDE.md',
+              '.claude',
+              '.cursor',
+
+              '*.log',
+              '*.tmp',
+              '*.bak',
+            ],
             backup: {
               enabled: false,
               location: 'remote',

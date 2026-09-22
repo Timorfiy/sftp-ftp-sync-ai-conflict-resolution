@@ -91,6 +91,7 @@ interface SftpOption {
 }
 
 interface FtpOption {
+  networkInterface?: string | null;
   secure: boolean | 'control' | 'implicit';
   secureOptions: any;
   ftpKeepAliveInterval?: number;
@@ -154,6 +155,16 @@ function filesIgnoredFromConfig(config: FileServiceConfig): string[] {
   // Auto-exclude system files that FTP servers often reject (e.g. cPanel quota file).
   const systemFiles = ['**/.ftpquota'];
   systemFiles.forEach(pattern => {
+    if (ignore.indexOf(pattern) === -1) {
+      ignore.push(pattern);
+    }
+  });
+
+  // Always exclude .vscode, regardless of user config: it commonly holds
+  // sftp.json (server host/credentials), and bots actively probe the web
+  // for /.vscode/sftp.json, so this stays non-optional.
+  const securityPatterns = ['.vscode'];
+  securityPatterns.forEach(pattern => {
     if (ignore.indexOf(pattern) === -1) {
       ignore.push(pattern);
     }

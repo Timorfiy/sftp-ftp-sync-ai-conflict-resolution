@@ -1,14 +1,13 @@
-jest.mock('vscode', () => ({
-  Uri: {
-    file: jest.fn(fsPath => ({ fsPath })),
-  },
-  window: {
-    showWarningMessage: jest.fn(),
-  },
-}));
-
-jest.mock('../../diff', () => ({
-  diff: jest.fn(),
+jest.mock('../conflictBridge', () => ({
+  acceptBatchOverwrite: jest.fn(async () => true),
+  captureConflict: jest.fn(async () => ({
+    root: 'C:\\workspace\\.kent-tmp\\sftp-conflicts',
+    record: { id: 'conflict-1' },
+  })),
+  markConflictFailed: jest.fn(),
+  markConflictUploaded: jest.fn(),
+  markConflictUploading: jest.fn(async () => ({ root: 'state', id: 'conflict-1' })),
+  waitForConflictDecision: jest.fn(async () => 'overwrite'),
 }));
 
 jest.mock('../../../logger', () => ({
@@ -19,7 +18,6 @@ jest.mock('../../../logger', () => ({
   },
 }));
 
-import * as vscode from 'vscode';
 import { FileType } from '../../../core/fs/fileSystem';
 import { TransferDirection } from '../../../core/transferTask';
 import {
@@ -32,6 +30,10 @@ import {
   initRemoteBaselineStore,
   recordRemoteBaseline,
 } from '../remoteBaseline';
+import {
+  acceptBatchOverwrite,
+  waitForConflictDecision,
+} from '../conflictBridge';
 
 describe('upload conflict metadata comparison', () => {
   const local = {
@@ -149,9 +151,10 @@ describe('confirmed conflict overwrite priority', () => {
       size: 90,
     };
     await recordRemoteBaseline(config, remotePath, baseline);
-    (vscode.window.showWarningMessage as jest.Mock).mockResolvedValueOnce('Overwrite');
-
-    const lifecycle = createConflictLifecycle({ config } as any);
+    const lifecycle = createConflictLifecycle({
+      config,
+      fileService: { workspace: 'C:\\workspace' },
+    } as any);
     const transferContext: any = {
       srcFsPath: 'C:\\workspace\\modals.css',
       targetFsPath: remotePath,
@@ -174,5 +177,68 @@ describe('confirmed conflict overwrite priority', () => {
     await lifecycle.beforeFileTransfer!(transferContext);
 
     expect(transferContext.conflictOverwrite).toBe(true);
+  });
+
+  test('Overwrite All is scoped to one lifecycle batch', async () => {
+    let state = {};
+    const workspaceState = {
+      get: jest.fn((_key, fallback) => state || fallback),
+      update: jest.fn(async (_key, value) => {
+        state = value;
+      }),
+    };
+    initRemoteBaselineStore(workspaceState as any);
+    const config = {
+      conflictCheck: true,
+      protocol: 'ftp',
+      username: 'batch-user',
+      host: 'example.test',
+      port: 21,
+    } as any;
+    const remotePath = '/assets/css/batch.css';
+    const baseline = { mtime: 1000, size: 10 };
+    await recordRemoteBaseline(config, remotePath, baseline);
+    const targetFs = {
+      lstat: jest.fn(async () => ({
+        type: FileType.File,
+        mode: 0o644,
+        size: 11,
+        mtime: 2000,
+        atime: 2000,
+      })),
+    } as any;
+    const makeContext = () => ({
+      srcFsPath: 'C:\\workspace\\batch.css',
+      targetFsPath: remotePath,
+      srcFs: {} as any,
+      targetFs,
+      fileType: FileType.File,
+      transferDirection: TransferDirection.LOCAL_TO_REMOTE,
+      sourceMtime: 3000,
+      sourceSize: 12,
+    } as any);
+    (waitForConflictDecision as jest.Mock)
+      .mockReset()
+      .mockResolvedValueOnce('overwrite_all')
+      .mockResolvedValueOnce('overwrite');
+    (acceptBatchOverwrite as jest.Mock).mockResolvedValue(true);
+
+    const firstBatch = createConflictLifecycle({
+      config,
+      fileService: { workspace: 'C:\\workspace' },
+    } as any);
+    await firstBatch.beforeFileTransfer!(makeContext());
+    await firstBatch.beforeFileTransfer!(makeContext());
+
+    expect(waitForConflictDecision).toHaveBeenCalledTimes(1);
+    expect(acceptBatchOverwrite).toHaveBeenCalledTimes(1);
+
+    const nextBatch = createConflictLifecycle({
+      config,
+      fileService: { workspace: 'C:\\workspace' },
+    } as any);
+    await nextBatch.beforeFileTransfer!(makeContext());
+
+    expect(waitForConflictDecision).toHaveBeenCalledTimes(2);
   });
 });

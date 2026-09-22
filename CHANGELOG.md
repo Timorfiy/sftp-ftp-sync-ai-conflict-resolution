@@ -1,3 +1,38 @@
+## 3.6.0 - 2026-09-22
+
+* Add opt-in FTP `networkInterface` selection by adapter name, resolving its current IPv4 address on reconnect.
+* Bind both control and passive data sockets, including FTPS, listings, backups and conflict snapshots. Fail explicitly when the selected adapter disappears; do not fall back to system routing.
+* Add **SFTP: Select Network Interface** with per-connection/profile selection and a system-routing option. Preserve unrelated configuration text and refuse stale editor changes.
+* Include upstream 3.5.0's mandatory .vscode transfer exclusion and safer new-config defaults.
+* Preserve the locally deployed Kent conflict bridge and its transfer lifecycle tests in the fork sources. FTP keepalive and retries remain opt-in.
+
+## 3.5.0 - 2026-09-10
+
+### Security
+
+* **`.vscode` is now always excluded from transfers:** it commonly holds
+  `sftp.json`, which can contain server host, username, and even a plaintext
+  password. Bots actively probe the web for `/.vscode/sftp.json`, so this
+  exclusion applies at runtime regardless of the `ignore` option and cannot be
+  turned off from `sftp.json`.
+* **`SFTP: Config` now pre-populates `ignore`** on newly generated
+  configurations with common patterns: `.vscode`, `.git`, `.github`,
+  `.DS_Store`, `Thumbs.db`, `src`, `.env`, `.env.*`, `AGENTS.md`, `CLAUDE.md`,
+  `.claude`, `.cursor`, `*.log`, `*.tmp`, `*.bak`. The list is fully editable
+  in the generated file — remove or add entries as needed, e.g. delete `src`
+  if your project uploads its source directly. Existing `sftp.json` files are
+  untouched.
+
+## 3.5.0 (Kent fork) - 2026-08-26
+
+Kent Agent Bridge release.
+
+* **Live conflict coordinator:** A blocked upload now remains suspended until Cursor or the local Codex MCP bridge resolves the exact transfer.
+* **Protocol v2:** Atomic workspace-local conflict state includes captured remote snapshots, SHA-256 hashes, revisions, request/response IPC, terminal transfer results, and orphan-session detection.
+* **Safe revalidation:** Overwrite decisions re-check local content and remote metadata/hash immediately before the transfer continues. Stale decisions return the conflict to `pending` with a new revision.
+* **Accurate completion:** Conflicts reach `uploaded` only from the successful transfer callback and `failed` on a real transfer error.
+* **Manual fallback:** A closable Quick Pick retains Open Diff, Overwrite, Overwrite All, and Cancel actions; MCP resolution closes the matching UI.
+
 ## 3.4.1 - 2026-08-21
 
 Fork integration release based on upstream 3.4.0.
