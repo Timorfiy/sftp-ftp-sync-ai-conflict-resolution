@@ -16,6 +16,7 @@ import {
   isConflictStatePath,
   isConflictStatePathOrAncestor,
 } from './conflictStateIsolation';
+import { withPathFailure } from '../../errors/actionable';
 
 export interface FileTransferContext {
   srcFsPath: string;
@@ -101,6 +102,28 @@ function getAltDirection(direction: TransferDirection) {
     : TransferDirection.LOCAL_TO_REMOTE;
 }
 
+function sourcePathKind(direction: TransferDirection): 'local' | 'remote' {
+  return direction === TransferDirection.LOCAL_TO_REMOTE ? 'local' : 'remote';
+}
+
+function targetPathKind(direction: TransferDirection): 'local' | 'remote' {
+  return direction === TransferDirection.LOCAL_TO_REMOTE ? 'remote' : 'local';
+}
+
+function sourceOperation<T>(
+  direction: TransferDirection,
+  operation: () => Promise<T>
+): Promise<T> {
+  return withPathFailure(sourcePathKind(direction), operation);
+}
+
+function targetOperation<T>(
+  direction: TransferDirection,
+  operation: () => Promise<T>
+): Promise<T> {
+  return withPathFailure(targetPathKind(direction), operation);
+}
+
 function localPathForTransfer(
   direction: TransferDirection,
   srcFsPath: string,
@@ -153,18 +176,30 @@ async function transferFolder(
   }
 
   // Need this to make sure file can correct transfer
-  await targetFs.ensureDir(targetFsPath);
+  await targetOperation(config.transferDirection, () =>
+    targetFs.ensureDir(targetFsPath)
+  );
 
   // If dirPerm is configured, we chmod the remote directory after creation.
   if(config.transferOption.dirPerm) {
     logger.info("chmod remote directory as configured by dirPerm, dirPerm is: ", config.transferOption.dirPerm)
-    await targetFs.chmod(targetFsPath, parseInt(String(config.transferOption.dirPerm), 8))
+    await targetOperation(config.transferDirection, () =>
+      targetFs.chmod(
+        targetFsPath,
+        parseInt(String(config.transferOption.dirPerm), 8)
+      )
+    );
   }
 
-  const fileEntries = await srcFs.list(srcFsPath);
+  const fileEntries = await sourceOperation(config.transferDirection, () =>
+    srcFs.list(srcFsPath)
+  );
   await Promise.all(
     fileEntries.map(async file => {
-      const accurateFile = await ensureAccurateFileEntry(file, srcFs);
+      const accurateFile = await sourceOperation(
+        config.transferDirection,
+        () => ensureAccurateFileEntry(file, srcFs)
+      );
       return transferWithType(
         {
           ...config,
@@ -262,11 +297,18 @@ async function transferWithType(
     case FileType.SymbolicLink:
       if (config.ensureDirExist) {
         const { targetFs, targetFsPath } = config;
-        await targetFs.ensureDir(targetFs.pathResolver.dirname(targetFsPath));
+        await targetOperation(config.transferDirection, () =>
+          targetFs.ensureDir(targetFs.pathResolver.dirname(targetFsPath))
+        );
         // If dirPerm is configured, we chmod the remote directory after creation.
         if(config.transferOption.dirPerm) {
           logger.info("Running chmod on remote directory with perm: ", config.transferOption.dirPerm)
-          await targetFs.chmod(targetFs.pathResolver.dirname(targetFsPath), parseInt(String(config.transferOption.dirPerm), 8));
+          await targetOperation(config.transferDirection, () =>
+            targetFs.chmod(
+              targetFs.pathResolver.dirname(targetFsPath),
+              parseInt(String(config.transferOption.dirPerm), 8)
+            )
+          );
         }
       }
       // <<< save before upload: start
@@ -276,7 +318,9 @@ async function transferWithType(
         if (document && !document.isClosed && document.isDirty) {
           await document.save();
           // Update mtime after file was saved
-          const stat = await config.srcFs.lstat(config.srcFsPath);
+          const stat = await sourceOperation(config.transferDirection, () =>
+            config.srcFs.lstat(config.srcFsPath)
+          );
           config.transferOption.mtime = stat.mtime;
           config.transferOption.sourceSize = stat.size;
           logger.info('save before upload.');
@@ -314,12 +358,16 @@ async function removeFile(
 
   switch (fileType) {
     case FileType.Directory:
-      await fileOperations.removeDir(file, fs, option);
+      await targetOperation(direction, () =>
+        fileOperations.removeDir(file, fs, option)
+      );
       logger.info(`${side} folder removed: ${file}`);
       break;
     case FileType.File:
     case FileType.SymbolicLink:
-      await fileOperations.removeFile(file, fs, option);
+      await targetOperation(direction, () =>
+        fileOperations.removeFile(file, fs, option)
+      );
       logger.info(`${side} file removed: ${file}`);
       break;
     default:
@@ -372,8 +420,12 @@ async function _sync(
         }
 
         [srcFile, desFile] = await Promise.all([
-          ensureAccurateFileEntry(srcFile, srcFs),
-          ensureAccurateFileEntry(desFile, targetFs),
+          sourceOperation(transferDirection, () =>
+            ensureAccurateFileEntry(srcFile, srcFs)
+          ),
+          targetOperation(transferDirection, () =>
+            ensureAccurateFileEntry(desFile, targetFs)
+          ),
         ]);
 
         let from: FileEntry = srcFile;
@@ -439,7 +491,9 @@ async function _sync(
         continue;
       }
 
-      srcFile = await ensureAccurateFileEntry(srcFile, srcFs);
+      srcFile = await sourceOperation(transferDirection, () =>
+        ensureAccurateFileEntry(srcFile, srcFs)
+      );
 
       const fspath = targetFs.pathResolver.join(targetFsPath, srcFile.name);
       switch (srcFile.type) {
@@ -577,11 +631,13 @@ async function _sync(
   };
 
   // create dir here so we don't have to ensure it for children files.
-  await targetFs.ensureDir(targetFsPath);
+  await targetOperation(transferDirection, () =>
+    targetFs.ensureDir(targetFsPath)
+  );
 
   const files = await Promise.all([
-    srcFs.list(srcFsPath).catch(() => []),
-    targetFs.list(targetFsPath).catch(() => []),
+    sourceOperation(transferDirection, () => srcFs.list(srcFsPath)),
+    targetOperation(transferDirection, () => targetFs.list(targetFsPath)),
   ]);
   await syncFiles(
     files[0].filter(entry => !isConflictStatePath(entry.fspath)),
@@ -598,7 +654,9 @@ export async function transfer(
   if (accessesConflictState(config)) {
     return;
   }
-  const stat = await config.srcFs.lstat(config.srcFsPath);
+  const stat = await sourceOperation(config.transferDirection, () =>
+    config.srcFs.lstat(config.srcFsPath)
+  );
   const transferOption = {
     ...config.transferOption,
     fallbackMode: stat.mode,

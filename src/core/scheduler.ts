@@ -66,6 +66,12 @@ class PriorityQueue<T> implements Queue<T> {
     this._queue.length = 0;
   }
 
+  drain(): T[] {
+    const items = this._queue.map(entry => entry.item);
+    this._queue.length = 0;
+    return items;
+  }
+
   get size(): number {
     return this._queue.length;
   }
@@ -142,6 +148,10 @@ class Scheduler {
 
   empty() {
     this._queue.clear();
+  }
+
+  drain(): Task[] {
+    return this._queue.drain();
   }
 
   onTaskStart(listener: (task: Task) => void) {

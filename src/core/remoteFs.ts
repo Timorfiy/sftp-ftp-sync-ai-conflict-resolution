@@ -1,6 +1,6 @@
 import upath from './upath';
 import { createHash } from 'crypto';
-import { showConfirmMessage, showWarningMessage } from '../host';
+import { showConfirmMessage } from '../host';
 import logger from '../logger';
 import app from '../app';
 import { ConnectOption } from './remote-client/remoteClient';
@@ -161,10 +161,7 @@ class KeepAliveRemoteFs {
           'Reject'
         );
         return accepted ? 'accept' : 'reject';
-      }, option.workspace).catch(err => {
-        showWarningMessage(err.message);
-        return false;
-      });
+      }, option.workspace);
     };
 
     app.sftpBarItem.showMsg('connecting...', connectOption.connectTimeout);

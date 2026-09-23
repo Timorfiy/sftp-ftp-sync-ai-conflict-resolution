@@ -2,7 +2,7 @@ import { Uri, window, ProgressLocation } from 'vscode';
 import * as path from 'path';
 import app from '../../app';
 import logger from '../../logger';
-import { simplifyPath, reportError } from '../../helper';
+import { simplifyPath } from '../../helper';
 import { UResource, FileService, TransferTask } from '../../core';
 import { validateConfig } from '../config';
 import watcherService from '../fileWatcher';
@@ -120,6 +120,9 @@ export function createFileService(config: any, workspace: string) {
   service.name = config.name;
   service.setConfigValidator(validateConfig);
   service.setWatcherService(watcherService);
+  service.queuedTransfer(task => {
+    (task as any)._queueId = transferQueueProvider.add(task);
+  });
   service.beforeTransfer(task => {
     const { localFsPath, transferType } = task;
     app.sftpBarItem.showMsg(
@@ -127,7 +130,6 @@ export function createFileService(config: any, workspace: string) {
       simplifyPath(localFsPath)
     );
     updateProgress();
-    (task as any)._queueId = transferQueueProvider.add(task);
     transferQueueProvider.start((task as any)._queueId);
   });
   service.afterTransfer((error, task) => {
@@ -143,7 +145,7 @@ export function createFileService(config: any, workspace: string) {
       app.sftpBarItem.showMsg(`cancelled ${filename}`, filepath, 2000 * 2);
     } else if (error) {
       // if ((error as any).reported !== true) {
-      reportError(error, `when ${transferType} ${localFsPath}`);
+      logger.error(error, `when ${transferType} ${localFsPath}`);
       // }
       app.sftpBarItem.showMsg(`failed ${filename}`, filepath, 2000 * 2);
     } else {

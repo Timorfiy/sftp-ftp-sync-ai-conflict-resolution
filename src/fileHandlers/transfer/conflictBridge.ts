@@ -3,6 +3,7 @@ import { createHash, randomUUID } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { COMMAND_OPEN_TROUBLESHOOTING } from '../../constants';
 import * as fileOperations from '../../core/fileBaseOperations';
 import type { FileStats } from '../../core/fs/fileSystem';
 import localFs from '../../core/localFs';
@@ -553,7 +554,7 @@ function conflictDetail(reason: UploadConflictReason): string {
 function showQuickPickOnce(
   session: ConflictSession,
   context: FileTransferContext
-): Promise<ConflictDecisionAction | 'open_diff' | undefined> {
+): Promise<ConflictDecisionAction | 'open_diff' | 'troubleshoot' | undefined> {
   return new Promise(resolve => {
     const quickPick = vscode.window.createQuickPick();
     quickPick.title = `SFTP/FTP Sync + AI Conflict Resolution blocked upload of ${path.basename(context.srcFsPath)}`;
@@ -561,13 +562,16 @@ function showQuickPickOnce(
     quickPick.ignoreFocusOut = true;
     quickPick.items = [
       { label: 'Open Diff', description: 'Compare the captured remote file with local content' },
+      { label: 'Troubleshoot', description: 'Open the bundled recovery guide' },
       { label: 'Overwrite', description: 'Upload this file' },
       { label: 'Overwrite All', description: 'Upload every remaining conflict in this batch' },
       { label: 'Cancel upload', description: 'Keep the remote file unchanged' },
     ];
     activeQuickPicks.set(session.record.id, quickPick);
     let finished = false;
-    const finish = (value: ConflictDecisionAction | 'open_diff' | undefined) => {
+    const finish = (
+      value: ConflictDecisionAction | 'open_diff' | 'troubleshoot' | undefined
+    ) => {
       if (finished) {
         return;
       }
@@ -582,6 +586,8 @@ function showQuickPickOnce(
       const label = quickPick.selectedItems[0]?.label;
       if (label === 'Open Diff') {
         finish('open_diff');
+      } else if (label === 'Troubleshoot') {
+        finish('troubleshoot');
       } else if (label === 'Overwrite') {
         finish('overwrite');
       } else if (label === 'Overwrite All') {
@@ -608,6 +614,15 @@ async function showManualUi(
     }
     if (choice === 'open_diff') {
       await openNativeDiff(session, context).catch(() => undefined);
+      continue;
+    }
+    if (choice === 'troubleshoot') {
+      await vscode.commands.executeCommand(
+        COMMAND_OPEN_TROUBLESHOOTING,
+        session.record.reason === 'timestamp-unavailable'
+          ? 'ftp-timestamps'
+          : 'conflicts'
+      );
       continue;
     }
     return choice;
