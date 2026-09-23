@@ -2,9 +2,9 @@
 
 Status: approved by owner on 2026-09-23
 
-The owner approved this roadmap in full. The specific choices in section 8
-remain pending and must be resolved before the dependent work. Approval of the
-roadmap does not authorize first publication.
+The owner approved this roadmap in full. Approved choices and the remaining
+decisions are recorded in section 8. Resolve remaining decisions before the
+dependent work. Approval of the roadmap does not authorize first publication.
 
 Audit date: 2026-09-23
 
@@ -469,6 +469,12 @@ editor and protocol checks run against a reproducible candidate artifact.
   fit without deleting active state, it is unavailable with an explicit
   storage-limit reason; working files must not be silently overwritten.
   These limits concern internal conflict state, not ordinary local backups.
+- Ordinary local text backups: retain 100 versions per file in newly
+  generated configurations. Existing configurations remain unchanged.
+- Minimum editor versions: VS Code 1.104.0 and Cursor 3.17.8, with the complete
+  first-release AI/MCP feature set. Do not preserve a separate VS Code 1.90
+  non-AI support tier. State actual tested versions separately from the
+  declared support floor.
 - Autonomous coordination: at most three independent tasks run concurrently.
   After independent review and mandatory verification pass, the coordinator
   may accept results, integrate code, push/open PRs, and start ready dependent
@@ -479,14 +485,10 @@ editor and protocol checks run against a reproducible candidate artifact.
 
 ### Remaining decisions
 
-The following must be resolved before their dependent work:
-
-1. default number of local backup versions;
-2. whether every publish tag requires manual GitHub Environment approval or a
-   protected/signed version tag itself authorizes publishing; and
-3. minimum VS Code and Cursor versions after selecting the MCP/tool
-   registration API. The current `engines.vscode: ^1.90.0` is not evidence that
-   the future bundled tool flow works at that version.
+Decide whether every publish tag requires manual GitHub Environment approval
+or a protected/signed version tag itself authorizes publishing before the
+dependent release-automation work. First publication remains separately
+authorized in either case.
 
 ## 9. Acceptance and Traceability Checklist
 
