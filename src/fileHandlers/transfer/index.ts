@@ -4,27 +4,11 @@ import createFileHandler, { FileHandlerContext } from '../createFileHandler';
 import { transfer, sync, TransferOption, SyncOption, TransferDirection } from './transfer';
 import { runHook } from '../../modules/hooks';
 import { remoteBackupsProvider } from '../../modules/remoteBackups';
-import { isConnectionError, withRetry } from '../../helper';
-import logger from '../../logger';
+import { withRetry } from '../../helper';
 import { createConflictLifecycle, UploadConflictAbortError } from './conflictCheck';
-import { getTransferRetryAttempts } from './retryPolicy';
+import { createTransferRetryOptions } from './retryOptions';
 
-function createRetryOptions(context: FileHandlerContext) {
-  const maxAttempts = getTransferRetryAttempts(
-    context.config.protocol,
-    context.config.ftpReconnectAttempts
-  );
-  return {
-    maxAttempts,
-    shouldRetry: isConnectionError,
-    onRetry: (_err: unknown, attempt: number) => {
-      logger.info(
-        `Connection lost during transfer (attempt ${attempt}/${maxAttempts - 1}). Reconnecting...`
-      );
-      context.fileService.clearRemoteFileSystem(context.config);
-    },
-  };
-}
+export { createTransferRetryOptions } from './retryOptions';
 
 function createTransferHandle(direction: TransferDirection) {
   return async function handle(this: FileHandlerContext, option) {
@@ -86,7 +70,7 @@ function createTransferHandle(direction: TransferDirection) {
             remoteBackupsProvider.refresh();
           }
         },
-        createRetryOptions(this)
+        createTransferRetryOptions(this, direction)
       );
     } catch (error) {
       if (error instanceof UploadConflictAbortError) {
@@ -157,7 +141,7 @@ export const sync2Remote = createFileHandler<SyncOption>({
 
           remoteBackupsProvider.refresh();
         },
-        createRetryOptions(this)
+        createTransferRetryOptions(this, TransferDirection.LOCAL_TO_REMOTE)
       );
     } catch (error) {
       if (error instanceof UploadConflictAbortError) {
@@ -227,7 +211,7 @@ export const sync2Local = createFileHandler<SyncOption>({
         );
         await scheduler.run();
       },
-      createRetryOptions(this)
+      createTransferRetryOptions(this, TransferDirection.REMOTE_TO_LOCAL)
     );
 
     await runHook('postSync', hooks, hookCtx, workspacePath);

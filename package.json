@@ -847,6 +847,8 @@
     "compile": "webpack --mode production",
     "dev": "webpack --mode development --watch",
     "test": "jest",
+    "test:acceptance:ftp": "jest --runInBand --detectOpenHandles test/acceptance/ftp.acceptance.spec.js",
+    "test:acceptance:sftp": "jest --runInBand --detectOpenHandles test/acceptance/sftp.acceptance.spec.js",
     "package": "vsce package",
     "pub:debug": "rm -rf _debug && mkdir _debug && vsce package --out _debug/sftp-debug.vsix && cd _debug && git init && git commit --allow-empty -m 'update debug package' && git checkout -b debug-package && cp ../INSTALL_DEBUG.md README.md  && git add . && git commit -am 'update debug package' && git push git@github.com:Timorfiy/sftp-ftp-sync-ai-conflict-resolution.git debug-package --force",
     "lint": "eslint src",

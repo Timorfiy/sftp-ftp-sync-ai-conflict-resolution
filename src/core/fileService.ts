@@ -662,7 +662,9 @@ export default class FileService {
   }
 
   clearRemoteFileSystem(config: ServiceConfig): void {
-    removeRemoteFs(getHostInfo(config));
+    const hostInfo = getHostInfo(config) as any;
+    hostInfo.workspace = this.workspace;
+    removeRemoteFs(hostInfo);
   }
 
   getConfig(useProfile = app.state.profile): ServiceConfig {
@@ -776,6 +778,8 @@ export default class FileService {
 
   // fixme: remote all profiles
   private _disposeFileSystem() {
-    return removeRemoteFs(getHostInfo(this.getConfig()));
+    const hostInfo = getHostInfo(this.getConfig()) as any;
+    hostInfo.workspace = this.workspace;
+    return removeRemoteFs(hostInfo);
   }
 }

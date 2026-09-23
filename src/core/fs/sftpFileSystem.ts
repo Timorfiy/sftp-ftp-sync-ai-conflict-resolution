@@ -177,16 +177,58 @@ export default class SFTPFileSystem extends RemoteFileSystem {
   }
 
   get(path, option?: FileOption): Promise<Readable> {
-    return new Promise((resolve, reject) => {
-      // const opt = { ...option, autoDestroy: false };
-      try {
-        // const stream = this.sftp.createReadStream(path, opt);
-        const stream = this.sftp.createReadStream(path, option);
-        resolve(stream);
-      } catch (err) {
-        reject(err);
-      }
+    let source: Readable | undefined;
+    let started = false;
+    let ended = false;
+    const sftp = this.sftp;
+    const output = new Readable({
+      read() {
+        if (source) {
+          source.resume();
+          return;
+        }
+        if (started) {
+          return;
+        }
+        started = true;
+        try {
+          const remoteStream = sftp.createReadStream(path, option);
+          source = remoteStream;
+          remoteStream.on('data', chunk => {
+            if (!output.push(chunk)) {
+              remoteStream.pause();
+            }
+          });
+          remoteStream.on('end', () => {
+            ended = true;
+            output.push(null);
+          });
+          remoteStream.on('error', error => {
+            if (!output.destroyed) {
+              output.destroy(error);
+            }
+          });
+          remoteStream.on('close', () => {
+            if (!ended && !output.destroyed) {
+              output.destroy(new Error('SFTP read stream closed before completion.'));
+            }
+          });
+        } catch (err) {
+          output.destroy(err as Error);
+        }
+      },
+      destroy(error, callback) {
+        if (source && !source.destroyed) {
+          source.destroy();
+        }
+        callback(error);
+      },
     });
+    // Transfer targets attach and remove their own one-shot error listener.
+    // Keep a permanent listener so a second ssh2 cleanup error during the same
+    // channel teardown cannot become an uncaught EventEmitter error.
+    output.on('error', () => {});
+    return Promise.resolve(output);
   }
 
   rename(srcPath: string, destPath: string): Promise<void> {
@@ -407,7 +449,10 @@ export default class SFTPFileSystem extends RemoteFileSystem {
           resolve();
         }
       };
-      writer.once('error', reject).once('finish', done).once('close', done);
+      // Channel teardown may surface multiple write request failures. A
+      // persistent listener prevents later errors from escaping after the
+      // promise has already rejected.
+      writer.on('error', reject).once('finish', done).once('close', done);
 
       input.once('error', err => {
         reject(err);

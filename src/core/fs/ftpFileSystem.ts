@@ -1,4 +1,4 @@
-import { Readable, PassThrough } from 'stream';
+import { Duplex, Readable } from 'stream';
 import { Client, FileInfo as BasicFileInfo, FileType as BasicFileType } from 'basic-ftp';
 import logger from '../../logger';
 import { FileEntry, FileType, FileStats, FileOption } from './fileSystem';
@@ -145,14 +145,40 @@ export default class FTPFileSystem extends RemoteFileSystem {
   }
 
   async get(path: string, _option?: FileOption): Promise<Readable> {
-    const stream = new PassThrough();
-
-    // Start download asynchronously; errors will destroy the stream
-    this.ftp.downloadTo(stream, path).catch(err => {
-      if (!stream.destroyed) {
-        stream.destroy(err);
-      }
+    // basic-ftp ends the destination stream when the data socket closes, then
+    // waits for the control-channel completion response. A plain PassThrough
+    // would therefore look successful to the local writer before a late 4xx,
+    // timeout, or control disconnect can reject downloadTo(). Keep the readable
+    // side open until the complete FTP command succeeds.
+    let started = false;
+    const ftp = this.ftp;
+    const stream = new Duplex({
+      read() {
+        if (started) {
+          return;
+        }
+        started = true;
+        ftp.downloadTo(stream, path).then(
+          () => stream.push(null),
+          err => {
+            if (!stream.destroyed) {
+              stream.destroy(err);
+            }
+          }
+        );
+      },
+      write(chunk, _encoding, callback) {
+        this.push(chunk);
+        callback();
+      },
+      final(callback) {
+        callback();
+      },
     });
+    // The caller normally installs its error handler immediately after get()
+    // resolves. Keep a no-op listener as a final guard for a synchronous
+    // closed-client rejection during teardown or retry hand-off.
+    stream.on('error', () => {});
 
     return stream;
   }
