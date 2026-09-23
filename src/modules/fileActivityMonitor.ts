@@ -26,6 +26,7 @@ import {
   releaseWatcherSuppression,
   suppressWatcherFor,
 } from './watcherSuppression';
+import { isConflictPathActive } from '../fileHandlers/transfer/conflictBridge';
 
 let workspaceWatcher: vscode.Disposable;
 let willRenameWatcher: vscode.Disposable;
@@ -61,6 +62,10 @@ export async function handleConfigSave(uri: vscode.Uri) {
 }
 
 async function handleFileSave(uri: vscode.Uri) {
+  if (isConflictPathActive(uri.fsPath)) {
+    logger.trace(`[file-save] skipped (active conflict) ${uri.fsPath}`);
+    return;
+  }
   const fileService = getFileService(uri);
   if (!fileService) {
     return;
@@ -91,6 +96,9 @@ async function handleFileSave(uri: vscode.Uri) {
  */
 function suppressWatcherForSave(doc: vscode.TextDocument) {
   const uri = doc.uri;
+  if (isConflictPathActive(uri.fsPath)) {
+    return;
+  }
   if (!isValidFile(uri) || !isInWorkspace(uri.fsPath) || isConfigFile(uri)) {
     return;
   }

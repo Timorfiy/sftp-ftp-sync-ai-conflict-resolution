@@ -130,9 +130,23 @@ describe('standalone extension identity', () => {
 
     expect(vscodeIgnore.split(/\r?\n/, 1)[0]).toBe('**');
     expect(vscodeIgnore).toContain('!dist/extension.js');
+    expect(vscodeIgnore).toContain('!dist/mcp-server.js');
+    expect(vscodeIgnore).toContain('!resources/mcp/conflict-resolution-instructions.md');
     expect(vscodeIgnore).not.toContain('!dist/**');
     expect(vscodeIgnore).not.toContain('!docs/**');
     expect(vscodeIgnore).not.toContain('release-readiness-roadmap');
     expect(vscodeIgnore).not.toContain('preview-sync-feature-spec');
+  });
+
+  test('pins the supported MCP editor surface and bundled server provider', () => {
+    expect(manifest.engines.vscode).toBe('^1.104.0');
+    expect(manifest.devDependencies['@types/vscode']).toBe('1.104.0');
+    expect(manifest.dependencies['@modelcontextprotocol/sdk']).toBe('1.30.1');
+    expect(manifest.contributes.mcpServerDefinitionProviders).toEqual([
+      {
+        id: 'sftpSyncAI.conflicts',
+        label: 'SFTP/FTP Sync Conflict Resolution',
+      },
+    ]);
   });
 });

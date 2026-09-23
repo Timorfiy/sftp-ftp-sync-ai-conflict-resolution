@@ -5,13 +5,10 @@
 const path = require('path');
 
 /**@type {import('webpack').Configuration}*/
-const config = {
+const shared = {
   target: 'node',
-
-  entry: './src/extension.ts',
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'extension.js',
     libraryTarget: 'commonjs2',
     devtoolModuleFilenameTemplate: '../[resource-path]',
   },
@@ -50,4 +47,23 @@ const config = {
   },
 };
 
-module.exports = config;
+module.exports = [
+  {
+    ...shared,
+    name: 'extension',
+    entry: './src/extension.ts',
+    output: {
+      ...shared.output,
+      filename: 'extension.js',
+    },
+  },
+  {
+    ...shared,
+    name: 'mcp-server',
+    entry: './src/mcp/server.ts',
+    output: {
+      ...shared.output,
+      filename: 'mcp-server.js',
+    },
+  },
+];
