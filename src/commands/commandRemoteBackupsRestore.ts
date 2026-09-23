@@ -6,6 +6,7 @@ import { checkCommand } from './abstract/createCommand';
 import localFs from '../core/localFs';
 import { createBackup, BackupStorage } from '../core/backup';
 import * as fileOperations from '../core/fileBaseOperations';
+import { showErrorMessage, showInformationMessage } from '../host';
 
 export default checkCommand({
   id: COMMAND_REMOTE_BACKUPS_RESTORE,
@@ -44,9 +45,9 @@ export default checkCommand({
 
       const backupFs = item.location === 'local' ? localFs : remoteFs;
       await fileOperations.transferFile(item.backupPath, item.originalPath, backupFs, remoteFs);
-      vscode.window.showInformationMessage(`Restored backup to ${item.originalPath}`);
+      showInformationMessage(`Restored backup to ${item.originalPath}`);
     } catch (error) {
-      vscode.window.showErrorMessage(`Failed to restore backup: ${error.message}`);
+      showErrorMessage(`Failed to restore backup: ${error.message}`);
     }
   },
 });

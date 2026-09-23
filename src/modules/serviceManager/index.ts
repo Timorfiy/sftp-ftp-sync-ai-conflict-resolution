@@ -7,6 +7,12 @@ import { UResource, FileService, TransferTask } from '../../core';
 import { validateConfig } from '../config';
 import watcherService from '../fileWatcher';
 import { transferQueueProvider } from '../transferQueue';
+import { redact } from '../../security/redaction';
+import {
+  CredentialMigrationCandidate,
+  credentialEndpointId,
+  migrateLegacyCredentials,
+} from '../secrets';
 import Trie from './trie';
 
 const WIN_DRIVE_REGEX = /^([a-zA-Z]):/;
@@ -18,31 +24,6 @@ const serviceManager = new Trie<FileService>(
     delimiter: path.sep,
   }
 );
-
-function maskConfig(config) {
-  const copy = {};
-  const MASK = '******';
-  Object.keys(config).forEach(key => {
-    const configValue = config[key];
-    switch (key) {
-      case 'username':
-      case 'password':
-      case 'passphrase':
-        copy[key] = MASK;
-        break;
-      case 'interactiveAuth':
-        if (Array.isArray(configValue)) {
-          copy[key] = configValue.map(() => MASK);
-        } else {
-          copy[key] = configValue;
-        }
-        break;
-      default:
-        copy[key] = configValue;
-    }
-  });
-  return copy;
-}
 
 function normalizePathForTrie(pathname) {
   if (isWindows) {
@@ -133,7 +114,7 @@ export function createFileService(config: any, workspace: string) {
   const normalizedBasePath = getBasePath(config.context, workspace);
   const service = new FileService(normalizedBasePath, workspace, config);
 
-  logger.info(`config at ${normalizedBasePath}`, maskConfig(config));
+  logger.info(`config at ${normalizedBasePath}`, redact(config));
 
   serviceManager.add(normalizedBasePath, service);
   service.name = config.name;
@@ -207,6 +188,23 @@ export function getAllFileService(): FileService[] {
   }
 
   return serviceManager.getAllValues();
+}
+
+export function getCredentialMigrationCandidates(): CredentialMigrationCandidate[] {
+  const candidates = new Map<string, CredentialMigrationCandidate>();
+  for (const service of getAllFileService()) {
+    for (const candidate of service.getCredentialMigrationCandidates()) {
+      candidates.set(
+        `${credentialEndpointId(candidate.endpoint)}\u0000${candidate.legacyHost}`,
+        candidate
+      );
+    }
+  }
+  return [...candidates.values()];
+}
+
+export async function migrateLoadedServiceCredentials(): Promise<void> {
+  await migrateLegacyCredentials(getCredentialMigrationCandidates());
 }
 
 export function getRunningTransformTasks(): TransferTask[] {

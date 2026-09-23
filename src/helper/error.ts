@@ -1,6 +1,7 @@
 import * as output from '../ui/output';
 import logger from '../logger';
 import { showErrorMessage } from '../host';
+import { redactedErrorMessage } from '../security/redaction';
 
 const CONNECTION_ERROR_PATTERNS = [
   /ECONNRESET/i,
@@ -34,13 +35,11 @@ export function isConnectionError(err: unknown): boolean {
 }
 
 export function reportError(err: Error | string, ctx?: string) {
-  let errorString: string;
+  const errorString = redactedErrorMessage(err);
   if (err instanceof Error) {
-    errorString = err.message;
-    logger.error(`${err.stack}`, ctx);
+    logger.error(err, ctx);
   } else {
-    errorString = err;
-    logger.error(errorString, ctx);
+    logger.error(err, ctx);
   }
 
   showErrorMessage(errorString, 'Detail').then(result => {

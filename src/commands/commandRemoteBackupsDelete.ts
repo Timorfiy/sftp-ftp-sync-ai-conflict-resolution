@@ -4,6 +4,7 @@ import { BackupVersion, remoteBackupsProvider } from '../modules/remoteBackups';
 import { checkCommand } from './abstract/createCommand';
 import localFs from '../core/localFs';
 import * as fileOperations from '../core/fileBaseOperations';
+import { showErrorMessage } from '../host';
 
 export default checkCommand({
   id: COMMAND_REMOTE_BACKUPS_DELETE,
@@ -28,7 +29,7 @@ export default checkCommand({
       await fileOperations.removeFile(item.backupPath, backupFs, undefined);
       remoteBackupsProvider.refresh();
     } catch (error) {
-      vscode.window.showErrorMessage(`Failed to delete backup: ${error.message}`);
+      showErrorMessage(`Failed to delete backup: ${error.message}`);
     }
   },
 });
