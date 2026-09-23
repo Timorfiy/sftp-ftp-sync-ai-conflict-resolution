@@ -12,6 +12,10 @@ import { flatten } from '../../utils';
 import logger from '../../logger';
 import { getOpenTextDocuments } from '../../host';
 import type { ConflictReportRef } from './conflictBridge';
+import {
+  isConflictStatePath,
+  isConflictStatePathOrAncestor,
+} from './conflictStateIsolation';
 
 export interface FileTransferContext {
   srcFsPath: string;
@@ -97,6 +101,20 @@ function getAltDirection(direction: TransferDirection) {
     : TransferDirection.LOCAL_TO_REMOTE;
 }
 
+function localPathForTransfer(
+  direction: TransferDirection,
+  srcFsPath: string,
+  targetFsPath: string
+): string {
+  return direction === TransferDirection.LOCAL_TO_REMOTE ? srcFsPath : targetFsPath;
+}
+
+function accessesConflictState(config: BaseTransferHandleConfig): boolean {
+  return isConflictStatePath(
+    localPathForTransfer(config.transferDirection, config.srcFsPath, config.targetFsPath)
+  );
+}
+
 function isFileModified(a: FileEntry, b: FileEntry): boolean {
   // compare time at seconds
   return Math.floor(a.mtime / 1000) !== Math.floor(b.mtime / 1000) || a.size !== b.size;
@@ -127,6 +145,9 @@ async function transferFolder(
 ) {
   const { srcFsPath, targetFsPath, srcFs, targetFs, transferOption } = config;
 
+  if (accessesConflictState(config)) {
+    return;
+  }
   if (transferOption.ignore && transferOption.ignore(srcFsPath)) {
     return;
   }
@@ -171,6 +192,9 @@ async function transferFile(
   fileType: FileType,
   collect: (t: TransferTask) => void
 ) {
+  if (accessesConflictState(config)) {
+    return;
+  }
   if (config.transferOption.ignore && config.transferOption.ignore(config.srcFsPath)) {
     return;
   }
@@ -227,6 +251,9 @@ async function transferWithType(
   fileType: FileType,
   collect: (t: TransferTask) => void
 ) {
+  if (accessesConflictState(config)) {
+    return;
+  }
   switch (fileType) {
     case FileType.Directory:
       await transferFolder(config, collect);
@@ -270,6 +297,12 @@ async function removeFile(
   option,
   direction: TransferDirection
 ) {
+  if (
+    direction === TransferDirection.REMOTE_TO_LOCAL &&
+    isConflictStatePathOrAncestor(file)
+  ) {
+    return;
+  }
   if (option.ignore && option.ignore(file)) {
     return;
   }
@@ -301,6 +334,9 @@ async function _sync(
 ) {
 
   const { srcFsPath, targetFsPath, srcFs, targetFs, transferOption, transferDirection } = config;
+  if (accessesConflictState(config)) {
+    return;
+  }
   if (transferOption.ignore && transferOption.ignore(srcFsPath)) {
     return;
   }
@@ -463,6 +499,9 @@ async function _sync(
     } else if (transferOption.delete) {
       Object.keys(desFileTable).forEach(id => {
         const file = desFileTable[id];
+        if (isConflictStatePathOrAncestor(file.fspath)) {
+          return;
+        }
         deleted.push(file);
         switch (file.type) {
           case FileType.Directory:
@@ -544,7 +583,10 @@ async function _sync(
     srcFs.list(srcFsPath).catch(() => []),
     targetFs.list(targetFsPath).catch(() => []),
   ]);
-  await syncFiles(...files);
+  await syncFiles(
+    files[0].filter(entry => !isConflictStatePath(entry.fspath)),
+    files[1].filter(entry => !isConflictStatePath(entry.fspath))
+  );
 }
 
 export { TransferOption, SyncOption, TransferDirection };
@@ -553,6 +595,9 @@ export async function transfer(
   config: TransferHandleConfig<TransferOption>,
   collect: (t: TransferTask) => void
 ) {
+  if (accessesConflictState(config)) {
+    return;
+  }
   const stat = await config.srcFs.lstat(config.srcFsPath);
   const transferOption = {
     ...config.transferOption,

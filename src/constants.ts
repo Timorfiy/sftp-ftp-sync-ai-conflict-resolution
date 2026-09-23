@@ -79,3 +79,5 @@ export const COMMAND_REMOTE_BACKUPS_REFRESH = 'sftp.remoteBackups.refresh';
 export const COMMAND_REMOTE_BACKUPS_OPEN = 'sftp.remoteBackups.open';
 export const COMMAND_REMOTE_BACKUPS_RESTORE = 'sftp.remoteBackups.restore';
 export const COMMAND_REMOTE_BACKUPS_DELETE = 'sftp.remoteBackups.delete';
+
+export const COMMAND_CLEAR_CONFLICT_STATE = 'sftpSyncAI.clearConflictState';

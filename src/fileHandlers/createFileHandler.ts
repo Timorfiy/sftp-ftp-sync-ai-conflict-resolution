@@ -3,6 +3,7 @@ import app from '../app';
 import { UResource, FileService, ServiceConfig } from '../core';
 import logger from '../logger';
 import { getFileService } from '../modules/serviceManager';
+import { isConflictStatePath } from './transfer/conflictStateIsolation';
 
 interface FileHandlerConfig {
   _?: boolean;
@@ -89,6 +90,10 @@ export default function createFileHandler<T>(
   async function fileHandle(ctx: Uri | FileHandlerContext, option?: T) {
     const handleCtx = ctx instanceof Uri ? handleCtxFromUri(ctx) : ctx;
     const { target } = handleCtx;
+    if (isConflictStatePath(target.localFsPath)) {
+      logger.warn(`Blocked transfer access to private conflict state: ${target.localFsPath}`);
+      return;
+    }
 
     const invokeOption = handlerOption.transformOption
       ? handlerOption.transformOption.call(handleCtx)
