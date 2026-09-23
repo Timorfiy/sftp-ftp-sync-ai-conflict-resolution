@@ -1,6 +1,10 @@
 import { FileType, RemoteFileSystem } from './fs';
 import { createEphemeralRemoteFs } from './remoteFs';
-import { ConnectOption } from './remote-client/remoteClient';
+import {
+  ConnectOption,
+  ErrorCode,
+} from './remote-client/remoteClient';
+import CustomError from './customError';
 import { RedactionScope } from '../security/redaction';
 import { classifyError, FailureId, TypedFailure } from '../errors/actionable';
 
@@ -85,6 +89,16 @@ export function classifyConnectionProbeError(
   error: unknown,
   stage: ProbeStage
 ): ConnectionProbeResult {
+  if (
+    error instanceof CustomError &&
+    Number(error.code) === ErrorCode.CONNECT_CANCELLED
+  ) {
+    return failure(
+      'Cancelled',
+      'The connection test was cancelled before it completed.',
+      'No remote data was changed. Run Test Connection again when you are ready.'
+    );
+  }
   if (error instanceof TypedFailure) {
     const actionable = classifyError(error);
     return failure(
