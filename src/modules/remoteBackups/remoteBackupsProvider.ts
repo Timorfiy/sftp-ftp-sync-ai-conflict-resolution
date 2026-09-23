@@ -7,6 +7,7 @@ import localFs from '../../core/localFs';
 import { getAllFileService } from '../serviceManager';
 import { BackupVersion, BackupItem } from './backupItem';
 import logger from '../../logger';
+import { COMMAND_REMOTE_BACKUPS_OPEN } from '../../constants';
 
 function formatBackupLabel(date: Date, size?: number): string {
   const localeDate = date.toLocaleString();
@@ -86,7 +87,7 @@ export class RemoteBackupsProvider implements vscode.TreeDataProvider<BackupItem
       contextValue: 'backupVersion',
       collapsibleState: vscode.TreeItemCollapsibleState.None,
       command: {
-        command: 'sftp.remoteBackups.open',
+        command: COMMAND_REMOTE_BACKUPS_OPEN,
         arguments: [version],
         title: 'Open Backup',
       },

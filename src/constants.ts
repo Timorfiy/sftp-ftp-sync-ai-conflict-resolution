@@ -3,6 +3,8 @@ import * as path from 'path';
 const VENDOR_FOLDER = '.vscode';
 
 export const EXTENSION_NAME = 'sftp';
+export const COMMAND_NAMESPACE = 'sftpSyncAI';
+export const CONTEXT_NAMESPACE = COMMAND_NAMESPACE;
 export const SETTING_KEY_REMOTE = 'remotefs.remote';
 
 export const REMOTE_SCHEME = 'remote';
@@ -12,70 +14,72 @@ export const VIEW_REMOTE_EXPLORER = 'remoteExplorer';
 export const CONGIF_FILENAME = 'sftp.json';
 export const CONFIG_PATH = path.join(VENDOR_FOLDER, CONGIF_FILENAME);
 
+const command = (name: string) => `${COMMAND_NAMESPACE}.${name}`;
+
 // command not in package.json
-export const COMMAND_TOGGLE_OUTPUT = 'sftp.toggleOutput';
+export const COMMAND_TOGGLE_OUTPUT = command('toggleOutput');
 
 // commands in package.json
-export const COMMAND_CONFIG = 'sftp.config';
-export const COMMAND_SET_PROFILE = 'sftp.setProfile';
-export const COMMAND_SELECT_NETWORK_INTERFACE = 'sftp.selectNetworkInterface';
-export const COMMAND_CANCEL_ALL_TRANSFER = 'sftp.cancelAllTransfer';
-export const COMMAND_OPEN_CONNECTION_IN_TERMINAL = 'sftp.openConnectInTerminal';
+export const COMMAND_CONFIG = command('config');
+export const COMMAND_SET_PROFILE = command('setProfile');
+export const COMMAND_SELECT_NETWORK_INTERFACE = command('selectNetworkInterface');
+export const COMMAND_CANCEL_ALL_TRANSFER = command('cancelAllTransfer');
+export const COMMAND_OPEN_CONNECTION_IN_TERMINAL = command('openConnectInTerminal');
 
-export const COMMAND_FORCE_UPLOAD = 'sftp.forceUpload';
-export const COMMAND_UPLOAD = 'sftp.upload';
-export const COMMAND_UPLOAD_FILE = 'sftp.upload.file';
-export const COMMAND_UPLOAD_CHANGEDFILES = 'sftp.upload.changedFiles';
-export const COMMAND_UPLOAD_ACTIVEFILE = 'sftp.upload.activeFile';
-export const COMMAND_UPLOAD_FOLDER = 'sftp.upload.folder';
-export const COMMAND_UPLOAD_ACTIVEFOLDER = 'sftp.upload.activeFolder';
-export const COMMAND_UPLOAD_PROJECT = 'sftp.upload.project';
+export const COMMAND_FORCE_UPLOAD = command('forceUpload');
+export const COMMAND_UPLOAD = command('upload');
+export const COMMAND_UPLOAD_FILE = command('upload.file');
+export const COMMAND_UPLOAD_CHANGEDFILES = command('upload.changedFiles');
+export const COMMAND_UPLOAD_ACTIVEFILE = command('upload.activeFile');
+export const COMMAND_UPLOAD_FOLDER = command('upload.folder');
+export const COMMAND_UPLOAD_ACTIVEFOLDER = command('upload.activeFolder');
+export const COMMAND_UPLOAD_PROJECT = command('upload.project');
 
-export const COMMAND_FORCE_UPLOAD_TO_ALL_PROFILES = 'sftp.forceUpload.to.allProfiles';
-export const COMMAND_UPLOAD_TO_ALL_PROFILES = 'sftp.upload.to.allProfiles';
-export const COMMAND_UPLOAD_FILE_TO_ALL_PROFILES = 'sftp.upload.file.to.allProfiles';
-export const COMMAND_UPLOAD_ACTIVEFILE_TO_ALL_PROFILES = 'sftp.upload.activeFile.to.allProfiles';
-export const COMMAND_UPLOAD_FOLDER_TO_ALL_PROFILES = 'sftp.upload.folder.to.allProfiles';
-export const COMMAND_UPLOAD_ACTIVEFOLDER_TO_ALL_PROFILES = 'sftp.upload.activeFolder.to.allProfiles';
-export const COMMAND_UPLOAD_PROJECT_TO_ALL_PROFILES = 'sftp.upload.project.to.allProfiles';
+export const COMMAND_FORCE_UPLOAD_TO_ALL_PROFILES = command('forceUpload.to.allProfiles');
+export const COMMAND_UPLOAD_TO_ALL_PROFILES = command('upload.to.allProfiles');
+export const COMMAND_UPLOAD_FILE_TO_ALL_PROFILES = command('upload.file.to.allProfiles');
+export const COMMAND_UPLOAD_ACTIVEFILE_TO_ALL_PROFILES = command('upload.activeFile.to.allProfiles');
+export const COMMAND_UPLOAD_FOLDER_TO_ALL_PROFILES = command('upload.folder.to.allProfiles');
+export const COMMAND_UPLOAD_ACTIVEFOLDER_TO_ALL_PROFILES = command('upload.activeFolder.to.allProfiles');
+export const COMMAND_UPLOAD_PROJECT_TO_ALL_PROFILES = command('upload.project.to.allProfiles');
 
-export const COMMAND_FORCE_DOWNLOAD = 'sftp.forceDownload';
-export const COMMAND_DOWNLOAD = 'sftp.download';
-export const COMMAND_DOWNLOAD_FILE = 'sftp.download.file';
-export const COMMAND_DOWNLOAD_ACTIVEFILE = 'sftp.download.activeFile';
-export const COMMAND_DOWNLOAD_FOLDER = 'sftp.download.folder';
-export const COMMAND_DOWNLOAD_ACTIVEFOLDER = 'sftp.download.activeFolder';
-export const COMMAND_DOWNLOAD_PROJECT = 'sftp.download.project';
+export const COMMAND_FORCE_DOWNLOAD = command('forceDownload');
+export const COMMAND_DOWNLOAD = command('download');
+export const COMMAND_DOWNLOAD_FILE = command('download.file');
+export const COMMAND_DOWNLOAD_ACTIVEFILE = command('download.activeFile');
+export const COMMAND_DOWNLOAD_FOLDER = command('download.folder');
+export const COMMAND_DOWNLOAD_ACTIVEFOLDER = command('download.activeFolder');
+export const COMMAND_DOWNLOAD_PROJECT = command('download.project');
 
-export const COMMAND_SYNC_LOCAL_TO_REMOTE = 'sftp.sync.localToRemote';
-export const COMMAND_SYNC_REMOTE_TO_LOCAL = 'sftp.sync.remoteToLocal';
-export const COMMAND_SYNC_BOTH_DIRECTIONS = 'sftp.sync.bothDirections';
+export const COMMAND_SYNC_LOCAL_TO_REMOTE = command('sync.localToRemote');
+export const COMMAND_SYNC_REMOTE_TO_LOCAL = command('sync.remoteToLocal');
+export const COMMAND_SYNC_BOTH_DIRECTIONS = command('sync.bothDirections');
 
-export const COMMAND_DIFF = 'sftp.diff';
-export const COMMAND_DIFF_ACTIVEFILE = 'sftp.diff.activeFile';
-export const COMMAND_LIST = 'sftp.list';
-export const COMMAND_LIST_ACTIVEFOLDER = 'sftp.listActiveFolder';
-export const COMMAND_LIST_ALL = 'sftp.listAll';
-export const COMMAND_DELETE_REMOTE = 'sftp.delete.remote';
-export const COMMAND_RENAME_REMOTE = 'sftp.rename.remote';
-export const COMMAND_REVEAL_IN_EXPLORER = 'sftp.revealInExplorer';
-export const COMMAND_REVEAL_IN_REMOTE_EXPLORER = 'sftp.revealInRemoteExplorer';
+export const COMMAND_DIFF = command('diff');
+export const COMMAND_DIFF_ACTIVEFILE = command('diff.activeFile');
+export const COMMAND_LIST = command('list');
+export const COMMAND_LIST_ACTIVEFOLDER = command('listActiveFolder');
+export const COMMAND_LIST_ALL = command('listAll');
+export const COMMAND_DELETE_REMOTE = command('delete.remote');
+export const COMMAND_RENAME_REMOTE = command('rename.remote');
+export const COMMAND_REVEAL_IN_EXPLORER = command('revealInExplorer');
+export const COMMAND_REVEAL_IN_REMOTE_EXPLORER = command('revealInRemoteExplorer');
 
-export const COMMAND_REMOTEEXPLORER_REFRESH = 'sftp.remoteExplorer.refresh';
-export const COMMAND_REMOTEEXPLORER_EDITINLOCAL = 'sftp.remoteExplorer.editInLocal';
-export const COMMAND_REMOTEEXPLORER_VIEW_CONTENT = 'sftp.viewContent';
-export const COMMAND_REMOTEEXPLORER_FILTER = 'sftp.remoteExplorer.filter';
-export const COMMAND_REMOTEEXPLORER_CLEAR_FILTER = 'sftp.remoteExplorer.clearFilter';
+export const COMMAND_REMOTEEXPLORER_REFRESH = command('remoteExplorer.refresh');
+export const COMMAND_REMOTEEXPLORER_EDITINLOCAL = command('remoteExplorer.editInLocal');
+export const COMMAND_REMOTEEXPLORER_VIEW_CONTENT = command('viewContent');
+export const COMMAND_REMOTEEXPLORER_FILTER = command('remoteExplorer.filter');
+export const COMMAND_REMOTEEXPLORER_CLEAR_FILTER = command('remoteExplorer.clearFilter');
 
-export const COMMAND_CREATE_FOLDER = 'sftp.create.folder';
-export const COMMAND_CREATE_FILE = 'sftp.create.file';
+export const COMMAND_CREATE_FOLDER = command('create.folder');
+export const COMMAND_CREATE_FILE = command('create.file');
 
-export const COMMAND_DELETE_SAVED_PASSWORD = 'sftp.deleteSavedPassword';
+export const COMMAND_DELETE_SAVED_PASSWORD = command('deleteSavedPassword');
 
-export const COMMAND_TRANSFER_QUEUE_CANCEL = 'sftp.transferQueue.cancel';
-export const COMMAND_TRANSFER_QUEUE_CLEAR = 'sftp.transferQueue.clear';
+export const COMMAND_TRANSFER_QUEUE_CANCEL = command('transferQueue.cancel');
+export const COMMAND_TRANSFER_QUEUE_CLEAR = command('transferQueue.clear');
 
-export const COMMAND_REMOTE_BACKUPS_REFRESH = 'sftp.remoteBackups.refresh';
-export const COMMAND_REMOTE_BACKUPS_OPEN = 'sftp.remoteBackups.open';
-export const COMMAND_REMOTE_BACKUPS_RESTORE = 'sftp.remoteBackups.restore';
-export const COMMAND_REMOTE_BACKUPS_DELETE = 'sftp.remoteBackups.delete';
+export const COMMAND_REMOTE_BACKUPS_REFRESH = command('remoteBackups.refresh');
+export const COMMAND_REMOTE_BACKUPS_OPEN = command('remoteBackups.open');
+export const COMMAND_REMOTE_BACKUPS_RESTORE = command('remoteBackups.restore');
+export const COMMAND_REMOTE_BACKUPS_DELETE = command('remoteBackups.delete');
