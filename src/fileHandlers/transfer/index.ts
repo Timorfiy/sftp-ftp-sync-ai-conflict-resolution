@@ -7,6 +7,7 @@ import { remoteBackupsProvider } from '../../modules/remoteBackups';
 import { withRetry } from '../../helper';
 import { createConflictLifecycle, UploadConflictAbortError } from './conflictCheck';
 import { createTransferRetryOptions } from './retryOptions';
+import { confirmBulkSync } from './bulkSyncConfirmation';
 
 export { createTransferRetryOptions } from './retryOptions';
 
@@ -87,7 +88,32 @@ const uploadHandle = createTransferHandle(TransferDirection.LOCAL_TO_REMOTE);
 const downloadHandle = createTransferHandle(TransferDirection.REMOTE_TO_LOCAL);
 
 export const sync2Remote = createFileHandler<SyncOption>({
-  name: 'sync local ➞ remote',
+  name: 'sync Local → Remote',
+  async beforeHandle(option) {
+    if (this.config.conflictCheck && option.delete && !option.bothDiretions) {
+      await vscode.window.showWarningMessage(
+        'SFTP/FTP Sync + AI Conflict Resolution blocked Sync Local → Remote.',
+        {
+          modal: true,
+          detail:
+            'conflictCheck cannot safely be combined with syncOption.delete. Disable delete or use Upload File/Folder.',
+        }
+      );
+      return false;
+    }
+
+    const direction = option.bothDiretions
+      ? 'bothDirections'
+      : 'localToRemote';
+    return confirmBulkSync({
+      direction,
+      connectionLabel: this.connectionLabel,
+      localPath: this.target.localFsPath,
+      remotePath: this.target.remoteFsPath,
+      deleteDestination: direction === 'localToRemote' && !!option.delete,
+      backup: this.config.backup,
+    });
+  },
   async handle(option) {
     const localFs = this.fileService.getLocalFileSystem();
     const { localFsPath, remoteFsPath } = this.target;
@@ -99,18 +125,6 @@ export const sync2Remote = createFileHandler<SyncOption>({
       protocol: this.config.protocol,
     };
     const workspacePath = this.fileService.workspace;
-
-    if (this.config.conflictCheck && option.delete) {
-      await vscode.window.showWarningMessage(
-        'SFTP/FTP Sync + AI Conflict Resolution blocked Sync Local → Remote.',
-        {
-          modal: true,
-          detail:
-            'conflictCheck cannot safely be combined with syncOption.delete. Disable delete or use Upload File/Folder.',
-        }
-      );
-      return;
-    }
 
     await runHook('preSync', hooks, hookCtx, workspacePath);
 
@@ -175,7 +189,20 @@ export const sync2Remote = createFileHandler<SyncOption>({
 });
 
 export const sync2Local = createFileHandler<SyncOption>({
-  name: 'sync remote ➞ local',
+  name: 'sync Remote → Local',
+  async beforeHandle(option) {
+    if (!option.delete) {
+      return true;
+    }
+    return confirmBulkSync({
+      direction: 'remoteToLocal',
+      connectionLabel: this.connectionLabel,
+      localPath: this.target.localFsPath,
+      remotePath: this.target.remoteFsPath,
+      deleteDestination: true,
+      backup: this.config.backup,
+    });
+  },
   async handle(option) {
     const localFs = this.fileService.getLocalFileSystem();
     const { localFsPath, remoteFsPath } = this.target;

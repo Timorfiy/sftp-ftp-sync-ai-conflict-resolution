@@ -568,6 +568,23 @@ export default class FileService {
     return this._profiles || [];
   }
 
+  getConnectionLabel(profile: string | null = app.state.profile): string {
+    if (profile) {
+      return `Profile "${profile}"`;
+    }
+
+    const connectionName = this.name.trim();
+    if (this.getAvailableProfiles().length > 0) {
+      return connectionName
+        ? `Base connection "${connectionName}"`
+        : 'Base connection';
+    }
+
+    return connectionName
+      ? `Connection "${connectionName}"`
+      : 'Default connection';
+  }
+
   getPendingTransferTasks(): TransferTask[] {
     return Array.from(this._pendingTransferTasks);
   }
