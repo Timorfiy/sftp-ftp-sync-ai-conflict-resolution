@@ -18,6 +18,14 @@ const delay = millisecends =>
       resolve();
     }, millisecends);
   });
+const deferred = () => {
+  let resolve;
+  const promise = new Promise(resolvePromise => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
+};
+const waitForIdle = queue => new Promise(resolve => queue.onIdle(resolve));
 const fixture = Symbol('fixture');
 
 const wrapTask = fn => ({
@@ -162,13 +170,14 @@ describe('scheduler', () => {
     }).not.toThrow();
   });
 
-  test('autoStart: false', () => {
+  test('autoStart: false', async () => {
     const queue = new Scheduler({ concurrency: 2, autoStart: false });
+    const gate = deferred();
 
-    queue.add(wrapTask(() => delay(20000)));
-    queue.add(wrapTask(() => delay(20000)));
-    queue.add(wrapTask(() => delay(20000)));
-    queue.add(wrapTask(() => delay(20000)));
+    queue.add(wrapTask(() => gate.promise));
+    queue.add(wrapTask(() => gate.promise));
+    queue.add(wrapTask(() => gate.promise));
+    queue.add(wrapTask(() => gate.promise));
     expect(queue.size).toEqual(4);
     expect(queue.pendingCount).toEqual(0);
     expect(queue.isRunning).toEqual(false);
@@ -177,17 +186,22 @@ describe('scheduler', () => {
     expect(queue.size).toEqual(2);
     expect(queue.pendingCount).toEqual(2);
     expect(queue.isRunning).toEqual(true);
+
+    const idle = waitForIdle(queue);
+    gate.resolve();
+    await idle;
   });
 
-  test('.pause()', () => {
+  test('.pause()', async () => {
     const queue = new Scheduler({ concurrency: 2 });
+    const gate = deferred();
 
     queue.pause();
-    queue.add(wrapTask(() => delay(20000)));
-    queue.add(wrapTask(() => delay(20000)));
-    queue.add(wrapTask(() => delay(20000)));
-    queue.add(wrapTask(() => delay(20000)));
-    queue.add(wrapTask(() => delay(20000)));
+    queue.add(wrapTask(() => gate.promise));
+    queue.add(wrapTask(() => gate.promise));
+    queue.add(wrapTask(() => gate.promise));
+    queue.add(wrapTask(() => gate.promise));
+    queue.add(wrapTask(() => gate.promise));
     expect(queue.size).toEqual(5);
     expect(queue.pendingCount).toEqual(0);
     expect(queue.isRunning).toEqual(false);
@@ -197,7 +211,7 @@ describe('scheduler', () => {
     expect(queue.pendingCount).toEqual(2);
     expect(queue.isRunning).toEqual(true);
 
-    queue.add(wrapTask(() => delay(20000)));
+    queue.add(wrapTask(() => gate.promise));
     queue.pause();
     expect(queue.size).toEqual(4);
     expect(queue.pendingCount).toEqual(2);
@@ -207,23 +221,37 @@ describe('scheduler', () => {
     expect(queue.size).toEqual(4);
     expect(queue.pendingCount).toEqual(2);
     expect(queue.isRunning).toEqual(true);
+
+    const idle = waitForIdle(queue);
+    gate.resolve();
+    await idle;
   });
 
-  test('.add() sync/async mixed tasks', () => {
+  test('.add() sync/async mixed tasks', async () => {
     const queue = new Scheduler({ concurrency: 1 });
+    const gate = deferred();
     queue.add(wrapTask(() => 'sync 1'));
-    queue.add(wrapTask(() => delay(1000)));
+    queue.add(wrapTask(() => gate.promise));
     queue.add(wrapTask(() => 'sync 2'));
     queue.add(wrapTask(() => fixture));
     expect(queue.size).toEqual(3);
     expect(queue.pendingCount).toEqual(1);
+
+    const idle = waitForIdle(queue);
+    gate.resolve();
+    await idle;
   });
 
-  test('.addAll() sync/async mixed tasks', () => {
+  test('.addAll() sync/async mixed tasks', async () => {
     const queue = new Scheduler();
-    const fns = [() => 'sync 1', () => delay(2000), () => 'sync 2', async () => fixture];
+    const gate = deferred();
+    const fns = [() => 'sync 1', () => gate.promise, () => 'sync 2', async () => fixture];
     queue.addAll(fns.map(wrapTask));
     expect(queue.size).toEqual(0);
     expect(queue.pendingCount).toEqual(4);
+
+    const idle = waitForIdle(queue);
+    gate.resolve();
+    await idle;
   });
 });

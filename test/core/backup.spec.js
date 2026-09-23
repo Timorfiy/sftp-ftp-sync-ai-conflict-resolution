@@ -22,6 +22,23 @@ function createRemoteFs() {
   });
 }
 
+function useMonotonicBackupClock() {
+  jest.useFakeTimers({
+    now: Date.UTC(2026, 0, 1),
+    doNotFake: [
+      'nextTick',
+      'queueMicrotask',
+      'setImmediate',
+      'clearImmediate',
+      'setInterval',
+      'clearInterval',
+      'setTimeout',
+      'clearTimeout',
+    ],
+  });
+  return () => jest.advanceTimersByTime(1);
+}
+
 describe('backup path utilities', () => {
   test('getBackupFolder joins remote path and backup folder', () => {
     expect(getBackupFolder('/var/www', '.vscode/sftp-backup')).toBe('/var/www/.vscode/sftp-backup');
@@ -125,6 +142,7 @@ describe('backup file classification', () => {
 
 describe('backup lifecycle', () => {
   afterEach(() => {
+    jest.useRealTimers();
     vol.reset();
   });
 
@@ -210,6 +228,7 @@ describe('backup lifecycle', () => {
   });
 
   test('createBackup keeps only the configured number of versions', async () => {
+    const advanceBackupClock = useMonotonicBackupClock();
     vol.fromJSON({ '/var/www/index.php': 'v1' }, '/');
     const fs = createRemoteFs();
     const backupConfig = {
@@ -221,6 +240,7 @@ describe('backup lifecycle', () => {
     for (let i = 0; i < 5; i++) {
       vol.writeFileSync('/var/www/index.php', `v${i + 1}`);
       await createBackup('/var/www/index.php', fs, backupConfig, '/var/www');
+      advanceBackupClock();
     }
 
     const remaining = vol.toJSON('/var/www/.vscode/sftp-backup');
@@ -256,6 +276,7 @@ describe('backup lifecycle', () => {
   });
 
   test('createBackup keeps only the configured number of local versions', async () => {
+    const advanceBackupClock = useMonotonicBackupClock();
     vol.fromJSON({ '/var/www/index.php': 'v1' }, '/');
     const remoteFs = createRemoteFs();
     const storage = {
@@ -273,6 +294,7 @@ describe('backup lifecycle', () => {
     for (let i = 0; i < 5; i++) {
       vol.writeFileSync('/var/www/index.php', `v${i + 1}`);
       await createBackup('/var/www/index.php', remoteFs, backupConfig, '/var/www', storage);
+      advanceBackupClock();
     }
 
     const remaining = vol.toJSON(path.join('/workspace', '.vscode/sftp-backup'));

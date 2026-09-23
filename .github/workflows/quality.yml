@@ -1,0 +1,44 @@
+name: Quality
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Windows quality gate
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm.cmd ci --no-audit --no-fund
+
+      - name: Run tests
+        run: npm.cmd test -- --runInBand
+
+      - name: Lint
+        run: npm.cmd run lint
+
+      - name: Typecheck
+        run: .\node_modules\.bin\tsc.cmd --noEmit
+
+      - name: Compile
+        run: npm.cmd run compile
