@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import TransferTask from '../core/transferTask';
+import { redactedErrorMessage } from '../security/redaction';
 
 interface QueueItem {
   id: string;
@@ -39,7 +40,7 @@ class TransferQueueProvider implements vscode.TreeDataProvider<QueueItem> {
       item.status = error ? 'failed' : 'completed';
       item.endTime = Date.now();
       if (error) {
-        item.error = error.message;
+        item.error = redactedErrorMessage(error);
       }
       this._onDidChange.fire(item);
       // Auto-remove completed items after 5 seconds

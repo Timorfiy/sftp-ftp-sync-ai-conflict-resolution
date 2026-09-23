@@ -128,7 +128,7 @@ module.exports = function protocolContract({
         remoteTimeOffsetInHours: 0,
       });
       await instance.connect(currentOption, {
-        askForPasswd: async () => currentOption.password,
+        requestSecret: async () => currentOption.password,
         verifyHostKey: async () => true,
       });
       return instance;
@@ -257,7 +257,7 @@ module.exports = function protocolContract({
         clientOption: connectOption(server.port, { password: 'wrong' }),
       });
       await expect(wrong.connect(connectOption(server.port, { password: 'wrong' }), {
-        askForPasswd: async () => 'wrong',
+        requestSecret: async () => 'wrong',
         verifyHostKey: async () => true,
       })).rejects.toThrow();
       wrong.end();

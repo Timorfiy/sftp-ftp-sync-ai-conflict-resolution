@@ -7,7 +7,12 @@ import initCommands from './initCommands';
 import { reportError } from './helper';
 import fileActivityMonitor from './modules/fileActivityMonitor';
 import { tryLoadConfigs } from './modules/config';
-import { getAllFileService, createFileService, disposeFileService } from './modules/serviceManager';
+import {
+  getAllFileService,
+  createFileService,
+  disposeFileService,
+  migrateLoadedServiceCredentials,
+} from './modules/serviceManager';
 import { getWorkspaceFolders, setContextValue } from './host';
 import RemoteExplorer from './modules/remoteExplorer';
 import { initSecrets } from './modules/secrets';
@@ -87,6 +92,7 @@ export async function activate(context: vscode.ExtensionContext) {
   });
   try {
     await setup(workspaceFolders);
+    await migrateLoadedServiceCredentials();
     setContextValue('hasConfig', getAllFileService().length > 0);
     app.remoteExplorer = new RemoteExplorer(context);
 

@@ -1,6 +1,7 @@
 import { FileType, RemoteFileSystem } from './fs';
 import { createEphemeralRemoteFs } from './remoteFs';
 import { ConnectOption } from './remote-client/remoteClient';
+import { RedactionScope } from '../security/redaction';
 
 export type ConnectionProbeCategory =
   | 'Configuration'
@@ -153,9 +154,10 @@ export async function probeConnection(
   profile: string
 ): Promise<ConnectionProbeResult> {
   let remoteFs: RemoteFileSystem | undefined;
+  const redactionScope = new RedactionScope();
   try {
     try {
-      remoteFs = await createEphemeralRemoteFs(option);
+      remoteFs = await createEphemeralRemoteFs(option, redactionScope);
     } catch (error) {
       return classifyConnectionProbeError(error, 'connect');
     }
@@ -194,8 +196,12 @@ export async function probeConnection(
       message: `Connected with ${option.protocol.toUpperCase()} and read ${remotePath}. No remote data was changed.`,
     };
   } finally {
-    if (remoteFs) {
-      remoteFs.end();
+    try {
+      if (remoteFs) {
+        remoteFs.end();
+      }
+    } finally {
+      redactionScope.dispose();
     }
   }
 }

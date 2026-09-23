@@ -7,7 +7,7 @@ const { bindFTPNetworkInterface } = require('../../src/core/remote-client/ftpNet
 const startFTPServer = require('../fixtures/ftpServer');
 
 const adapter = address => ({ Ethernet: [{ address, family: 'IPv4', internal: false }] });
-const authorization = { askForPasswd: jest.fn(), verifyHostKey: jest.fn() };
+const authorization = { requestSecret: jest.fn(), verifyHostKey: jest.fn() };
 afterEach(() => jest.restoreAllMocks());
 
 test.each([

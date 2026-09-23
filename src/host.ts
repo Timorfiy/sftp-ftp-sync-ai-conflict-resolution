@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { CONTEXT_NAMESPACE } from './constants';
+import { redactText } from './security/redaction';
 
 export function getOpenTextDocuments(): readonly vscode.TextDocument[] {
   return vscode.workspace.textDocuments;
@@ -83,15 +84,15 @@ export function setContextValue(key: string, value: any) {
 }
 
 export function showErrorMessage(message: string, ...items: string[]) {
-  return vscode.window.showErrorMessage(message, ...items);
+  return vscode.window.showErrorMessage(redactText(message), ...items);
 }
 
 export function showInformationMessage(message: string, ...items: string[]) {
-  return vscode.window.showInformationMessage(message, ...items);
+  return vscode.window.showInformationMessage(redactText(message), ...items);
 }
 
 export function showWarningMessage(message: string, ...items: string[]): Thenable<string | undefined> {
-  return vscode.window.showWarningMessage(message, ...items);
+  return vscode.window.showWarningMessage(redactText(message), ...items);
 }
 
 export async function showConfirmMessage(
@@ -100,7 +101,7 @@ export async function showConfirmMessage(
   cancelLabel: string = 'No'
 ) {
   const result = await vscode.window.showInformationMessage(
-    message,
+    redactText(message),
     { title: confirmLabel },
     { title: cancelLabel }
   );

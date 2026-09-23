@@ -77,7 +77,14 @@ export default class SSHClient extends RemoteClient {
 
         const client = new SSHClient(curOpt);
         this.hoppingClients.push(client);
-        await client.connect({ ...curOpt, sock }, config);
+        await client.connect(
+          { ...curOpt, sock },
+          {
+            ...config,
+            requestSecret: request =>
+              config.requestSecret({ ...request, persist: false }),
+          }
+        );
       }
 
       const lastClient = this.hoppingClients[this.hoppingClients.length - 1];
@@ -264,9 +271,11 @@ export default class SSHClient extends RemoteClient {
 
     // explict compare to true, cause we want to distinct between string and true
     if (option.passphrase === true) {
-      option.passphrase = await config.askForPasswd(
-        `[${option.host}]: Enter your passphrase`
-      );
+      option.passphrase = await config.requestSecret({
+        kind: 'passphrase',
+        prompt: `[${option.host}]: Enter your passphrase`,
+        persist: true,
+      });
       if (option.passphrase === undefined) {
         throw new CustomError(ErrorCode.CONNECT_CANCELLED, 'cancelled');
       }
@@ -314,7 +323,11 @@ export default class SSHClient extends RemoteClient {
             }
 
             config
-              .askForPasswd(`[${option.host}]: ${prompt.prompt}`)
+              .requestSecret({
+                kind: 'interactive-answer',
+                prompt: `[${option.host}]: ${prompt.prompt}`,
+                persist: false,
+              })
               .then(answer => {
                 if (answer === undefined) {
                   return reject(

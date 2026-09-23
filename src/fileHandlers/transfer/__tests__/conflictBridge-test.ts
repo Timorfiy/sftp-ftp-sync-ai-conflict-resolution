@@ -68,6 +68,7 @@ import * as path from 'path';
 import * as fileOperations from '../../../core/fileBaseOperations';
 import { FileType } from '../../../core/fs/fileSystem';
 import { TransferDirection } from '../../../core/transferTask';
+import { RedactionScope } from '../../../security/redaction';
 import {
   acceptBatchOverwrite,
   atomicWriteJson,
@@ -428,6 +429,35 @@ describe('Kent conflict bridge coordinator', () => {
       'legacy snapshot'
     );
     expect(fs.existsSync(stateRoot)).toBe(false);
+  });
+
+  test('persists redacted conflict failure and tool-visible error strings', async () => {
+    const data = await fixture();
+    const session = await captureConflict(
+      data.workspace,
+      'redaction-batch',
+      data.context,
+      'remote-changed',
+      data.remote
+    );
+    const reference = await markConflictUploading(session);
+    const canary = 'conflict-password-canary-2d719b2c';
+    const scope = new RedactionScope();
+    scope.register(canary);
+
+    await markConflictFailed(
+      reference,
+      new Error(`Upload authentication failed: ${canary}`)
+    );
+
+    const record = JSON.parse(
+      await fs.promises.readFile(session.record.reportFile, 'utf8')
+    );
+    expect(record.result.error).toBe(
+      'Upload authentication failed: [REDACTED]'
+    );
+    expect(JSON.stringify(record)).not.toContain(canary);
+    scope.dispose();
   });
 
   test('corrupt legacy reports remain protected and surface migration failure until repaired', async () => {

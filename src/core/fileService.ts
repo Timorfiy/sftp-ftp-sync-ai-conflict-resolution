@@ -6,7 +6,11 @@ import app from '../app';
 import logger from '../logger';
 import { getUserSetting, showWarningMessage } from '../host';
 import { replaceHomePath, resolvePath } from '../helper';
-import { getCredential } from '../modules/secrets';
+import {
+  createCredentialEndpoint,
+  CredentialMigrationCandidate,
+  getCredential,
+} from '../modules/secrets';
 import { SETTING_KEY_REMOTE, EXTENSION_NAME } from '../constants';
 import upath from './upath';
 import Ignore from './ignore';
@@ -231,6 +235,7 @@ export async function prepareRemoteConnectionOption(
   workspace: string
 ): Promise<any> {
   const hostInfo = getHostInfo(config) as any;
+  const credentialEndpoint = createCredentialEndpoint(hostInfo);
   const passwordIsPlaintext =
     typeof hostInfo.password === 'string' &&
     hostInfo.password.length > 0 &&
@@ -241,7 +246,7 @@ export async function prepareRemoteConnectionOption(
     const extConfig = getUserSetting(EXTENSION_NAME);
     if (!extConfig.get<boolean>('suppressPlaintextPasswordWarning', false)) {
       const result = await showWarningMessage(
-        `Security warning: "${hostInfo.host}" has a plaintext password in sftp.json. ` +
+        'Security warning: this endpoint has a plaintext password in sftp.json. ' +
         `Use \`"password": null\` and store credentials via "SFTP: Delete Saved Password" / Secret Storage instead.`,
         "Don't show again"
       );
@@ -251,7 +256,7 @@ export async function prepareRemoteConnectionOption(
     }
   } else {
     hostInfo.password =
-      (await getCredential(hostInfo.host, hostInfo.username, 'password')) || undefined;
+      (await getCredential(credentialEndpoint, 'password')) || undefined;
   }
 
   hostInfo.workspace = workspace;
@@ -263,7 +268,7 @@ export async function prepareRemoteConnectionOption(
     hostInfo.passphrase !== 'prompt';
 
   if (!passphraseIsPlaintext) {
-    const stored = await getCredential(hostInfo.host, hostInfo.username, 'passphrase');
+    const stored = await getCredential(credentialEndpoint, 'passphrase');
     if (stored) {
       hostInfo.passphrase = stored;
     }
@@ -701,6 +706,20 @@ export default class FileService {
   getAllConfig(): Array<ServiceConfig> {
     const profiles = this._config.profiles;
     return profiles ? Object.keys(profiles).map(p => this.getConfig(p)) : [];
+  }
+
+  getCredentialMigrationCandidates(): CredentialMigrationCandidate[] {
+    const configs = [this.getConfig(), ...this.getAllConfig()];
+    const candidates = new Map<string, CredentialMigrationCandidate>();
+    for (const config of configs) {
+      const endpoint = createCredentialEndpoint(config);
+      const candidate = { endpoint, legacyHost: config.host };
+      candidates.set(
+        `${JSON.stringify(endpoint)}\u0000${candidate.legacyHost}`,
+        candidate
+      );
+    }
+    return [...candidates.values()];
   }
 
   dispose() {
