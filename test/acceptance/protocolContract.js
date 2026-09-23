@@ -1,6 +1,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const net = require('net');
 const upath = require('../../src/core/upath').default;
 const localFs = require('../../src/core/localFs').default;
 const FileService = require('../../src/core/fileService').default;
@@ -15,8 +16,10 @@ const {
 const { initRemoteBaselineStore } = require('../../src/fileHandlers/transfer/remoteBaseline');
 const {
   createRemoteIfNoneExist,
+  getAllRemoteFs,
   removeRemoteFs,
 } = require('../../src/core/remoteFs');
+const { probeConnection } = require('../../src/core/connectionProbe');
 const { withRetry, isConnectionError } = require('../../src/helper');
 const { captureConflict, waitForConflictDecision } = require('../../src/fileHandlers/transfer/conflictBridge');
 
@@ -129,6 +132,23 @@ module.exports = function protocolContract({
         verifyHostKey: async () => true,
       });
       return instance;
+    }
+
+    async function unusedLoopbackPort() {
+      const listener = net.createServer();
+      await new Promise((resolve, reject) => {
+        listener.once('error', reject);
+        listener.listen(0, '127.0.0.1', resolve);
+      });
+      const port = listener.address().port;
+      await new Promise(resolve => listener.close(resolve));
+      return port;
+    }
+
+    async function waitForConnectionsToClose() {
+      for (let attempt = 0; attempt < 40 && server.activeConnections > 1; attempt += 1) {
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
     }
 
     beforeEach(async () => {
@@ -271,6 +291,97 @@ module.exports = function protocolContract({
       server.sandbox.allow('/denied');
       expect(await server.sandbox.exists('/denied/new.txt')).toBe(false);
       expect(await server.sandbox.read('/sample.txt')).toEqual(Buffer.from('initial fixture data'));
+    });
+
+    test('probes read-only success and categorized failures without cached sessions or remote mutation', async () => {
+      const hostKeyStore = protocol === 'sftp'
+        ? require('../../src/core/remote-client/hostKeyStore')
+        : undefined;
+      await server.sandbox.mkdir('/probe');
+      await server.sandbox.seed('/probe/readme.txt', 'probe remains unchanged');
+      await server.sandbox.mkdir('/probe-denied');
+      const before = await server.sandbox.snapshot();
+      const cachedCount = getAllRemoteFs().length;
+      server.sandbox.clearOperations();
+      if (hostKeyStore) hostKeyStore.checkHostKey.mockClear();
+
+      const success = await probeConnection(
+        connectOption(server.port),
+        '/probe',
+        `${protocol} fixture`
+      );
+      expect(success).toMatchObject({
+        ok: true,
+        protocol,
+        remotePath: '/probe',
+      });
+      expect(success.message).toContain('No remote data was changed');
+      if (hostKeyStore) expect(hostKeyStore.checkHostKey).toHaveBeenCalledTimes(1);
+      expect(getAllRemoteFs()).toHaveLength(cachedCount);
+      await waitForConnectionsToClose();
+
+      const wrongAuth = await probeConnection(
+        connectOption(server.port, { password: 'wrong' }),
+        '/probe',
+        `${protocol} fixture`
+      );
+      expect(wrongAuth).toMatchObject({ ok: false, category: 'Authentication' });
+
+      const missing = await probeConnection(
+        connectOption(server.port),
+        '/missing',
+        `${protocol} fixture`
+      );
+      expect(missing).toMatchObject({ ok: false, category: 'Remote path' });
+
+      if (protocol === 'ftp') {
+        server.sandbox.deny('/');
+        const deniedDuringStat = await probeConnection(
+          connectOption(server.port),
+          '/probe',
+          `${protocol} fixture`
+        );
+        expect(deniedDuringStat).toMatchObject({ ok: false, category: 'Permission' });
+        server.sandbox.allow('/');
+      }
+
+      server.sandbox.deny('/probe-denied');
+      const denied = await probeConnection(
+        connectOption(server.port),
+        '/probe-denied',
+        `${protocol} fixture`
+      );
+      expect(denied).toMatchObject({ ok: false, category: 'Permission' });
+      server.sandbox.allow('/probe-denied');
+
+      const refused = await probeConnection(
+        connectOption(await unusedLoopbackPort()),
+        '/probe',
+        `${protocol} fixture`
+      );
+      expect(refused).toMatchObject({ ok: false, category: 'Network' });
+
+      server.sandbox.disconnect('list', 'once');
+      const dropped = await probeConnection(
+        connectOption(server.port),
+        '/probe',
+        `${protocol} fixture`
+      );
+      expect(dropped).toMatchObject({ ok: false, category: 'Network' });
+
+      const mutatingOperations = new Set([
+        'STOR', 'MFMT', 'MKD', 'DELE', 'RMD', 'RNFR', 'RNTO', 'SITE',
+        'OPEN_WRITE', 'WRITE', 'FSETSTAT', 'SETSTAT', 'MKDIR', 'REMOVE',
+        'RMDIR', 'RENAME', 'EXTENDED:posix-rename@openssh.com',
+      ]);
+      expect(server.sandbox.operations.filter(
+        event => mutatingOperations.has(event.operation)
+      )).toEqual([]);
+      const after = await server.sandbox.snapshot();
+      expect(after).toEqual(before);
+      await waitForConnectionsToClose();
+      expect(server.activeConnections).toBe(1);
+      expect(getAllRemoteFs()).toHaveLength(cachedCount);
     });
 
     test('reconnects a safe download once, fails persistently, and observes disconnect', async () => {

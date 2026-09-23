@@ -60,7 +60,7 @@
     "viewsWelcome": [
       {
         "view": "remoteExplorer",
-        "contents": "No SFTP configuration found in this workspace.\n[Create SFTP Config](command:sftpSyncAI.config)",
+        "contents": "No SFTP configuration found in this workspace.\n[Create SFTP Config](command:sftpSyncAI.config)\n[Test Connection](command:sftpSyncAI.testConnection)",
         "when": "!sftpSyncAI.hasConfig"
       },
       {
@@ -109,6 +109,11 @@
       {
         "command": "sftpSyncAI.config",
         "title": "Config",
+        "category": "SFTP"
+      },
+      {
+        "command": "sftpSyncAI.testConnection",
+        "title": "Test Connection",
         "category": "SFTP"
       },
       {
@@ -383,6 +388,9 @@
     ],
     "menus": {
       "commandPalette": [
+        {
+          "command": "sftpSyncAI.testConnection"
+        },
         {
           "command": "sftpSyncAI.setProfile",
           "when": "sftpSyncAI.enabled"
@@ -704,6 +712,11 @@
         }
       ],
       "view/item/context": [
+        {
+          "command": "sftpSyncAI.testConnection",
+          "group": "navigation@1",
+          "when": "view == remoteExplorer && viewItem == root"
+        },
         {
           "command": "sftpSyncAI.transferQueue.cancel",
           "group": "inline",
