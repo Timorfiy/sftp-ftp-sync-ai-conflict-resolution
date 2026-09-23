@@ -1,6 +1,34 @@
+const showWarningMessage = jest.fn();
+
+jest.mock('vscode', () => ({
+  Uri: class Uri {},
+  window: {
+    showWarningMessage,
+    createOutputChannel: jest.fn(() => ({
+      appendLine: jest.fn(),
+      clear: jest.fn(),
+      show: jest.fn(),
+    })),
+  },
+  workspace: {
+    getConfiguration: jest.fn(() => ({
+      get: jest.fn((_key, fallback) => fallback),
+      update: jest.fn(async () => undefined),
+    })),
+  },
+}));
 jest.mock('../../src/logger', () => ({
   __esModule: true,
   default: { trace: jest.fn(), debug: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn() },
+}));
+jest.mock('../../src/modules/serviceManager', () => ({
+  getFileService: jest.fn(),
+}));
+jest.mock('../../src/fileHandlers/shared', () => ({
+  refreshRemoteExplorer: jest.fn(),
+}));
+jest.mock('../../src/modules/remoteBackups', () => ({
+  remoteBackupsProvider: { refresh: jest.fn() },
 }));
 jest.mock('../../src/app', () => ({
   __esModule: true,

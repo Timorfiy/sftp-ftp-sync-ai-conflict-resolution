@@ -22,6 +22,8 @@ const {
 const { probeConnection } = require('../../src/core/connectionProbe');
 const { withRetry, isConnectionError } = require('../../src/helper');
 const { captureConflict, waitForConflictDecision } = require('../../src/fileHandlers/transfer/conflictBridge');
+const vscode = require('vscode');
+const { sync2Local, sync2Remote } = require('../../src/fileHandlers/transfer');
 
 function memoryMemento() {
   let state = {};
@@ -151,6 +153,31 @@ module.exports = function protocolContract({
       }
     }
 
+    function bulkSyncContext(localPath, remotePath, overrides = {}) {
+      const config = serviceConfig({
+        conflictCheck: false,
+        syncOption: {
+          delete: false,
+          skipCreate: false,
+          ignoreExisting: false,
+          update: false,
+        },
+        ...overrides,
+      });
+      const fileService = new FileService(localRoot, localRoot, config);
+      fileService.getRemoteFileSystem = jest.fn(async () => remoteFs);
+      const resolvedConfig = fileService.getConfig(null);
+      return {
+        target: {
+          localFsPath: localPath,
+          remoteFsPath: remotePath,
+        },
+        fileService,
+        config: resolvedConfig,
+        connectionLabel: `${protocol.toUpperCase()} loopback`,
+      };
+    }
+
     beforeEach(async () => {
       jest.clearAllMocks();
       server = undefined;
@@ -199,6 +226,121 @@ module.exports = function protocolContract({
         direction: TransferDirection.REMOTE_TO_LOCAL,
       });
       expect(await fs.promises.readFile(downloadPath)).toEqual(uploadBytes);
+    });
+
+    test('bulk upload cancellation does not connect, list, delete, or change either tree', async () => {
+      const localPath = path.join(localRoot, 'bulk-cancel');
+      await fs.promises.mkdir(localPath);
+      await fs.promises.writeFile(path.join(localPath, 'overwrite.txt'), 'local replacement');
+      await server.sandbox.mkdir('/bulk-cancel');
+      await server.sandbox.seed('/bulk-cancel/overwrite.txt', 'remote original');
+      await server.sandbox.seed('/bulk-cancel/remote-only.txt', 'must remain');
+      const context = bulkSyncContext(localPath, '/bulk-cancel', {
+        syncOption: {
+          delete: true,
+          skipCreate: false,
+          ignoreExisting: false,
+          update: false,
+        },
+      });
+      const remoteBefore = await server.sandbox.snapshot();
+      const localBefore = await fs.promises.readFile(
+        path.join(localPath, 'overwrite.txt')
+      );
+      const connectionsBefore = server.connectionCount;
+      server.sandbox.clearOperations();
+      vscode.window.showWarningMessage.mockResolvedValueOnce(undefined);
+
+      await sync2Remote(context);
+
+      expect(vscode.window.showWarningMessage).toHaveBeenCalledWith(
+        'Confirm Local → Remote (upload) sync',
+        expect.objectContaining({
+          modal: true,
+          detail: expect.stringContaining(
+            'Remote files and folders absent locally will be deleted remotely.'
+          ),
+        }),
+        'Sync Local → Remote'
+      );
+      expect(context.fileService.getRemoteFileSystem).not.toHaveBeenCalled();
+      expect(server.connectionCount).toBe(connectionsBefore);
+      expect(server.sandbox.operations).toEqual([]);
+      expect(await server.sandbox.snapshot()).toEqual(remoteBefore);
+      expect(await fs.promises.readFile(path.join(localPath, 'overwrite.txt'))).toEqual(
+        localBefore
+      );
+    });
+
+    test('delete-enabled Remote → Local cancellation preserves both trees', async () => {
+      const localPath = path.join(localRoot, 'download-delete-cancel');
+      await fs.promises.mkdir(localPath);
+      await fs.promises.writeFile(path.join(localPath, 'local-only.txt'), 'must remain local');
+      await server.sandbox.mkdir('/download-delete-cancel');
+      await server.sandbox.seed('/download-delete-cancel/remote.txt', 'must remain remote');
+      const context = bulkSyncContext(localPath, '/download-delete-cancel', {
+        syncOption: {
+          delete: true,
+          skipCreate: false,
+          ignoreExisting: false,
+          update: false,
+        },
+      });
+      const remoteBefore = await server.sandbox.snapshot();
+      const localBefore = await fs.promises.readFile(
+        path.join(localPath, 'local-only.txt')
+      );
+      const connectionsBefore = server.connectionCount;
+      server.sandbox.clearOperations();
+      vscode.window.showWarningMessage.mockResolvedValueOnce(undefined);
+
+      await sync2Local(context);
+
+      expect(vscode.window.showWarningMessage).toHaveBeenCalledWith(
+        'Confirm Remote → Local sync',
+        expect.objectContaining({
+          modal: true,
+          detail: expect.stringContaining(
+            'Local files and folders absent remotely will be deleted locally.'
+          ),
+        }),
+        'Sync Remote → Local'
+      );
+      expect(context.fileService.getRemoteFileSystem).not.toHaveBeenCalled();
+      expect(server.connectionCount).toBe(connectionsBefore);
+      expect(server.sandbox.operations).toEqual([]);
+      expect(await server.sandbox.snapshot()).toEqual(remoteBefore);
+      expect(await fs.promises.readFile(path.join(localPath, 'local-only.txt'))).toEqual(
+        localBefore
+      );
+    });
+
+    test('confirmed bulk upload performs exactly one overwrite and preserves unrelated remote content', async () => {
+      const localPath = path.join(localRoot, 'bulk-confirm');
+      await fs.promises.mkdir(localPath);
+      await fs.promises.writeFile(path.join(localPath, 'overwrite.txt'), 'confirmed local bytes');
+      await server.sandbox.mkdir('/bulk-confirm');
+      await server.sandbox.seed('/bulk-confirm/overwrite.txt', 'old');
+      await server.sandbox.seed('/bulk-confirm/remote-only.txt', 'must remain');
+      const context = bulkSyncContext(localPath, '/bulk-confirm');
+      server.sandbox.clearOperations();
+      vscode.window.showWarningMessage.mockResolvedValueOnce('Sync Local → Remote');
+
+      await sync2Remote(context);
+
+      expect(context.fileService.getRemoteFileSystem).toHaveBeenCalledTimes(1);
+      expect(await server.sandbox.read('/bulk-confirm/overwrite.txt')).toEqual(
+        Buffer.from('confirmed local bytes')
+      );
+      expect(await server.sandbox.read('/bulk-confirm/remote-only.txt')).toEqual(
+        Buffer.from('must remain')
+      );
+      const uploadStartOperation = protocol === 'ftp' ? 'STOR' : 'OPEN_WRITE';
+      expect(
+        server.sandbox.operations.filter(
+          event => event.operation === uploadStartOperation
+        )
+      ).toHaveLength(1);
     });
 
     test('records a baseline and blocks a changed remote with conflict metadata', async () => {

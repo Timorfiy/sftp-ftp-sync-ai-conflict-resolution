@@ -55,17 +55,35 @@ Download the remote version of the current file and overwrite the local copy.
 ## SFTP: Download Active Folder
 Download the entire folder the current file is located in.
 
-## SFTP: Sync Local -> Remote
+## SFTP: Sync Local → Remote
 1. Any files that exist on both local and remote that have a different timestamp between local and remote are copied over.
 2. Any files that only exist on the local are copied over.
 
+Before any hook, connection, listing, or file change, a modal identifies the
+active connection/profile, local source path, and remote destination path.
+Canceling it leaves both sides unchanged. If `syncOption.delete` is enabled,
+the modal also states that destination-only remote files and folders will be
+deleted remotely.
+
+Remote overwrite backups, when enabled, cover text files only and a backup
+failure does not block the overwrite. `syncOption.delete` is outside
+`backup.onDelete`, so the confirmation does not promise a universal undo.
+
 You can change the default behavior by [syncOption](https://github.com/philipdaoud/sftp-neo/wiki/Configuration#syncoption).
 
-## SFTP: Sync Remote -> Local
-Same as `Sync Local -> Remote`, but in the opposite direction.
+## SFTP: Sync Remote → Local
+Same as `Sync Local → Remote`, but in the opposite direction.
+
+This direction remains unconfirmed unless `syncOption.delete` is enabled. In
+that case, the modal states that destination-only local files and folders will
+be deleted locally. Successful replacements do not retain an extension
+recovery version.
 
 ## SFTP: Sync Both Directions
 Compare file modification times, and will always perform the action that causes the newest file to be present in both locations.
+
+A modal identifies both paths and warns that this operation writes both sides
+and can overwrite remote files. This mode does not apply `syncOption.delete`.
 
 *Only [skipCreate](https://github.com/philipdaoud/sftp-neo/wiki/Configuration#syncoptionskipcreate) and [ignoreExisting](https://github.com/philipdaoud/sftp-neo/wiki/Configuration#syncoptionignoreexisting) are valid for this command.*
 
