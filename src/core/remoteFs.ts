@@ -1,6 +1,6 @@
 import upath from './upath';
 import { createHash } from 'crypto';
-import { showConfirmMessage, showWarningMessage } from '../host';
+import { showConfirmMessage } from '../host';
 import logger from '../logger';
 import app from '../app';
 import { ConnectOption, Config as RemoteClientConfig } from './remote-client/remoteClient';
@@ -124,10 +124,7 @@ function createConnection(
         'Reject'
       );
       return accepted ? 'accept' : 'reject';
-    }, option.workspace).catch(err => {
-      showWarningMessage(err.message);
-      return false;
-    });
+    }, option.workspace);
 
   return { connectOption, fs, callbacks: { requestSecret, verifyHostKey } };
 }

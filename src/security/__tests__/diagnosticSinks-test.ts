@@ -89,8 +89,10 @@ describe('diagnostic sink redaction', () => {
 
     expect(error.message).toContain(canary);
     expect(mockShowErrorMessage).toHaveBeenCalledWith(
-      'Authentication rejected [REDACTED]',
-      'Detail'
+      'Authentication was rejected: The server did not accept the configured or prompted credentials. Verify the username and credential source, then reconnect.',
+      'Copy Diagnostics',
+      'Troubleshoot',
+      'Show Output'
     );
     expect(
       mockAppendLine.mock.calls.flat().join('\n')
@@ -119,6 +121,10 @@ describe('diagnostic sink redaction', () => {
     expect(String(treeItem.tooltip)).not.toContain(canary);
     scope.dispose();
     jest.runOnlyPendingTimers();
+    expect(
+      transferQueueProvider.getChildren().some(value => value.id === id)
+    ).toBe(true);
+    transferQueueProvider.clearCompleted();
     jest.useRealTimers();
   });
 });

@@ -4,7 +4,7 @@ import { BackupVersion, remoteBackupsProvider } from '../modules/remoteBackups';
 import { checkCommand } from './abstract/createCommand';
 import localFs from '../core/localFs';
 import * as fileOperations from '../core/fileBaseOperations';
-import { showErrorMessage } from '../host';
+import { reportError } from '../helper';
 
 export default checkCommand({
   id: COMMAND_REMOTE_BACKUPS_DELETE,
@@ -29,7 +29,10 @@ export default checkCommand({
       await fileOperations.removeFile(item.backupPath, backupFs, undefined);
       remoteBackupsProvider.refresh();
     } catch (error) {
-      showErrorMessage(`Failed to delete backup: ${error.message}`);
+      void reportError(error, {
+        operation: 'delete backup',
+        retrySafety: 'unsafe',
+      });
     }
   },
 });

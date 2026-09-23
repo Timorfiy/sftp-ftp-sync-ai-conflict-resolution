@@ -2,6 +2,7 @@ import * as crypto from 'crypto';
 import * as os from 'os';
 import * as path from 'path';
 import * as fse from 'fs-extra';
+import { TypedFailure } from '../../errors/actionable';
 
 const STORE_PATH = path.join(os.homedir(), '.vscode-sftp', 'known_hosts.json');
 
@@ -47,12 +48,14 @@ export async function checkHostKey(
       return true;
     }
     // Key mismatch for this workspace — surface to caller as a thrown error.
-    throw new Error(
+    throw new TypedFailure(
+      'host-key.changed',
       `SSH host key for ${host} has CHANGED.\n` +
       `Stored:   ${scopedEntry}\n` +
       `Received: ${keyFingerprint}\n` +
       `If this is unexpected, a man-in-the-middle attack may be in progress. ` +
-      `To accept the new key, remove the entry from ${STORE_PATH} and reconnect.`
+      `To accept the new key, remove the entry from ${STORE_PATH} and reconnect.`,
+      { protocol: 'sftp' }
     );
   }
 
@@ -76,5 +79,9 @@ export async function checkHostKey(
     await save(known);
     return true;
   }
-  return false;
+  throw new TypedFailure(
+    'host-key.rejected',
+    `SSH host key for ${host} was rejected by the user.`,
+    { protocol: 'sftp' }
+  );
 }
