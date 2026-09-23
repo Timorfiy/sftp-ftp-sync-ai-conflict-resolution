@@ -397,7 +397,7 @@ export async function captureConflict(
   const session = { root, record };
   await writeIndexRecord(root, record);
   notifyWindows(
-    'SFTP Neo — конфликт',
+    'SFTP/FTP Sync + AI Conflict Resolution — конфликт',
     `Загрузка ${path.basename(context.srcFsPath)} остановлена: серверный файл изменён.`
   );
 
@@ -589,7 +589,7 @@ function showQuickPickOnce(
 ): Promise<ConflictDecisionAction | 'open_diff' | undefined> {
   return new Promise(resolve => {
     const quickPick = vscode.window.createQuickPick();
-    quickPick.title = `SFTP Neo blocked upload of ${path.basename(context.srcFsPath)}`;
+    quickPick.title = `SFTP/FTP Sync + AI Conflict Resolution blocked upload of ${path.basename(context.srcFsPath)}`;
     quickPick.placeholder = conflictDetail(session.record.reason);
     quickPick.ignoreFocusOut = true;
     quickPick.items = [

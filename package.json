@@ -1,7 +1,7 @@
 {
   "name": "sftp-neo",
-  "displayName": "SFTP Neo (Kent Agent Bridge)",
-  "description": "SFTP/FTP sync with Kent conflict coordination for Cursor and Codex",
+  "displayName": "SFTP/FTP Sync + AI Conflict Resolution",
+  "description": "SFTP/FTP synchronization with AI-assisted conflict resolution for VS Code and Cursor",
   "version": "3.6.0",
   "publisher": "PhilipDaoud",
   "author": "Philip Daoud <philipdaoud@gmail.com> (https://github.com/PhilipDaoud)",
@@ -9,12 +9,12 @@
     "vscode": "^1.90.0"
   },
   "bugs": {
-    "url": "https://github.com/Timorfiy/sftp-neo-withftp/issues"
+    "url": "https://github.com/Timorfiy/sftp-ftp-sync-ai-conflict-resolution/issues"
   },
-  "homepage": "https://github.com/Timorfiy/sftp-neo-withftp#readme",
+  "homepage": "https://github.com/Timorfiy/sftp-ftp-sync-ai-conflict-resolution#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Timorfiy/sftp-neo-withftp.git"
+    "url": "https://github.com/Timorfiy/sftp-ftp-sync-ai-conflict-resolution.git"
   },
   "license": "MIT",
   "categories": [
@@ -848,7 +848,7 @@
     "dev": "webpack --mode development --watch",
     "test": "jest",
     "package": "vsce package",
-    "pub:debug": "rm -rf _debug && mkdir _debug && vsce package --out _debug/sftp-debug.vsix && cd _debug && git init && git commit --allow-empty -m 'update debug package' && git checkout -b debug-package && cp ../INSTALL_DEBUG.md README.md  && git add . && git commit -am 'update debug package' && git push git@github.com:philipdaoud/sftp-neo.git debug-package --force",
+    "pub:debug": "rm -rf _debug && mkdir _debug && vsce package --out _debug/sftp-debug.vsix && cd _debug && git init && git commit --allow-empty -m 'update debug package' && git checkout -b debug-package && cp ../INSTALL_DEBUG.md README.md  && git add . && git commit -am 'update debug package' && git push git@github.com:Timorfiy/sftp-ftp-sync-ai-conflict-resolution.git debug-package --force",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix"
   },

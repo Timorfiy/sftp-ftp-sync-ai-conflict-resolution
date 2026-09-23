@@ -1,9 +1,9 @@
 # Complete `sftp.json` option reference
 
 This page lists the intentional `sftp.json` configuration options supported by
-the current SFTP Neo implementation.
+SFTP/FTP Sync + AI Conflict Resolution.
 
-> Verified against fork version 3.6.0, including upstream SFTP Neo 3.5.0.
+> Verified against version 3.6.0.
 
 FTP connections also support `"networkInterface": "Ethernet"`. Omit it or set it to `null`
 for system routing; use `null` in a profile to override an inherited adapter.
@@ -83,7 +83,7 @@ copy only the options needed by your setup.
     "enabled": false,                       // Back up files before overwriting. Default: false.
     "location": "remote",                   // "remote" or "local". Default: "remote".
     "folder": ".vscode/sftp-backup",        // Backup directory. Default: ".vscode/sftp-backup".
-    "versions": 100,                        // Smart-retention hard limit per file. Fork default: 100.
+    "versions": 100,                        // Smart-retention hard limit per file. Default: 100.
     "onDelete": false                       // Back up non-sync deletions. Default: false.
   },
 
@@ -134,7 +134,7 @@ from the main reference. These are its connection-specific options:
   "secure": false,                          // false, true, "control", or "implicit". Default: false.
   "secureOptions": {},                      // Options passed to Node.js TLS. Default: none.
   "passive": false,                         // Accepted by validation but currently has no effect.
-  "ftpKeepAliveInterval": 0,                // Legacy fork override for keepalive; both options omitted means disabled.
+  "ftpKeepAliveInterval": 0,                // Legacy override for keepalive; both options omitted means disabled.
   "ftpReconnectAttempts": 0,                // Full-transfer retries after a lost FTP connection. Default: 0.
   "concurrency": 1                          // Forced to 1 for FTP.
 }
@@ -146,7 +146,7 @@ implicit FTPS. `secureOptions` is passed through to the underlying TLS client;
 its available values and defaults therefore depend on Node.js/OpenSSL.
 
 `ftpKeepAliveInterval` and `ftpReconnectAttempts` are compatibility options
-from this fork. `ftpKeepAliveInterval` takes precedence over the common
+supported by this extension. `ftpKeepAliveInterval` takes precedence over the common
 `keepalive` option for FTP. FTP keepalive and full-transfer retries are disabled
 unless their corresponding value is explicitly greater than `0`; this avoids
 amplifying connection failures on shared hosting.
@@ -309,7 +309,7 @@ this workspace. The baseline is refreshed after successful uploads and
 downloads and is scoped by protocol, host, port, username, and remote path.
 
 If the remote version changed, the baseline is missing, or the FTP server cannot
-provide an exact timestamp, SFTP Neo offers four safe choices: overwrite one,
+provide an exact timestamp, the extension offers four safe choices: overwrite one,
 overwrite all for the current operation, open a diff, or cancel. The check uses
 metadata only and does not download the remote file. Deleting sync is blocked
 while `conflictCheck` is enabled because metadata comparison cannot make a
@@ -363,12 +363,12 @@ Limits:
 workspace root for `"local"`. It is automatically excluded from sync and the
 Remote Explorer, and is never itself backed up.
 
-This fork backs up text and source files, including PHP, CSS, JavaScript,
+The extension backs up text and source files, including PHP, CSS, JavaScript,
 TypeScript, JSON, HTML, XML, SVG, and common configuration formats. Known binary
 media, fonts, PDFs, archives, and executables are skipped; unknown extensions
 are sampled before a backup is created.
 
-`backup.versions` is a hard per-file limit. With the fork default of `100`,
+`backup.versions` is a hard per-file limit. With the default of `100`,
 pruning preserves the oldest historical anchor, the latest 50 versions, up to 5
 newest confirmed conflict-overwrite backups, and evenly distributed versions
 from the remaining history.

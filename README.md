@@ -1,21 +1,19 @@
 <div align="center">
 
-# 🚀 SFTP Neo
+# 🚀 SFTP/FTP Sync + AI Conflict Resolution
 
-**Sync your code to any server without leaving VS Code.**
+**Sync your code over SFTP/FTP with AI-assisted conflict resolution.**
 
 🔒 **More Secure** · 📦 **Updated Libraries** · ⭐ **More Features**
 
-[![VS Code Marketplace](https://vsmarketplacebadges.dev/version/philipdaoud.sftp-neo.png?style=flat-square&label=Marketplace&color=007ACC&logo=visualstudiocode)](https://marketplace.visualstudio.com/items?itemName=philipdaoud.sftp-neo)
-[![Open VSX](https://img.shields.io/badge/Open%20VSX-PhilipDaoud.sftp--neo-45B39D?style=flat-square&logo=eclipseide)](https://open-vsx.org/extension/PhilipDaoud/sftp-neo)
-[![GitHub Repo](https://img.shields.io/badge/Releases-GitHub-181717?style=flat-square&logo=github)](https://github.com/philipdaoud/sftp-neo/releases)
-[![License](https://img.shields.io/github/license/philipdaoud/sftp-neo?style=flat-square&color=green)](./LICENSE)
+[![GitHub Repo](https://img.shields.io/badge/Releases-GitHub-181717?style=flat-square&logo=github)](https://github.com/Timorfiy/sftp-ftp-sync-ai-conflict-resolution/releases)
+[![License](https://img.shields.io/github/license/Timorfiy/sftp-ftp-sync-ai-conflict-resolution?style=flat-square&color=green)](./LICENSE)
 
 </div>
 
-## Fork update: FTP network interface selection
+## FTP network interface selection
 
-This fork includes upstream 3.5.0 and preserves the Kent conflict bridge. Version 3.6.0 adds
+Version 3.6.0 adds
 `"networkInterface": "Ethernet"` for binding a connection's FTP traffic to a named adapter.
 Run **SFTP: Select Network Interface** to choose an adapter or restore system routing.
 The option covers both control and passive file-transfer connections and does not silently
@@ -23,9 +21,6 @@ fall back when the selected adapter is unavailable. [Usage and limitations](docs
 
 ---
 
-> **Forked & Modernized** from [Natizyskunk/vscode-sftp](https://github.com/Natizyskunk/vscode-sftp), originally based on the abandoned [liximomo/vscode-sftp](https://github.com/liximomo/vscode-sftp). Updated dependencies, new features, and full compatibility with the latest VS Code APIs.
-
----
 
 
 ## 📑 Quick Links
@@ -86,12 +81,12 @@ Set `"remoteExplorer": { "enableDragAndDrop": true }` and drag items around the 
 | **v3.0.5** | "Don't show again" on the plaintext-password warning, workspace-scoped SSH host keys |
 | **v3.0** | Automatic versioned backups before every upload, with a panel to browse and restore |
 
-### Fork hotfix in v3.4.2
+### Hotfix in v3.4.2
 
 - FTP keepalive is opt-in again; an omitted interval no longer sends `NOOP` every 30 seconds.
 - Full FTP transfer retries are opt-in through `ftpReconnectAttempts`, preventing repeated connections and duplicate upload attempts while a host is unhealthy.
 
-### Fork additions in v3.4.1
+### Additions in v3.4.1
 
 - **Conflict-safe uploads:** optional `conflictCheck` compares the current remote `mtime` and byte size with the last observed baseline before overwriting an existing file.
 - **Explicit conflict choices:** overwrite one, overwrite all for the current operation, open a diff, or cancel without touching the remote file.
@@ -130,7 +125,7 @@ Set `"remoteExplorer": { "enableDragAndDrop": true }` and drag items around the 
 
 ### 1. Install
 
-Grab it from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=philipdaoud.sftp-neo) or install the `.vsix` from [Releases](https://github.com/philipdaoud/sftp-neo/releases).
+Install a `.vsix` built from this repository using **Extensions: Install from VSIX...** in VS Code or Cursor.
 
 ### 2. Configure
 
@@ -349,7 +344,7 @@ thing.
 }
 ```
 
-FTP-only options: `secure`, `secureOptions`, `passive`, plus the legacy fork
+FTP-only options: `secure`, `secureOptions`, `passive`, plus the legacy
 overrides `ftpKeepAliveInterval` and `ftpReconnectAttempts`. SFTP-only extras:
 `algorithms`, `sshCustomParams`, and `hop` (bastion hosts — see above).
 
@@ -382,7 +377,7 @@ The four options worth understanding before switching on:
 
 ## 🔐 Security
 
-SFTP Neo stores passwords & passphrases in your **OS credential store** (macOS Keychain, Windows Credential Manager, Linux libsecret) via VS Code's Secret Storage API — so your `sftp.json` stays clean and commit-safe.
+The extension stores passwords & passphrases in your **OS credential store** (macOS Keychain, Windows Credential Manager, Linux libsecret) via VS Code's Secret Storage API — so your `sftp.json` stays clean and commit-safe.
 
 **How to use it:**
 
@@ -409,7 +404,7 @@ The same works for private key `passphrase`.
 
 ## 🔑 SSH Authentication
 
-SFTP Neo supports three ways to authenticate SFTP connections. For both security and convenience, **SSH keys** or **ssh-agent** are recommended over plaintext passwords.
+The extension supports three ways to authenticate SFTP connections. For both security and convenience, **SSH keys** or **ssh-agent** are recommended over plaintext passwords.
 
 | Method | Best for | Stored in `sftp.json` | Works with **Open SSH in Terminal** |
 |--------|----------|----------------------|-------------------------------------|
@@ -430,7 +425,7 @@ SFTP Neo supports three ways to authenticate SFTP connections. For both security
    ssh-copy-id -i ~/.ssh/id_ed25519.pub user@example.com
    ```
 
-3. **Configure SFTP Neo**:
+3. **Configure the extension**:
    ```json
    {
      "name": "My Server",
@@ -444,7 +439,7 @@ SFTP Neo supports three ways to authenticate SFTP connections. For both security
    }
    ```
 
-> 💡 **Encrypted key?** Set `"passphrase": true` and SFTP Neo will prompt once, then offer to save it to Secret Storage. Or load the key into ssh-agent (see below) and omit `passphrase`.
+> 💡 **Encrypted key?** Set `"passphrase": true` and the extension will prompt once, then offer to save it to Secret Storage. Or load the key into ssh-agent (see below) and omit `passphrase`.
 
 ### SSH agent (`agent`)
 
@@ -464,7 +459,7 @@ Using an ssh-agent is the most convenient option: your key is unlocked once per 
    # Example: /tmp/ssh-XXXXXX/agent.12345
    ```
 
-3. **Configure SFTP Neo**:
+3. **Configure the extension**:
    ```json
    {
      "host": "example.com",
@@ -510,7 +505,7 @@ It **cannot** auto-type a password or passphrase into the terminal. If you want 
 
 Browse your remote server directly in the VS Code sidebar.
 
-![Remote Explorer Preview](https://raw.githubusercontent.com/philipdaoud/sftp-neo/master/assets/showcase/remote-explorer.png)
+![Remote Explorer Preview](./assets/showcase/remote-explorer.png)
 
 Open it via:
 - Command Palette → `View: Show SFTP`
@@ -528,7 +523,7 @@ Select multiple files with `Ctrl`/`Shift` to download or upload in batches.
 
 </div>
 
-Before a remote text file is overwritten by an upload or sync-to-remote operation, SFTP Neo automatically creates a timestamped backup copy. SVG is treated as text; known binary images, video, audio, fonts, PDFs, archives, and executables are skipped. Unknown extensions are sampled for binary content. Choose to keep backups on the remote server or in your local workspace.
+Before a remote text file is overwritten by an upload or sync-to-remote operation, the extension automatically creates a timestamped backup copy. SVG is treated as text; known binary images, video, audio, fonts, PDFs, archives, and executables are skipped. Unknown extensions are sampled for binary content. Choose to keep backups on the remote server or in your local workspace.
 
 ### 🚀 How It Works
 
@@ -631,8 +626,18 @@ See [FAQ.md](./FAQ.md) for common questions and solutions.
 
 ---
 
+## Credits
+
+Built on [SFTP Neo](https://github.com/philipdaoud/sftp-neo) by Philip Daoud,
+which builds on [Natizyskunk/vscode-sftp](https://github.com/Natizyskunk/vscode-sftp)
+and the original [liximomo/vscode-sftp](https://github.com/liximomo/vscode-sftp).
+
+The original authors' copyright notices and MIT license are preserved in [LICENSE](./LICENSE).
+
+---
+
 <div align="center">
 
-Made with ☕ & 🐛 squashing by [Philip Daoud](https://github.com/PhilipDaoud)
+Maintained by [Timorfiy](https://github.com/Timorfiy).
 
 </div>

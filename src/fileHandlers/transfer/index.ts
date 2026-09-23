@@ -118,7 +118,7 @@ export const sync2Remote = createFileHandler<SyncOption>({
 
     if (this.config.conflictCheck && option.delete) {
       await vscode.window.showWarningMessage(
-        'SFTP Neo blocked Sync Local → Remote.',
+        'SFTP/FTP Sync + AI Conflict Resolution blocked Sync Local → Remote.',
         {
           modal: true,
           detail:
