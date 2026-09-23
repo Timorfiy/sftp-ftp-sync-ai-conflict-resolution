@@ -3,10 +3,14 @@ jest.mock('fs');
 import { vol } from 'memfs';
 import * as fs from 'fs';
 import * as path from 'path';
-import { sync, TransferDirection } from '../transfer';
+import { sync, transfer, TransferDirection } from '../transfer';
 import localFs from '../../../core/localFs';
 import TransferTask from '../../../core/transferTask';
 import RemoteFs from '../../../../test/helper/localRemoteFs';
+import {
+  clearConflictStateIsolation,
+  configureConflictStateIsolation,
+} from '../conflictStateIsolation';
 
 declare global {
   interface Array<T> {
@@ -78,9 +82,149 @@ const fillFs = obj => {
 const mapList = (list: any[], key: string) => list.map(t => t[key]);
 
 describe('transfer algorithm', () => {
+  describe.each(['ftp', 'sftp'])('%s conflict-state isolation', protocol => {
+    afterEach(() => {
+      clearConflictStateIsolation();
+    });
+
+    test('explicit upload and download never inspect or schedule private state', async () => {
+      const workspace = path.join('/workspace', protocol);
+      const stateRoot = path.join('/global', protocol, 'conflict-state-v2');
+      configureConflictStateIsolation(stateRoot, [workspace]);
+      const localStateFile = path.join(
+        workspace,
+        '.kent-tmp',
+        'sftp-conflicts',
+        'record',
+        'conflict.json'
+      );
+      const globalStateFile = path.join(stateRoot, 'workspaces', 'bucket', 'conflict.json');
+      const localFsMock = {
+        lstat: jest.fn(),
+        pathResolver: path,
+      } as any;
+      const remoteFsMock = {
+        lstat: jest.fn(),
+        ensureDir: jest.fn(),
+        pathResolver: path.posix,
+      } as any;
+      const collect = jest.fn();
+
+      await transfer(
+        {
+          srcFsPath: localStateFile,
+          srcFs: localFsMock,
+          targetFsPath: '/remote/conflict.json',
+          targetFs: remoteFsMock,
+          transferDirection: TransferDirection.LOCAL_TO_REMOTE,
+          transferOption: { perserveTargetMode: false, ignore: null },
+        },
+        collect
+      );
+      await transfer(
+        {
+          srcFsPath: '/remote/conflict.json',
+          srcFs: remoteFsMock,
+          targetFsPath: globalStateFile,
+          targetFs: localFsMock,
+          transferDirection: TransferDirection.REMOTE_TO_LOCAL,
+          transferOption: { perserveTargetMode: false, ignore: null },
+        },
+        collect
+      );
+
+      expect(localFsMock.lstat).not.toHaveBeenCalled();
+      expect(remoteFsMock.lstat).not.toHaveBeenCalled();
+      expect(remoteFsMock.ensureDir).not.toHaveBeenCalled();
+      expect(collect).not.toHaveBeenCalled();
+    });
+  });
+
   describe('sync', () => {
     afterEach(() => {
+      clearConflictStateIsolation();
       vol.reset();
+    });
+
+    test('delete-enabled remote-to-local sync preserves legacy conflict state', async () => {
+      fillFs({
+        local: {
+          '.kent-tmp': {
+            'sftp-conflicts': {
+              record: {
+                'conflict.json': file('private state'),
+              },
+            },
+          },
+        },
+        remote: {},
+      });
+      configureConflictStateIsolation('/global/conflict-state-v2', ['/local']);
+
+      const tasks: TransferTask[] = [];
+      const deleted = await sync(
+        {
+          srcFsPath: '/remote',
+          srcFs: localFs,
+          targetFsPath: '/local',
+          targetFs: localFs,
+          transferDirection: TransferDirection.REMOTE_TO_LOCAL,
+          transferOption: {
+            delete: true,
+            perserveTargetMode: false,
+          },
+        },
+        task => tasks.push(task)
+      );
+
+      expect(tasks).toHaveLength(0);
+      expect(deleted).toHaveLength(0);
+      expect(
+        fs.readFileSync(
+          path.join('/local', '.kent-tmp', 'sftp-conflicts', 'record', 'conflict.json'),
+          'utf8'
+        )
+      ).toBe('private state');
+    });
+
+    test('broad folder upload schedules ordinary files but skips conflict state', async () => {
+      fillFs({
+        local: {
+          'index.txt': file('public'),
+          '.kent-tmp': {
+            'sftp-conflicts': {
+              record: {
+                'conflict.json': file('private'),
+              },
+            },
+          },
+        },
+        remote: {},
+      });
+      configureConflictStateIsolation('/global/conflict-state-v2', ['/local']);
+      const tasks: TransferTask[] = [];
+
+      await transfer(
+        {
+          srcFsPath: '/local',
+          srcFs: localFs,
+          targetFsPath: '/remote',
+          targetFs: localFs,
+          transferDirection: TransferDirection.LOCAL_TO_REMOTE,
+          transferOption: {
+            perserveTargetMode: false,
+            ignore: null,
+          },
+        },
+        task => tasks.push(task)
+      );
+
+      expect(tasks.map(task => task.targetFsPath)).toEqual([
+        path.join('/remote', 'index.txt'),
+      ]);
+      expect(fs.existsSync(path.join('/remote', '.kent-tmp', 'sftp-conflicts'))).toBe(
+        false
+      );
     });
 
     test('sync', async () => {

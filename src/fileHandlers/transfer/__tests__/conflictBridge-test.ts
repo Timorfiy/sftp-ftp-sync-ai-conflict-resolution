@@ -1,4 +1,5 @@
 const mockQuickPicks: any[] = [];
+const showErrorMessage = jest.fn(async () => undefined);
 
 jest.mock('vscode', () => ({
   Uri: {
@@ -8,6 +9,7 @@ jest.mock('vscode', () => ({
     executeCommand: jest.fn(async () => undefined),
   },
   window: {
+    showErrorMessage,
     createQuickPick: jest.fn(() => {
       let acceptHandler = () => undefined;
       let hideHandler = () => undefined;
@@ -54,6 +56,7 @@ jest.mock('../../diff', () => ({
 jest.mock('../../../logger', () => ({
   __esModule: true,
   default: {
+    error: jest.fn(),
     info: jest.fn(),
     warn: jest.fn(),
   },
@@ -74,6 +77,7 @@ import {
   markConflictFailed,
   markConflictUploaded,
   markConflictUploading,
+  revalidateConflict,
   waitForConflictDecision,
 } from '../conflictBridge';
 
@@ -85,12 +89,13 @@ function delay(milliseconds: number) {
 
 async function fixture() {
   const workspace = path.join(testRoot, randomUUID());
+  const globalStorageRoot = path.join(testRoot, randomUUID(), 'global');
   const localFile = path.join(workspace, 'local.txt');
   const remoteFile = path.join(workspace, 'fake-remote.txt');
   await fs.promises.mkdir(workspace, { recursive: true });
   await fs.promises.writeFile(localFile, 'local content\n');
   await fs.promises.writeFile(remoteFile, 'remote content\n');
-  await initializeConflictBridge([workspace], '3.5.0-test');
+  await initializeConflictBridge([workspace], '3.5.0-test', { globalStorageRoot });
   const remoteStat = await fs.promises.stat(remoteFile);
   const targetFs = {
     lstat: jest.fn(async () => ({
@@ -112,7 +117,7 @@ async function fixture() {
     sourceSize: (await fs.promises.stat(localFile)).size,
   };
   const remote = await targetFs.lstat(remoteFile);
-  return { workspace, localFile, remoteFile, context, remote };
+  return { workspace, globalStorageRoot, localFile, remoteFile, context, remote };
 }
 
 describe('Kent conflict bridge coordinator', () => {
@@ -129,6 +134,24 @@ describe('Kent conflict bridge coordinator', () => {
 
   afterEach(async () => {
     await disposeConflictBridge();
+  });
+
+  test('clean multi-root initialization writes no workspace or global state', async () => {
+    const workspaces = [
+      path.join(testRoot, randomUUID(), 'one'),
+      path.join(testRoot, randomUUID(), 'two'),
+    ];
+    const globalStorageRoot = path.join(testRoot, randomUUID(), 'global');
+    await Promise.all(workspaces.map(workspace => fs.promises.mkdir(workspace, { recursive: true })));
+
+    await initializeConflictBridge(workspaces, '3.5.0-test', { globalStorageRoot });
+
+    expect(fs.existsSync(globalStorageRoot)).toBe(false);
+    for (const workspace of workspaces) {
+      expect(
+        fs.existsSync(path.join(workspace, '.kent-tmp', 'sftp-conflicts'))
+      ).toBe(false);
+    }
   });
 
   test('MCP decision resumes the live promise, closes QuickPick, and records upload callback', async () => {
@@ -230,6 +253,60 @@ describe('Kent conflict bridge coordinator', () => {
     expect(session.record.staleReason).toContain('remote-changed');
   });
 
+  test('successive remote revalidations retain only the authoritative snapshot', async () => {
+    const data = await fixture();
+    const session = await captureConflict(
+      data.workspace,
+      'batch-repeated-revalidation',
+      data.context,
+      'remote-changed',
+      data.remote
+    );
+    const directory = path.dirname(session.record.reportFile);
+
+    await fs.promises.writeFile(data.remoteFile, 'remote changed once\n');
+    await expect(revalidateConflict(session, data.context)).resolves.toMatchObject({
+      valid: false,
+      revision: 2,
+    });
+    const firstReplacement = session.record.remoteSnapshot;
+    expect(firstReplacement).toBeTruthy();
+
+    await fs.promises.writeFile(data.remoteFile, 'remote changed twice and grew\n');
+    await expect(revalidateConflict(session, data.context)).resolves.toMatchObject({
+      valid: false,
+      revision: 3,
+    });
+    const secondReplacement = session.record.remoteSnapshot;
+    expect(secondReplacement).toBeTruthy();
+    expect(secondReplacement).not.toBe(firstReplacement);
+
+    const snapshots = (await fs.promises.readdir(directory)).filter(name =>
+      /^remote(?:-[0-9a-f-]+)?\.[^\\/]+$/i.test(name)
+    );
+    expect(snapshots).toEqual([path.basename(secondReplacement!)]);
+    expect(fs.existsSync(firstReplacement!)).toBe(false);
+
+    const unreferenced = path.join(directory, `remote-${randomUUID()}.txt`);
+    await fs.promises.writeFile(unreferenced, 'crash leftover');
+    await disposeConflictBridge();
+    await initializeConflictBridge([data.workspace], '3.5.0-test', {
+      globalStorageRoot: data.globalStorageRoot,
+      sessionId: 'restarted-session',
+      processIsAlive: () => false,
+      now: () => new Date(Date.now() + 120_000),
+      policy: { leaseStaleMs: 1 },
+    });
+
+    const restarted = JSON.parse(
+      await fs.promises.readFile(session.record.reportFile, 'utf8')
+    );
+    expect(restarted.status).toBe('orphaned');
+    expect(restarted.remoteSnapshot).toBe(secondReplacement);
+    expect(fs.existsSync(secondReplacement!)).toBe(true);
+    expect(fs.existsSync(unreferenced)).toBe(false);
+  });
+
   test('snapshot failures remain pending with a reportable error', async () => {
     const data = await fixture();
     (fileOperations.transferFile as jest.Mock).mockRejectedValueOnce(
@@ -245,6 +322,28 @@ describe('Kent conflict bridge coordinator', () => {
     expect(session.record.status).toBe('pending');
     expect(session.record.remoteSnapshot).toBeNull();
     expect(session.record.snapshotError).toBe('snapshot unavailable');
+  });
+
+  test('oversized snapshots are not downloaded and leave a stable limit reason', async () => {
+    const data = await fixture();
+    await initializeConflictBridge([data.workspace], '3.5.0-test', {
+      globalStorageRoot: data.globalStorageRoot,
+      policy: { maxSnapshotBytes: data.remote.size - 1 },
+    });
+    (fileOperations.transferFile as jest.Mock).mockClear();
+
+    const session = await captureConflict(
+      data.workspace,
+      'batch-oversized',
+      data.context,
+      'remote-changed',
+      data.remote
+    );
+
+    expect(fileOperations.transferFile).not.toHaveBeenCalled();
+    expect(session.record.status).toBe('pending');
+    expect(session.record.remoteSnapshot).toBeNull();
+    expect(session.record.snapshotError).toContain('per snapshot');
   });
 
   test('Cursor wins a race and an already queued MCP request receives already_resolved', async () => {
@@ -287,13 +386,19 @@ describe('Kent conflict bridge coordinator', () => {
     const stateRoot = path.join(workspace, '.kent-tmp', 'sftp-conflicts');
     const id = 'old-session-conflict';
     const reportFile = path.join(stateRoot, id, 'conflict.json');
+    const remoteSnapshot = path.join(stateRoot, id, 'remote.txt');
+    await fs.promises.mkdir(path.dirname(remoteSnapshot), { recursive: true });
+    await fs.promises.writeFile(remoteSnapshot, 'legacy snapshot');
     const oldRecord = {
       version: 2,
       id,
       status: 'uploading',
+      detectedAt: '2026-09-23T10:00:00.000Z',
+      updatedAt: '2026-09-23T10:00:00.000Z',
       revision: 1,
       sessionId: 'old-session',
       reportFile,
+      remoteSnapshot,
     };
     await atomicWriteJson(reportFile, oldRecord);
     await atomicWriteJson(path.join(stateRoot, 'index.json'), {
@@ -301,10 +406,70 @@ describe('Kent conflict bridge coordinator', () => {
       conflicts: [oldRecord],
     });
 
-    await initializeConflictBridge([workspace], '3.5.0-test');
+    const globalStorageRoot = path.join(testRoot, randomUUID(), 'global');
+    await initializeConflictBridge([workspace], '3.5.0-test', {
+      globalStorageRoot,
+      processIsAlive: () => false,
+      now: () => new Date('2026-09-23T12:00:00.000Z'),
+      policy: { leaseStaleMs: 1 },
+    });
 
-    const record = JSON.parse(await fs.promises.readFile(reportFile, 'utf8'));
+    const importedRoot = path.join(
+      globalStorageRoot,
+      'conflict-state-v2',
+      'workspaces'
+    );
+    const [bucket] = await fs.promises.readdir(importedRoot);
+    const importedReport = path.join(importedRoot, bucket, id, 'conflict.json');
+    const record = JSON.parse(await fs.promises.readFile(importedReport, 'utf8'));
     expect(record.status).toBe('orphaned');
     expect(record.result.orphanedAt).toBeTruthy();
+    expect(await fs.promises.readFile(record.remoteSnapshot, 'utf8')).toBe(
+      'legacy snapshot'
+    );
+    expect(fs.existsSync(stateRoot)).toBe(false);
+  });
+
+  test('corrupt legacy reports remain protected and surface migration failure until repaired', async () => {
+    const workspace = path.join(testRoot, randomUUID());
+    const stateRoot = path.join(workspace, '.kent-tmp', 'sftp-conflicts');
+    const id = 'corrupt-legacy';
+    const directory = path.join(stateRoot, id);
+    const reportFile = path.join(directory, 'conflict.json');
+    await fs.promises.mkdir(directory, { recursive: true });
+    await fs.promises.writeFile(reportFile, '{not-json');
+    const globalStorageRoot = path.join(testRoot, randomUUID(), 'global');
+
+    await initializeConflictBridge([workspace], '3.5.0-test', {
+      globalStorageRoot,
+      processIsAlive: () => false,
+    });
+
+    expect(fs.existsSync(stateRoot)).toBe(true);
+    expect(showErrorMessage).toHaveBeenCalledWith(
+      expect.stringContaining('could not migrate legacy conflict state')
+    );
+
+    await fs.promises.writeFile(
+      reportFile,
+      JSON.stringify({
+        version: 2,
+        id,
+        status: 'failed',
+        detectedAt: '2026-09-23T10:00:00.000Z',
+        updatedAt: '2026-09-23T10:00:00.000Z',
+        sessionId: 'legacy-session',
+        reportFile,
+        remoteSnapshot: null,
+      })
+    );
+    showErrorMessage.mockClear();
+    await initializeConflictBridge([workspace], '3.5.0-test', {
+      globalStorageRoot,
+      processIsAlive: () => false,
+    });
+
+    expect(showErrorMessage).not.toHaveBeenCalled();
+    expect(fs.existsSync(stateRoot)).toBe(false);
   });
 });

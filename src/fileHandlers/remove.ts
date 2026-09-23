@@ -6,6 +6,7 @@ import createFileHandler, { FileHandlerContext } from './createFileHandler';
 import { FileHandleOption } from './option';
 import { remoteBackupsProvider } from '../modules/remoteBackups';
 import logger from '../logger';
+import { isConflictStatePathOrAncestor } from './transfer/conflictStateIsolation';
 
 /**
  * Copy everything the delete is about to destroy into the backup folder.
@@ -44,6 +45,10 @@ async function backupFilesBeingDeleted(
 export const removeRemote = createFileHandler<FileHandleOption & { skipDir?: boolean }>({
   name: 'removeRemote',
   async handle(option) {
+    if (isConflictStatePathOrAncestor(this.target.localFsPath)) {
+      logger.warn(`Blocked deletion of private conflict state: ${this.target.localFsPath}`);
+      return;
+    }
     const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
     const { remoteFsPath } = this.target;
     const stat = await remoteFs.lstat(remoteFsPath);

@@ -10,6 +10,20 @@ import logger from '../../logger';
 import { diff } from '../diff';
 import type { FileTransferContext } from './transfer';
 import type { RemoteBaseline } from './remoteBaseline';
+import {
+  atomicWriteJson,
+  ConflictRetentionPolicy,
+  ConflictStateStatus,
+  ConflictStateStore,
+  readJson,
+  StoredConflictRecord,
+} from './conflictStateStore';
+import {
+  clearConflictStateIsolation,
+  configureConflictStateIsolation,
+} from './conflictStateIsolation';
+
+export { atomicWriteJson } from './conflictStateStore';
 
 export const CONFLICT_PROTOCOL_VERSION = 2;
 
@@ -18,16 +32,7 @@ export type UploadConflictReason =
   | 'baseline-missing'
   | 'timestamp-unavailable';
 
-export type ConflictStatus =
-  | 'capturing'
-  | 'pending'
-  | 'reviewing'
-  | 'resolving'
-  | 'uploading'
-  | 'uploaded'
-  | 'cancelled'
-  | 'failed'
-  | 'orphaned';
+export type ConflictStatus = ConflictStateStatus;
 
 export type ConflictDecisionAction = 'overwrite' | 'overwrite_all' | 'cancel';
 export type ConflictDecisionSource = 'mcp' | 'cursor' | 'batch';
@@ -46,35 +51,19 @@ interface ConflictDecision {
   acceptedAt: string;
 }
 
-export interface ConflictRecord {
-  version: 2;
-  id: string;
-  status: ConflictStatus;
+export interface ConflictRecord extends StoredConflictRecord {
   revision: number;
   reason: UploadConflictReason;
-  detectedAt: string;
-  updatedAt: string;
   workspaceRoot: string;
-  sessionId: string;
   batchId: string;
   localFile: string;
   remoteFile: string;
-  remoteSnapshot: string | null;
-  reportFile: string;
   local: ConflictFileMetadata;
   remote: ConflictFileMetadata;
   baseline: Pick<RemoteBaseline, 'mtime' | 'size'> | null;
-  snapshotError?: string;
   staleReason?: string;
   remoteMissingAt?: string;
   decision?: ConflictDecision;
-  result?: {
-    uploadedAt?: string;
-    cancelledAt?: string;
-    failedAt?: string;
-    orphanedAt?: string;
-    error?: string;
-  };
 }
 
 export interface ConflictSession {
@@ -103,22 +92,12 @@ interface RequestEnvelope {
   responseFile: string;
 }
 
-const TERMINAL_STATUSES = new Set<ConflictStatus>([
-  'uploaded',
-  'cancelled',
-  'failed',
-  'orphaned',
-]);
-const RECENT_TERMINAL_LIMIT = 100;
 const REQUEST_POLL_MS = 200;
-const extensionSessionId = `${Date.now()}-${process.pid}-${randomUUID()}`;
-const workspaceRoots = new Set<string>();
-const writeQueues = new Map<string, Promise<void>>();
 const resolvedSessions = new Set<string>();
 const activeQuickPicks = new Map<string, vscode.QuickPick<vscode.QuickPickItem>>();
 let manualUiQueue: Promise<void> = Promise.resolve();
-let extensionVersion = '3.5.0';
 let conflictSequence = 0;
+let stateStore: ConflictStateStore | undefined;
 
 function now(): string {
   return new Date().toISOString();
@@ -137,67 +116,27 @@ function isNotFoundError(error: any): boolean {
 }
 
 function isTerminal(status: unknown): boolean {
-  return typeof status === 'string' && TERMINAL_STATUSES.has(status as ConflictStatus);
+  return (
+    status === 'uploaded' ||
+    status === 'cancelled' ||
+    status === 'failed' ||
+    status === 'orphaned'
+  );
 }
 
 function safeName(value: string): string {
   return value.replace(/[^a-zA-Z0-9._-]+/g, '-').slice(0, 80) || 'file';
 }
 
-function workspaceConflictRoot(workspaceRoot: string): string {
-  return path.join(path.resolve(workspaceRoot), '.kent-tmp', 'sftp-conflicts');
-}
-
-async function readJson<T>(file: string): Promise<T | undefined> {
-  try {
-    return JSON.parse(await fs.promises.readFile(file, 'utf8')) as T;
-  } catch (_error) {
-    return undefined;
+function requireStateStore(): ConflictStateStore {
+  if (!stateStore) {
+    throw new Error('Conflict state is not configured.');
   }
+  return stateStore;
 }
 
-export async function atomicWriteJson(file: string, value: unknown): Promise<void> {
-  await fs.promises.mkdir(path.dirname(file), { recursive: true });
-  const temporary = `${file}.${process.pid}.${randomUUID()}.tmp`;
-  await fs.promises.writeFile(temporary, JSON.stringify(value, null, 2), 'utf8');
-  try {
-    await fs.promises.rename(temporary, file);
-  } catch (error) {
-    try {
-      await fs.promises.copyFile(temporary, file);
-      await fs.promises.unlink(temporary);
-    } catch (_copyError) {
-      throw error;
-    }
-  }
-}
-
-function queueWrite(root: string, operation: () => Promise<void>): Promise<void> {
-  const previous = writeQueues.get(root) || Promise.resolve();
-  const current = previous.then(operation, operation);
-  writeQueues.set(root, current.then(() => undefined, () => undefined));
-  return current;
-}
-
-async function writeIndexRecord(root: string, record: ConflictRecord): Promise<void> {
-  return queueWrite(root, async () => {
-    const indexFile = path.join(root, 'index.json');
-    const existing = await readJson<{ conflicts?: any[] }>(indexFile);
-    const withoutCurrent = (existing?.conflicts || []).filter(item => item?.id !== record.id);
-    const active = withoutCurrent.filter(
-      item => item?.version === 2 && !isTerminal(item?.status)
-    );
-    const terminal = withoutCurrent
-      .filter(item => item?.version !== 2 || isTerminal(item?.status))
-      .slice(-RECENT_TERMINAL_LIMIT);
-    const conflicts = [...terminal, ...active, record];
-    await atomicWriteJson(indexFile, {
-      version: CONFLICT_PROTOCOL_VERSION,
-      updatedAt: now(),
-      conflicts,
-    });
-    await atomicWriteJson(record.reportFile, record);
-  });
+async function writeConflictRecord(root: string, record: ConflictRecord): Promise<void> {
+  await requireStateStore().writeRecord(root, record);
 }
 
 async function updateSession(
@@ -208,7 +147,7 @@ async function updateSession(
   Object.assign(session.record, changes);
   session.record.status = status;
   session.record.updatedAt = now();
-  await writeIndexRecord(session.root, session.record);
+  await writeConflictRecord(session.root, session.record);
 }
 
 async function hashFile(file: string): Promise<string> {
@@ -260,87 +199,58 @@ function notifyWindows(title: string, message: string): void {
   }
 }
 
-async function writeBridge(root: string): Promise<void> {
-  await atomicWriteJson(path.join(root, 'bridge.json'), {
-    version: CONFLICT_PROTOCOL_VERSION,
-    protocolVersion: CONFLICT_PROTOCOL_VERSION,
-    extensionVersion,
-    pid: process.pid,
-    sessionId: extensionSessionId,
-    startedAt: now(),
-  });
-}
-
-async function orphanPreviousSession(root: string): Promise<void> {
-  const indexFile = path.join(root, 'index.json');
-  const index = await readJson<{ conflicts?: any[] }>(indexFile);
-  if (!Array.isArray(index?.conflicts)) {
-    return;
-  }
-  let changed = false;
-  const reportWrites: Array<Promise<void>> = [];
-  const conflicts = index!.conflicts!.map(item => {
-    if (
-      item?.version === 2 &&
-      !isTerminal(item.status) &&
-      item.sessionId !== extensionSessionId
-    ) {
-      changed = true;
-      const updatedAt = now();
-      const orphaned = {
-        ...item,
-        status: 'orphaned',
-        updatedAt,
-        result: { ...(item.result || {}), orphanedAt: updatedAt },
-      };
-      if (typeof orphaned.reportFile === 'string') {
-        reportWrites.push(atomicWriteJson(orphaned.reportFile, orphaned));
-      }
-      return orphaned;
-    }
-    return item;
-  });
-  if (changed) {
-    await Promise.all(reportWrites);
-    await atomicWriteJson(indexFile, {
-      version: CONFLICT_PROTOCOL_VERSION,
-      updatedAt: now(),
-      conflicts,
-    });
-  }
+export interface ConflictBridgeInitializationOptions {
+  globalStorageRoot: string;
+  policy?: Partial<ConflictRetentionPolicy>;
+  sessionId?: string;
+  processId?: number;
+  now?: () => Date;
+  processIsAlive?: (pid: number) => boolean;
 }
 
 export async function initializeConflictBridge(
   workspaces: readonly string[],
-  version: string
+  version: string,
+  options: ConflictBridgeInitializationOptions
 ): Promise<void> {
-  extensionVersion = version;
-  await Promise.all(
-    workspaces.map(async workspace => {
-      const root = workspaceConflictRoot(workspace);
-      workspaceRoots.add(root);
-      await fs.promises.mkdir(root, { recursive: true });
-      await orphanPreviousSession(root);
-      await writeBridge(root);
-    })
-  );
+  await stateStore?.dispose();
+  stateStore = new ConflictStateStore({
+    globalStorageRoot: options.globalStorageRoot,
+    workspaces,
+    extensionVersion: version,
+    policy: options.policy,
+    sessionId: options.sessionId,
+    processId: options.processId,
+    now: options.now,
+    processIsAlive: options.processIsAlive,
+  });
+  configureConflictStateIsolation(stateStore.stateRoot, workspaces);
+  try {
+    await stateStore.reconcileLegacyIfPresent();
+  } catch (error) {
+    logger.error(error, 'migrate legacy conflict state');
+    void vscode.window.showErrorMessage(
+      'SFTP/FTP Sync + AI Conflict Resolution could not migrate legacy conflict state. ' +
+        'The project copy remains protected from transfer; reload the editor or use Clear Conflict State after resolving filesystem access.'
+    );
+  }
 }
 
 export async function disposeConflictBridge(): Promise<void> {
-  await Promise.all(
-    Array.from(workspaceRoots).map(async root => {
-      const bridgeFile = path.join(root, 'bridge.json');
-      const bridge = await readJson<{ sessionId?: string }>(bridgeFile);
-      if (bridge?.sessionId === extensionSessionId) {
-        try {
-          await fs.promises.unlink(bridgeFile);
-        } catch (_error) {
-          // The bridge is advisory. A missing or already-removed file is harmless.
-        }
-      }
-    })
-  );
-  workspaceRoots.clear();
+  const store = stateStore;
+  stateStore = undefined;
+  clearConflictStateIsolation();
+  await store?.dispose();
+}
+
+export async function clearConflictState(workspaces: readonly string[]) {
+  return requireStateStore().clear(workspaces);
+}
+
+export async function listConflictState(
+  workspaces: readonly string[]
+): Promise<ConflictRecord[]> {
+  return (await requireStateStore().list(workspaces)) as ConflictRecord[];
 }
 
 export async function captureConflict(
@@ -351,22 +261,14 @@ export async function captureConflict(
   remote: Pick<FileStats, 'mtime' | 'size'>,
   baseline?: RemoteBaseline
 ): Promise<ConflictSession> {
-  const root = workspaceConflictRoot(workspaceRoot);
-  if (!workspaceRoots.has(root)) {
-    workspaceRoots.add(root);
-    await fs.promises.mkdir(root, { recursive: true });
-    await writeBridge(root);
-  }
-
+  const store = requireStateStore();
   const detectedAt = now();
   const id = `${detectedAt.replace(/[:.]/g, '-')}-${process.pid}-${++conflictSequence}-${safeName(path.basename(context.srcFsPath))}`;
+  const root = await store.prepareConflict(workspaceRoot, id);
   const directory = path.join(root, id);
   const extension = path.extname(context.srcFsPath) || '.bin';
   const remoteSnapshot = path.join(directory, `remote${extension}`);
   const reportFile = path.join(directory, 'conflict.json');
-  await fs.promises.mkdir(path.join(directory, 'requests'), { recursive: true });
-  await fs.promises.mkdir(path.join(directory, 'responses'), { recursive: true });
-
   const record: ConflictRecord = {
     version: 2,
     id,
@@ -376,7 +278,7 @@ export async function captureConflict(
     detectedAt,
     updatedAt: detectedAt,
     workspaceRoot: path.resolve(workspaceRoot),
-    sessionId: extensionSessionId,
+    sessionId: store.sessionId,
     batchId,
     localFile: context.srcFsPath,
     remoteFile: context.targetFsPath,
@@ -395,22 +297,46 @@ export async function captureConflict(
     baseline: baseline ? { mtime: baseline.mtime, size: baseline.size } : null,
   };
   const session = { root, record };
-  await writeIndexRecord(root, record);
+  await writeConflictRecord(root, record);
   notifyWindows(
     'SFTP/FTP Sync + AI Conflict Resolution — конфликт',
     `Загрузка ${path.basename(context.srcFsPath)} остановлена: серверный файл изменён.`
   );
 
+  const admission = await store.reserveSnapshot(remote.size);
+  if (!admission.allowed) {
+    await updateSession(session, 'pending', {
+      remoteSnapshot: null,
+      snapshotError: admission.reason,
+    });
+    return session;
+  }
+  const temporarySnapshot = `${remoteSnapshot}.snapshot.tmp`;
   try {
     await fileOperations.transferFile(
       context.targetFsPath,
-      remoteSnapshot,
+      temporarySnapshot,
       context.targetFs,
       localFs
     );
+    const finalized = await store.finalizeSnapshot(
+      admission.reservation,
+      temporarySnapshot
+    );
+    if (!finalized.allowed) {
+      await fs.promises.rm(temporarySnapshot, { force: true });
+      await updateSession(session, 'pending', {
+        remoteSnapshot: null,
+        snapshotError: finalized.reason,
+      });
+      return session;
+    }
+    await replaceSnapshot(temporarySnapshot, remoteSnapshot);
     record.remote.sha256 = await hashFile(remoteSnapshot);
     await updateSession(session, 'pending', { snapshotError: undefined });
   } catch (error) {
+    store.releaseSnapshot(admission.reservation);
+    await fs.promises.rm(temporarySnapshot, { force: true });
     await updateSession(session, 'pending', {
       remoteSnapshot: null,
       snapshotError: cleanError(error),
@@ -449,23 +375,26 @@ async function openNativeDiff(
 }
 
 async function replaceSnapshot(source: string, destination: string): Promise<void> {
-  await fs.promises.copyFile(source, destination);
-  try {
-    await fs.promises.unlink(source);
-  } catch (_error) {
-    // A stale temporary snapshot is harmless and remains under .kent-tmp.
-  }
+  await fs.promises.rename(source, destination);
 }
 
 async function refreshRemoteSnapshot(
   session: ConflictSession,
   context: FileTransferContext,
   remote: Pick<FileStats, 'mtime' | 'size'>
-): Promise<string | null> {
+): Promise<{ changed: boolean; supersededSnapshot?: string }> {
+  const store = requireStateStore();
   const directory = path.dirname(session.record.reportFile);
   const extension = path.extname(context.srcFsPath) || '.bin';
-  const permanent = path.join(directory, `remote${extension}`);
+  const permanent = path.join(directory, `remote-${randomUUID()}${extension}`);
   const temporary = path.join(directory, `remote-check-${randomUUID()}${extension}`);
+  const admission = await store.reserveSnapshot(remote.size);
+  if (!admission.allowed) {
+    const supersededSnapshot = session.record.remoteSnapshot || undefined;
+    session.record.remoteSnapshot = null;
+    session.record.snapshotError = admission.reason;
+    return { changed: true, supersededSnapshot };
+  }
   try {
     await fileOperations.transferFile(
       context.targetFsPath,
@@ -473,9 +402,19 @@ async function refreshRemoteSnapshot(
       context.targetFs,
       localFs
     );
+    const finalized = await store.finalizeSnapshot(admission.reservation, temporary);
+    if (!finalized.allowed) {
+      await fs.promises.rm(temporary, { force: true });
+      const supersededSnapshot = session.record.remoteSnapshot || undefined;
+      session.record.remoteSnapshot = null;
+      session.record.snapshotError = finalized.reason;
+      return { changed: true, supersededSnapshot };
+    }
     const remoteHash = await hashFile(temporary);
     const changed = remoteHash !== session.record.remote.sha256;
+    let supersededSnapshot: string | undefined;
     if (changed || !session.record.remoteSnapshot) {
+      supersededSnapshot = session.record.remoteSnapshot || undefined;
       await replaceSnapshot(temporary, permanent);
       session.record.remoteSnapshot = permanent;
     } else {
@@ -487,8 +426,10 @@ async function refreshRemoteSnapshot(
       sha256: remoteHash,
     };
     session.record.snapshotError = undefined;
-    return changed ? remoteHash : null;
+    return { changed, supersededSnapshot };
   } catch (error) {
+    store.releaseSnapshot(admission.reservation);
+    const supersededSnapshot = session.record.remoteSnapshot || undefined;
     session.record.remoteSnapshot = null;
     session.record.snapshotError = cleanError(error);
     try {
@@ -496,7 +437,27 @@ async function refreshRemoteSnapshot(
     } catch (_cleanupError) {
       // Nothing else to clean up.
     }
-    return 'snapshot-error';
+    return { changed: true, supersededSnapshot };
+  }
+}
+
+async function removeSupersededSnapshot(
+  session: ConflictSession,
+  supersededSnapshot?: string
+): Promise<void> {
+  if (
+    !supersededSnapshot ||
+    supersededSnapshot === session.record.remoteSnapshot ||
+    path.dirname(supersededSnapshot) !== path.dirname(session.record.reportFile)
+  ) {
+    return;
+  }
+  try {
+    await fs.promises.rm(supersededSnapshot, { force: true });
+  } catch (error) {
+    logger.warn(
+      `Could not remove superseded conflict snapshot ${path.basename(supersededSnapshot)}: ${cleanError(error)}`
+    );
   }
 }
 
@@ -508,6 +469,7 @@ export async function revalidateConflict(
   const localHash = await hashFileOrNull(context.srcFsPath);
   const localChanged = localHash !== session.record.local.sha256;
   let remoteChanged = false;
+  let supersededSnapshot: string | undefined;
   let remoteMissing = false;
   let remote: FileStats | undefined;
 
@@ -528,14 +490,16 @@ export async function revalidateConflict(
       size: localStat.size,
       sha256: localHash,
     };
-    await writeIndexRecord(session.root, session.record);
+    await writeConflictRecord(session.root, session.record);
     return { valid: true, revision: session.record.revision };
   }
 
   if (remote) {
     const metadataChanged = !metadataMatches(remote, session.record.remote);
     if (metadataChanged || remote.mtime <= 0) {
-      remoteChanged = (await refreshRemoteSnapshot(session, context, remote)) !== null;
+      const refreshed = await refreshRemoteSnapshot(session, context, remote);
+      remoteChanged = refreshed.changed;
+      supersededSnapshot = refreshed.supersededSnapshot;
     }
   }
 
@@ -555,6 +519,7 @@ export async function revalidateConflict(
       .filter(Boolean)
       .join(',');
     await updateSession(session, 'pending');
+    await removeSupersededSnapshot(session, supersededSnapshot);
     return { valid: false, revision: session.record.revision };
   }
 
@@ -568,7 +533,8 @@ export async function revalidateConflict(
     sha256: localHash,
   };
   session.record.staleReason = undefined;
-  await writeIndexRecord(session.root, session.record);
+  await writeConflictRecord(session.root, session.record);
+  await removeSupersededSnapshot(session, supersededSnapshot);
   return { valid: true, revision: session.record.revision };
 }
 
@@ -867,10 +833,10 @@ async function updateConflictByReference(
   status: ConflictStatus,
   changes: Partial<ConflictRecord>
 ): Promise<void> {
-  const index = await readJson<{ conflicts?: ConflictRecord[] }>(
-    path.join(reference.root, 'index.json')
+  const record = await requireStateStore().readRecord<ConflictRecord>(
+    reference.root,
+    reference.id
   );
-  const record = index?.conflicts?.find(item => item.id === reference.id);
   if (!record) {
     return;
   }

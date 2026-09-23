@@ -35,7 +35,7 @@ Create a new configuration file for a project.
 
 ## SFTP: Set Profile
 Set the current profile.
-           
+
 ### KeyBindings Args
 func(profileName: string)
 
@@ -125,6 +125,18 @@ Stop the current transfers (upload and download).
 
 ## SFTP: Open SSH in Terminal
 Open a terminal in VSCode and auto login to a specific server.
+
+## sftpSyncAI.clearConflictState
+
+Safely clears completed, cancelled, failed, and restart-orphaned conflict
+records for every open workspace. A modal confirmation is required, and active
+conflict decisions in this or another editor window are preserved.
+
+Conflict state is created lazily in the editor's private extension storage,
+not in the project. It is excluded from transfer and sync. Inactive state is
+retained for up to 90 days, with at most 250 inactive records per workspace, a
+500 MiB extension-wide budget, and a 100 MiB limit per remote snapshot. This
+storage is private by location; it is not encrypted.
 
 ***
 
