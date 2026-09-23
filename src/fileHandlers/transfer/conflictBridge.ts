@@ -6,7 +6,20 @@ import * as vscode from 'vscode';
 import * as fileOperations from '../../core/fileBaseOperations';
 import type { FileStats } from '../../core/fs/fileSystem';
 import localFs from '../../core/localFs';
+import {
+  requireSafeLocalPath,
+  SafeLocalPathError,
+} from '../../helper/safeLocalPath';
+import { getOpenTextDocuments } from '../../host';
 import logger from '../../logger';
+import {
+  ConflictBridgeRequest,
+  conflictBridgeRequestSchema,
+  CONFLICT_PROTOCOL_VERSION,
+  MAX_CANDIDATE_BYTES,
+  McpLaunchConfiguration,
+} from '../../mcp/conflictContract';
+import { suppressWatcherFor } from '../../modules/watcherSuppression';
 import { diff } from '../diff';
 import type { FileTransferContext } from './transfer';
 import type { RemoteBaseline } from './remoteBaseline';
@@ -17,6 +30,7 @@ import {
   ConflictStateStore,
   readJson,
   StoredConflictRecord,
+  workspaceBucketId,
 } from './conflictStateStore';
 import {
   clearConflictStateIsolation,
@@ -24,8 +38,6 @@ import {
 } from './conflictStateIsolation';
 
 export { atomicWriteJson } from './conflictStateStore';
-
-export const CONFLICT_PROTOCOL_VERSION = 2;
 
 export type UploadConflictReason =
   | 'remote-changed'
@@ -51,6 +63,12 @@ interface ConflictDecision {
   acceptedAt: string;
 }
 
+interface ConflictCandidate {
+  source: 'submitted' | 'acknowledged';
+  sha256: string;
+  preparedAt: string;
+}
+
 export interface ConflictRecord extends StoredConflictRecord {
   revision: number;
   reason: UploadConflictReason;
@@ -61,6 +79,9 @@ export interface ConflictRecord extends StoredConflictRecord {
   local: ConflictFileMetadata;
   remote: ConflictFileMetadata;
   baseline: Pick<RemoteBaseline, 'mtime' | 'size'> | null;
+  localSnapshot: string | null;
+  localSnapshotError?: string;
+  candidate?: ConflictCandidate;
   staleReason?: string;
   remoteMissingAt?: string;
   decision?: ConflictDecision;
@@ -76,18 +97,8 @@ export interface ConflictReportRef {
   id: string;
 }
 
-interface BridgeRequest {
-  version: 2;
-  requestId?: string;
-  kind: 'open_diff' | 'resolve';
-  expectedRevision: number;
-  action?: ConflictDecisionAction;
-  source?: 'mcp';
-  createdAt?: string;
-}
-
 interface RequestEnvelope {
-  request: BridgeRequest;
+  request: unknown;
   requestId: string;
   responseFile: string;
 }
@@ -98,6 +109,10 @@ const activeQuickPicks = new Map<string, vscode.QuickPick<vscode.QuickPickItem>>
 let manualUiQueue: Promise<void> = Promise.resolve();
 let conflictSequence = 0;
 let stateStore: ConflictStateStore | undefined;
+let bridgeCapability = '';
+let bridgeWorkspaces: readonly string[] = [];
+let notificationsEnabled = true;
+const activeConflictPaths = new Set<string>();
 
 function now(): string {
   return new Date().toISOString();
@@ -111,6 +126,12 @@ function cleanError(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+function bridgeError(message: string, cause: unknown): Error {
+  const error = new Error(message);
+  Object.defineProperty(error, 'cause', { value: cause });
+  return error;
+}
+
 function isNotFoundError(error: any): boolean {
   return error?.code === 'ENOENT' || error?.code === 2 || error?.message === 'file not exist';
 }
@@ -122,6 +143,23 @@ function isTerminal(status: unknown): boolean {
     status === 'failed' ||
     status === 'orphaned'
   );
+}
+
+function pathKey(file: string): string {
+  const resolved = path.resolve(file);
+  return process.platform === 'win32' ? resolved.toLocaleLowerCase('en-US') : resolved;
+}
+
+export function isConflictPathActive(file: string): boolean {
+  return activeConflictPaths.has(pathKey(file));
+}
+
+function holdConflictPath(file: string): void {
+  activeConflictPaths.add(pathKey(file));
+}
+
+function releaseConflictPath(file: string): void {
+  activeConflictPaths.delete(pathKey(file));
 }
 
 function safeName(value: string): string {
@@ -168,6 +206,60 @@ async function hashFileOrNull(file: string): Promise<string | null> {
   }
 }
 
+async function captureLocalRecovery(
+  session: ConflictSession,
+  localFile: string
+): Promise<void> {
+  if (session.record.localSnapshot) {
+    return;
+  }
+  const store = requireStateStore();
+  let stat: fs.Stats;
+  let directory: string;
+  try {
+    stat = (await requireSafeLocalPath(session.record.workspaceRoot, localFile, {
+      type: 'file',
+    }))!;
+    directory = path.dirname(session.record.reportFile);
+    await requireSafeLocalPath(session.root, directory, { type: 'directory' });
+  } catch (error) {
+    if (!(error instanceof SafeLocalPathError)) {
+      throw error;
+    }
+    session.record.localSnapshotError =
+      'A local recovery snapshot requires a regular file without symbolic links.';
+    return;
+  }
+  const admission = await store.reserveSnapshot(stat.size);
+  if (!admission.allowed) {
+    session.record.localSnapshotError = admission.reason;
+    return;
+  }
+  const extension = path.extname(localFile) || '.bin';
+  const temporary = path.join(directory, `local-recovery-${randomUUID()}${extension}.tmp`);
+  const permanent = temporary.slice(0, -4);
+  try {
+    await Promise.all([
+      requireSafeLocalPath(directory, temporary, { allowMissingLeaf: true, type: 'file' }),
+      requireSafeLocalPath(directory, permanent, { allowMissingLeaf: true, type: 'file' }),
+    ]);
+    await fs.promises.copyFile(localFile, temporary, fs.constants.COPYFILE_EXCL);
+    const finalized = await store.finalizeSnapshot(admission.reservation, temporary);
+    if (!finalized.allowed) {
+      await fs.promises.rm(temporary, { force: true });
+      session.record.localSnapshotError = finalized.reason;
+      return;
+    }
+    await replaceSnapshot(temporary, permanent, directory);
+    session.record.localSnapshot = permanent;
+    session.record.localSnapshotError = undefined;
+  } catch (error) {
+    store.releaseSnapshot(admission.reservation);
+    await fs.promises.rm(temporary, { force: true });
+    session.record.localSnapshotError = cleanError(error);
+  }
+}
+
 function metadataMatches(
   a: Pick<FileStats, 'mtime' | 'size'>,
   b: Pick<FileStats, 'mtime' | 'size'>
@@ -180,7 +272,7 @@ function encodePowerShell(value: string): string {
 }
 
 function notifyWindows(title: string, message: string): void {
-  if (process.platform !== 'win32') {
+  if (process.platform !== 'win32' || !notificationsEnabled) {
     return;
   }
   try {
@@ -206,6 +298,7 @@ export interface ConflictBridgeInitializationOptions {
   processId?: number;
   now?: () => Date;
   processIsAlive?: (pid: number) => boolean;
+  notifications?: boolean;
 }
 
 export async function initializeConflictBridge(
@@ -224,6 +317,10 @@ export async function initializeConflictBridge(
     now: options.now,
     processIsAlive: options.processIsAlive,
   });
+  bridgeWorkspaces = workspaces.map(workspace => path.resolve(workspace));
+  bridgeCapability = `${randomUUID()}${randomUUID()}`;
+  notificationsEnabled = options.notifications !== false;
+  activeConflictPaths.clear();
   configureConflictStateIsolation(stateStore.stateRoot, workspaces);
   try {
     await stateStore.reconcileLegacyIfPresent();
@@ -239,8 +336,33 @@ export async function initializeConflictBridge(
 export async function disposeConflictBridge(): Promise<void> {
   const store = stateStore;
   stateStore = undefined;
+  bridgeWorkspaces = [];
+  bridgeCapability = '';
+  notificationsEnabled = true;
+  activeConflictPaths.clear();
   clearConflictStateIsolation();
   await store?.dispose();
+}
+
+export function getConflictMcpConfiguration(
+  extensionVersion: string,
+  workspaceNames: ReadonlyMap<string, string>
+): McpLaunchConfiguration {
+  const store = requireStateStore();
+  if (!bridgeCapability) {
+    throw new Error('Conflict MCP capability is unavailable.');
+  }
+  return {
+    version: 1,
+    extensionVersion,
+    stateRoot: store.stateRoot,
+    capability: bridgeCapability,
+    workspaces: bridgeWorkspaces.map(root => ({
+      bucket: workspaceBucketId(root),
+      root,
+      name: workspaceNames.get(pathKey(root)) || path.basename(root),
+    })),
+  };
 }
 
 export async function clearConflictState(workspaces: readonly string[]) {
@@ -261,6 +383,14 @@ export async function captureConflict(
   remote: Pick<FileStats, 'mtime' | 'size'>,
   baseline?: RemoteBaseline
 ): Promise<ConflictSession> {
+  try {
+    await requireSafeLocalPath(workspaceRoot, context.srcFsPath, { type: 'file' });
+  } catch (error) {
+    if (error instanceof SafeLocalPathError) {
+      throw bridgeError('unsupported_file', error);
+    }
+    throw error;
+  }
   const store = requireStateStore();
   const detectedAt = now();
   const id = `${detectedAt.replace(/[:.]/g, '-')}-${process.pid}-${++conflictSequence}-${safeName(path.basename(context.srcFsPath))}`;
@@ -283,6 +413,7 @@ export async function captureConflict(
     localFile: context.srcFsPath,
     remoteFile: context.targetFsPath,
     remoteSnapshot,
+    localSnapshot: null,
     reportFile,
     local: {
       mtime: context.sourceMtime,
@@ -297,7 +428,9 @@ export async function captureConflict(
     baseline: baseline ? { mtime: baseline.mtime, size: baseline.size } : null,
   };
   const session = { root, record };
+  holdConflictPath(context.srcFsPath);
   await writeConflictRecord(root, record);
+  await captureLocalRecovery(session, context.srcFsPath);
   notifyWindows(
     'SFTP/FTP Sync + AI Conflict Resolution — конфликт',
     `Загрузка ${path.basename(context.srcFsPath)} остановлена: серверный файл изменён.`
@@ -313,6 +446,17 @@ export async function captureConflict(
   }
   const temporarySnapshot = `${remoteSnapshot}.snapshot.tmp`;
   try {
+    await requireSafeLocalPath(root, directory, { type: 'directory' });
+    await Promise.all([
+      requireSafeLocalPath(directory, temporarySnapshot, {
+        allowMissingLeaf: true,
+        type: 'file',
+      }),
+      requireSafeLocalPath(directory, remoteSnapshot, {
+        allowMissingLeaf: true,
+        type: 'file',
+      }),
+    ]);
     await fileOperations.transferFile(
       context.targetFsPath,
       temporarySnapshot,
@@ -331,7 +475,7 @@ export async function captureConflict(
       });
       return session;
     }
-    await replaceSnapshot(temporarySnapshot, remoteSnapshot);
+    await replaceSnapshot(temporarySnapshot, remoteSnapshot, directory);
     record.remote.sha256 = await hashFile(remoteSnapshot);
     await updateSession(session, 'pending', { snapshotError: undefined });
   } catch (error) {
@@ -359,6 +503,18 @@ async function openNativeDiff(
   try {
     const snapshot = session.record.remoteSnapshot;
     if (snapshot && fs.existsSync(snapshot)) {
+      try {
+        await requireSafeLocalPath(
+          path.dirname(session.record.reportFile),
+          snapshot,
+          { type: 'file' }
+        );
+      } catch (error) {
+        if (error instanceof SafeLocalPathError) {
+          throw bridgeError('unsupported_file', error);
+        }
+        throw error;
+      }
       await vscode.commands.executeCommand(
         'vscode.diff',
         vscode.Uri.file(snapshot),
@@ -374,7 +530,15 @@ async function openNativeDiff(
   }
 }
 
-async function replaceSnapshot(source: string, destination: string): Promise<void> {
+async function replaceSnapshot(
+  source: string,
+  destination: string,
+  root: string
+): Promise<void> {
+  await Promise.all([
+    requireSafeLocalPath(root, source, { type: 'file' }),
+    requireSafeLocalPath(root, destination, { allowMissingLeaf: true, type: 'file' }),
+  ]);
   await fs.promises.rename(source, destination);
 }
 
@@ -388,6 +552,11 @@ async function refreshRemoteSnapshot(
   const extension = path.extname(context.srcFsPath) || '.bin';
   const permanent = path.join(directory, `remote-${randomUUID()}${extension}`);
   const temporary = path.join(directory, `remote-check-${randomUUID()}${extension}`);
+  await requireSafeLocalPath(session.root, directory, { type: 'directory' });
+  await Promise.all([
+    requireSafeLocalPath(directory, permanent, { allowMissingLeaf: true, type: 'file' }),
+    requireSafeLocalPath(directory, temporary, { allowMissingLeaf: true, type: 'file' }),
+  ]);
   const admission = await store.reserveSnapshot(remote.size);
   if (!admission.allowed) {
     const supersededSnapshot = session.record.remoteSnapshot || undefined;
@@ -415,7 +584,7 @@ async function refreshRemoteSnapshot(
     let supersededSnapshot: string | undefined;
     if (changed || !session.record.remoteSnapshot) {
       supersededSnapshot = session.record.remoteSnapshot || undefined;
-      await replaceSnapshot(temporary, permanent);
+      await replaceSnapshot(temporary, permanent, directory);
       session.record.remoteSnapshot = permanent;
     } else {
       await fs.promises.unlink(temporary);
@@ -463,11 +632,25 @@ async function removeSupersededSnapshot(
 
 export async function revalidateConflict(
   session: ConflictSession,
-  context: FileTransferContext
+  context: FileTransferContext,
+  allowedLocalHash?: string
 ): Promise<{ valid: boolean; revision: number }> {
-  const localStat = await fs.promises.stat(context.srcFsPath);
+  let localStat: fs.Stats;
+  try {
+    localStat = (await requireSafeLocalPath(
+      session.record.workspaceRoot,
+      context.srcFsPath,
+      { type: 'file' }
+    ))!;
+  } catch (error) {
+    if (error instanceof SafeLocalPathError) {
+      throw bridgeError('unsupported_file', error);
+    }
+    throw error;
+  }
   const localHash = await hashFileOrNull(context.srcFsPath);
-  const localChanged = localHash !== session.record.local.sha256;
+  const localChanged =
+    localHash !== session.record.local.sha256 && localHash !== allowedLocalHash;
   let remoteChanged = false;
   let supersededSnapshot: string | undefined;
   let remoteMissing = false;
@@ -484,14 +667,36 @@ export async function revalidateConflict(
   }
 
   if (remoteMissing) {
-    session.record.remoteMissingAt = now();
+    const stateChanged =
+      !session.record.remoteMissingAt ||
+      localChanged ||
+      Boolean(session.record.candidate) ||
+      Boolean(session.record.decision) ||
+      Boolean(session.record.result) ||
+      session.record.staleReason !==
+        [localChanged ? 'local-changed' : '', 'remote-missing']
+          .filter(Boolean)
+          .join(',');
+    if (stateChanged) {
+      session.record.revision += 1;
+    }
+    session.record.remoteMissingAt ||= now();
     session.record.local = {
       mtime: localStat.mtimeMs,
       size: localStat.size,
       sha256: localHash,
     };
-    await writeConflictRecord(session.root, session.record);
-    return { valid: true, revision: session.record.revision };
+    session.record.decision = undefined;
+    session.record.candidate = undefined;
+    session.record.result = undefined;
+    session.record.staleReason = [
+      localChanged ? 'local-changed' : '',
+      'remote-missing',
+    ]
+      .filter(Boolean)
+      .join(',');
+    await updateSession(session, 'pending');
+    return { valid: false, revision: session.record.revision };
   }
 
   if (remote) {
@@ -511,6 +716,7 @@ export async function revalidateConflict(
       sha256: localHash,
     };
     session.record.decision = undefined;
+    session.record.candidate = undefined;
     session.record.result = undefined;
     session.record.staleReason = [
       localChanged ? 'local-changed' : '',
@@ -532,6 +738,8 @@ export async function revalidateConflict(
     size: localStat.size,
     sha256: localHash,
   };
+  context.sourceMtime = localStat.mtimeMs;
+  context.sourceSize = localStat.size;
   session.record.staleReason = undefined;
   await writeConflictRecord(session.root, session.record);
   await removeSupersededSnapshot(session, supersededSnapshot);
@@ -646,12 +854,219 @@ async function pendingRequests(session: ConflictSession): Promise<RequestEnvelop
     if (fs.existsSync(responseFile)) {
       continue;
     }
-    const request = await readJson<BridgeRequest>(requestFile);
-    if (request) {
-      pending.push({ request, requestId, responseFile });
+    const stat = await fs.promises.lstat(requestFile).catch(() => undefined);
+    if (!stat?.isFile() || stat.size > MAX_CANDIDATE_BYTES * 2) {
+      pending.push({ request: undefined, requestId, responseFile });
+      continue;
     }
+    const request = await readJson<unknown>(requestFile);
+    pending.push({ request, requestId, responseFile });
   }
   return pending;
+}
+
+function isDirtyDocument(file: string): boolean {
+  const target = pathKey(file);
+  return getOpenTextDocuments().some(
+    document =>
+      !document.isClosed &&
+      document.isDirty &&
+      pathKey(document.uri.fsPath) === target
+  );
+}
+
+async function requireMutableLocalFile(
+  session: ConflictSession
+): Promise<fs.Stats> {
+  if (isTerminal(session.record.status) || session.record.status === 'resolving' || session.record.status === 'uploading') {
+    throw new Error('terminal_or_resolving');
+  }
+  if (isDirtyDocument(session.record.localFile)) {
+    throw new Error('dirty_buffer');
+  }
+  try {
+    return (await requireSafeLocalPath(
+      session.record.workspaceRoot,
+      session.record.localFile,
+      { type: 'file' }
+    ))!;
+  } catch (error) {
+    if (!(error instanceof SafeLocalPathError)) {
+      throw error;
+    }
+    throw bridgeError('unsupported_file', error);
+  }
+}
+
+async function replaceLocalAtomically(
+  file: string,
+  content: string,
+  mode: number,
+  workspaceRoot: string
+): Promise<void> {
+  const directory = path.dirname(file);
+  const temporary = path.join(directory, `.${path.basename(file)}.${randomUUID()}.tmp`);
+  const rollback = path.join(directory, `.${path.basename(file)}.${randomUUID()}.rollback`);
+  await Promise.all([
+    requireSafeLocalPath(workspaceRoot, file, { type: 'file' }),
+    requireSafeLocalPath(workspaceRoot, temporary, {
+      allowMissingLeaf: true,
+      type: 'file',
+    }),
+    requireSafeLocalPath(workspaceRoot, rollback, {
+      allowMissingLeaf: true,
+      type: 'file',
+    }),
+  ]);
+  await fs.promises.writeFile(temporary, content, {
+    encoding: 'utf8',
+    flag: 'wx',
+    mode: mode & 0o777,
+  });
+  await fs.promises.chmod(temporary, mode & 0o777);
+  let originalMoved = false;
+  try {
+    await Promise.all([
+      requireSafeLocalPath(workspaceRoot, file, { type: 'file' }),
+      requireSafeLocalPath(workspaceRoot, temporary, { type: 'file' }),
+      requireSafeLocalPath(workspaceRoot, rollback, {
+        allowMissingLeaf: true,
+        type: 'file',
+      }),
+    ]);
+    await fs.promises.rename(file, rollback);
+    originalMoved = true;
+    await Promise.all([
+      requireSafeLocalPath(workspaceRoot, rollback, { type: 'file' }),
+      requireSafeLocalPath(workspaceRoot, temporary, { type: 'file' }),
+      requireSafeLocalPath(workspaceRoot, file, {
+        allowMissingLeaf: true,
+        type: 'file',
+      }),
+    ]);
+    await fs.promises.rename(temporary, file);
+    await fs.promises.rm(rollback, { force: true });
+  } catch (error) {
+    await fs.promises.rm(temporary, { force: true }).catch(() => undefined);
+    if (originalMoved) {
+      await fs.promises.rename(rollback, file).catch(() => undefined);
+    }
+    throw error;
+  }
+}
+
+async function requireRecoverySnapshot(session: ConflictSession): Promise<void> {
+  if (!session.record.localSnapshot) {
+    throw new Error('recovery_unavailable');
+  }
+  try {
+    await requireSafeLocalPath(
+      path.dirname(session.record.reportFile),
+      session.record.localSnapshot,
+      { type: 'file' }
+    );
+  } catch (error) {
+    if (error instanceof SafeLocalPathError) {
+      throw bridgeError('recovery_unavailable', error);
+    }
+    throw error;
+  }
+}
+
+async function submitLocalCandidate(
+  session: ConflictSession,
+  context: FileTransferContext,
+  request: Extract<ConflictBridgeRequest, { kind: 'submit_local' }>
+): Promise<void> {
+  if (request.expectedRevision !== session.record.revision) {
+    throw new Error('stale');
+  }
+  const bytes = Buffer.byteLength(request.content, 'utf8');
+  if (bytes > MAX_CANDIDATE_BYTES || request.content.includes('\0')) {
+    throw new Error('invalid_content');
+  }
+  const stat = await requireMutableLocalFile(session);
+  const currentHash = await hashFile(session.record.localFile);
+  if (
+    currentHash !== session.record.local.sha256 ||
+    currentHash !== request.expectedLocalSha256
+  ) {
+    await revalidateConflict(session, context);
+    throw new Error('stale');
+  }
+  await captureLocalRecovery(session, session.record.localFile);
+  if (!session.record.localSnapshot) {
+    await writeConflictRecord(session.root, session.record);
+    throw new Error('recovery_unavailable');
+  }
+  await requireRecoverySnapshot(session);
+  suppressWatcherFor(session.record.localFile, 30_000);
+  try {
+    await replaceLocalAtomically(
+      session.record.localFile,
+      request.content,
+      stat.mode,
+      session.record.workspaceRoot
+    );
+  } catch (error) {
+    if (error instanceof SafeLocalPathError) {
+      throw bridgeError('unsupported_file', error);
+    }
+    throw error;
+  }
+  const updated = await requireMutableLocalFile(session);
+  const candidateHash = await hashFile(session.record.localFile);
+  session.record.revision += 1;
+  session.record.local = {
+    mtime: updated.mtimeMs,
+    size: updated.size,
+    sha256: candidateHash,
+  };
+  session.record.candidate = {
+    source: 'submitted',
+    sha256: candidateHash,
+    preparedAt: now(),
+  };
+  session.record.staleReason = undefined;
+  context.sourceMtime = updated.mtimeMs;
+  context.sourceSize = updated.size;
+  await updateSession(session, 'pending');
+}
+
+async function acknowledgeLocalCandidate(
+  session: ConflictSession,
+  context: FileTransferContext,
+  request: Extract<ConflictBridgeRequest, { kind: 'acknowledge_local' }>
+): Promise<void> {
+  if (request.expectedRevision !== session.record.revision) {
+    throw new Error('stale');
+  }
+  const stat = await requireMutableLocalFile(session);
+  await requireRecoverySnapshot(session);
+  const hash = await hashFile(session.record.localFile);
+  if (hash !== request.expectedLocalSha256) {
+    await revalidateConflict(session, context);
+    throw new Error('stale');
+  }
+  const remoteValidation = await revalidateConflict(session, context, hash);
+  if (!remoteValidation.valid) {
+    throw new Error('stale');
+  }
+  session.record.revision += 1;
+  session.record.local = {
+    mtime: stat.mtimeMs,
+    size: stat.size,
+    sha256: hash,
+  };
+  session.record.candidate = {
+    source: 'acknowledged',
+    sha256: hash,
+    preparedAt: now(),
+  };
+  session.record.staleReason = undefined;
+  context.sourceMtime = stat.mtimeMs;
+  context.sourceSize = stat.size;
+  await updateSession(session, 'pending');
 }
 
 async function respond(
@@ -677,14 +1092,31 @@ async function acceptDecision(
   source: ConflictDecisionSource,
   expectedRevision: number,
   requestId?: string
-): Promise<{ accepted: boolean; stale: boolean }> {
+): Promise<{ accepted: boolean; stale: boolean; error?: string }> {
+  if (isTerminal(session.record.status) || session.record.status === 'uploading') {
+    return { accepted: false, stale: false, error: 'already_resolved' };
+  }
   if (expectedRevision !== session.record.revision) {
     return { accepted: false, stale: true };
+  }
+
+  if (
+    source === 'mcp' &&
+    action !== 'cancel' &&
+    !session.record.candidate
+  ) {
+    return { accepted: false, stale: false, error: 'candidate_required' };
   }
 
   if (action !== 'cancel') {
     const validation = await revalidateConflict(session, context);
     if (!validation.valid) {
+      return { accepted: false, stale: true };
+    }
+    if (
+      source === 'mcp' &&
+      session.record.candidate?.sha256 !== session.record.local.sha256
+    ) {
       return { accepted: false, stale: true };
     }
   }
@@ -702,6 +1134,7 @@ async function acceptDecision(
       decision,
       result: { cancelledAt: acceptedAt },
     });
+    releaseConflictPath(session.record.localFile);
   } else {
     await updateSession(session, 'resolving', { decision });
   }
@@ -751,52 +1184,111 @@ export async function waitForConflictDecision(
 
     const requests = await pendingRequests(session);
     for (const envelope of requests) {
-      const request = envelope.request;
-      if (request.version !== CONFLICT_PROTOCOL_VERSION) {
-        await respond(envelope, session, { accepted: false, error: 'unsupported_protocol' });
+      const parsed = conflictBridgeRequestSchema.safeParse(envelope.request);
+      if (!parsed.success || parsed.data.requestId !== envelope.requestId) {
+        await respond(envelope, session, {
+          accepted: false,
+          error: 'invalid_request',
+          message: 'The request did not match the conflict bridge contract.',
+        });
+        continue;
+      }
+      const request = parsed.data;
+      if (request.capability !== bridgeCapability) {
+        await respond(envelope, session, {
+          accepted: false,
+          error: 'unauthorized',
+          message: 'The request capability is invalid or expired.',
+        });
         continue;
       }
       if (request.expectedRevision !== session.record.revision) {
         await respond(envelope, session, { accepted: false, stale: true });
         continue;
       }
-      if (request.kind === 'open_diff') {
+
+      if (request.kind === 'submit_local' || request.kind === 'acknowledge_local') {
         try {
-          await openNativeDiff(session, context);
-          await respond(envelope, session, { accepted: true, opened: true });
+          if (request.kind === 'submit_local') {
+            await submitLocalCandidate(session, context, request);
+          } else {
+            await acknowledgeLocalCandidate(session, context, request);
+          }
+          await respond(envelope, session, {
+            accepted: true,
+            candidateSha256: session.record.candidate?.sha256,
+          });
         } catch (error) {
+          const detail = cleanError(error);
+          const knownErrors = new Set([
+            'stale',
+            'dirty_buffer',
+            'unsupported_file',
+            'invalid_content',
+            'recovery_unavailable',
+            'terminal_or_resolving',
+          ]);
+          const code = knownErrors.has(detail) ? detail : 'write_failed';
+          if (code === 'write_failed') {
+            logger.warn(
+              `Could not prepare local conflict candidate for ${path.basename(
+                session.record.localFile
+              )}: ${detail}`
+            );
+          }
           await respond(envelope, session, {
             accepted: false,
-            error: cleanError(error),
+            stale: code === 'stale',
+            error: code,
+            message:
+              code === 'dirty_buffer'
+                ? 'Save or revert the dirty editor buffer before preparing a candidate.'
+                : code === 'recovery_unavailable'
+                  ? 'A required local recovery snapshot could not be retained within the conflict-state limits.'
+                  : code === 'write_failed'
+                    ? 'The extension could not atomically replace the local file; the original file was restored.'
+                  : undefined,
           });
         }
-        continue;
-      }
-      if (
-        request.kind !== 'resolve' ||
-        !request.action ||
-        !['overwrite', 'overwrite_all', 'cancel'].includes(request.action)
-      ) {
-        await respond(envelope, session, { accepted: false, error: 'invalid_request' });
         continue;
       }
 
       const accepted = await acceptDecision(
         session,
         context,
-        request.action,
+        request.action === 'upload' ? 'overwrite' : 'cancel',
         'mcp',
         request.expectedRevision,
         envelope.requestId
       );
       if (!accepted.accepted) {
-        await respond(envelope, session, { accepted: false, stale: accepted.stale });
+        await respond(envelope, session, {
+          accepted: false,
+          stale: accepted.stale,
+          error: accepted.error,
+          message:
+            accepted.error === 'candidate_required'
+              ? 'Submit or acknowledge resolved local content before requesting upload.'
+              : undefined,
+        });
         continue;
       }
 
       closeManualUi(session);
-      await respond(envelope, session, { accepted: true, action: request.action });
-      return request.action;
+      await respond(envelope, session, { accepted: true });
+      const superseded = (await pendingRequests(session)).filter(
+        item => item.requestId !== envelope.requestId
+      );
+      await Promise.all(
+        superseded.map(item =>
+          respond(item, session, {
+            accepted: false,
+            error: 'already_resolved',
+            message: 'Another manual or agent decision already won this conflict.',
+          })
+        )
+      );
+      return request.action === 'upload' ? 'overwrite' : 'cancel';
     }
 
     await delay(REQUEST_POLL_MS);
@@ -842,6 +1334,9 @@ async function updateConflictByReference(
   }
   const session = { root: reference.root, record };
   await updateSession(session, status, changes);
+  if (isTerminal(status)) {
+    releaseConflictPath(record.localFile);
+  }
 }
 
 export async function markConflictUploaded(reference: ConflictReportRef): Promise<void> {

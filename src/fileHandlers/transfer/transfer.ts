@@ -216,6 +216,8 @@ async function transferFile(
 
   const transferOption = {
     ...config.transferOption,
+    mtime: lifecycleContext.sourceMtime,
+    sourceSize: lifecycleContext.sourceSize,
     backupPriority: lifecycleContext.conflictOverwrite ? 'conflict' as const : 'normal' as const,
     onTransferSuccess: config.transferOption.afterFileTransfer
       ? () => config.transferOption.afterFileTransfer!(lifecycleContext)

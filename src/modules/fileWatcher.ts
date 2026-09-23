@@ -8,6 +8,7 @@ import app from '../app';
 import StatusBarItem from '../ui/statusBarItem';
 import { getRunningTransformTasks } from './serviceManager';
 import { isWatcherSuppressed } from './watcherSuppression';
+import { isConflictPathActive } from '../fileHandlers/transfer/conflictBridge';
 
 const watchers: {
   [x: string]: vscode.FileSystemWatcher;
@@ -74,6 +75,10 @@ function uploadHandler(uri: vscode.Uri, ignore?: (fsPath: string) => boolean) {
   }
 
   if (ignore && ignore(uri.fsPath)) {
+    return;
+  }
+  if (isConflictPathActive(uri.fsPath)) {
+    logger.trace(`[watcher/updated] skipped (active conflict) ${uri.fsPath}`);
     return;
   }
 

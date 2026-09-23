@@ -1,5 +1,6 @@
 **
 !dist/extension.js
+!dist/mcp-server.js
 !package.json
 !README.md
 !CHANGELOG.md
@@ -18,3 +19,4 @@
 !docs/options.md
 !docs/setting.md
 !docs/sftp_configuration.md
+!resources/mcp/conflict-resolution-instructions.md

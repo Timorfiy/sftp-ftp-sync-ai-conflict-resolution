@@ -22,7 +22,9 @@ export interface StoredConflictRecord {
   sessionId: string;
   reportFile: string;
   remoteSnapshot: string | null;
+  localSnapshot?: string | null;
   snapshotError?: string;
+  localSnapshotError?: string;
   result?: {
     uploadedAt?: string;
     cancelledAt?: string;
@@ -554,6 +556,12 @@ export class ConflictStateStore {
         record.snapshotError = 'Remote snapshot was interrupted or is no longer available.';
         await atomicWriteJson(reportFile, record);
       }
+      if (record.localSnapshot && !(await pathExists(record.localSnapshot))) {
+        record.localSnapshot = null;
+        record.localSnapshotError =
+          'Local recovery snapshot was interrupted or is no longer available.';
+        await atomicWriteJson(reportFile, record);
+      }
       await this.removeUnreferencedSnapshots(fullPath, record);
       if (
         isActiveConflictStatus(record.status) &&
@@ -642,13 +650,20 @@ export class ConflictStateStore {
   ): Promise<void> {
     for (const name of await fs.promises.readdir(directory)) {
       const isTemporary =
-        name.startsWith('remote-check-') || name.endsWith('.snapshot.tmp');
-      const isPermanent = /^remote(?:-[0-9a-f-]+)?\.[^\\/]+$/i.test(name);
+        name.startsWith('remote-check-') ||
+        name.startsWith('local-recovery-') && name.endsWith('.tmp') ||
+        name.endsWith('.snapshot.tmp');
+      const isPermanent =
+        /^remote(?:-[0-9a-f-]+)?\.[^\\/]+$/i.test(name) ||
+        /^local-recovery-[0-9a-f-]+\.[^\\/]+$/i.test(name);
       if (!isTemporary && !isPermanent) {
         continue;
       }
       const candidate = path.join(directory, name);
       if (record.remoteSnapshot && path.resolve(candidate) === path.resolve(record.remoteSnapshot)) {
+        continue;
+      }
+      if (record.localSnapshot && path.resolve(candidate) === path.resolve(record.localSnapshot)) {
         continue;
       }
       await fs.promises.rm(candidate, { force: true });

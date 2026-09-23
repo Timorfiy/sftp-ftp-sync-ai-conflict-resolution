@@ -1,4 +1,4 @@
-import { isLocalPathAtOrUnder } from '../helper';
+import { isLocalPathAtOrUnder } from '../helper/paths';
 
 /**
  * Paths the file watcher should ignore because something else is handling them.

@@ -8,6 +8,9 @@ jest.mock('vscode', () => ({
   commands: {
     executeCommand: jest.fn(async () => undefined),
   },
+  workspace: {
+    textDocuments: [],
+  },
   window: {
     showErrorMessage,
     createQuickPick: jest.fn(() => {
@@ -66,6 +69,7 @@ import { randomUUID } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as fileOperations from '../../../core/fileBaseOperations';
+import * as vscode from 'vscode';
 import { FileType } from '../../../core/fs/fileSystem';
 import { TransferDirection } from '../../../core/transferTask';
 import {
@@ -73,7 +77,9 @@ import {
   atomicWriteJson,
   captureConflict,
   disposeConflictBridge,
+  getConflictMcpConfiguration,
   initializeConflictBridge,
+  isConflictPathActive,
   markConflictFailed,
   markConflictUploaded,
   markConflictUploading,
@@ -87,12 +93,39 @@ function delay(milliseconds: number) {
   return new Promise(resolve => setTimeout(resolve, milliseconds));
 }
 
-async function fixture() {
+async function waitForJson(file: string): Promise<any> {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    if (fs.existsSync(file)) {
+      return JSON.parse(await fs.promises.readFile(file, 'utf8'));
+    }
+    await delay(20);
+  }
+  throw new Error(`Timed out waiting for ${path.basename(file)}`);
+}
+
+async function sendRequest(
+  session: any,
+  capability: string,
+  request: Record<string, unknown>
+): Promise<any> {
+  const requestId = randomUUID();
+  const directory = path.dirname(session.record.reportFile);
+  await atomicWriteJson(path.join(directory, 'requests', `${requestId}.json`), {
+    version: 3,
+    requestId,
+    capability,
+    createdAt: new Date().toISOString(),
+    ...request,
+  });
+  return waitForJson(path.join(directory, 'responses', `${requestId}.json`));
+}
+
+async function fixture(localRelative = 'local.txt') {
   const workspace = path.join(testRoot, randomUUID());
   const globalStorageRoot = path.join(testRoot, randomUUID(), 'global');
-  const localFile = path.join(workspace, 'local.txt');
+  const localFile = path.join(workspace, localRelative);
   const remoteFile = path.join(workspace, 'fake-remote.txt');
-  await fs.promises.mkdir(workspace, { recursive: true });
+  await fs.promises.mkdir(path.dirname(localFile), { recursive: true });
   await fs.promises.writeFile(localFile, 'local content\n');
   await fs.promises.writeFile(remoteFile, 'remote content\n');
   await initializeConflictBridge([workspace], '3.5.0-test', { globalStorageRoot });
@@ -118,6 +151,16 @@ async function fixture() {
   };
   const remote = await targetFs.lstat(remoteFile);
   return { workspace, globalStorageRoot, localFile, remoteFile, context, remote };
+}
+
+async function createDirectoryLink(target: string, link: string): Promise<void> {
+  await fs.promises.mkdir(target, { recursive: true });
+  await fs.promises.rm(link, { recursive: true, force: true });
+  await fs.promises.symlink(
+    target,
+    link,
+    process.platform === 'win32' ? 'junction' : 'dir'
+  );
 }
 
 describe('Kent conflict bridge coordinator', () => {
@@ -163,17 +206,36 @@ describe('Kent conflict bridge coordinator', () => {
       'remote-changed',
       data.remote
     );
+    expect(isConflictPathActive(data.localFile)).toBe(true);
     const decisionPromise = waitForConflictDecision(session, data.context);
     await delay(20);
-    const requestId = `request-${randomUUID()}`;
+    const capability = getConflictMcpConfiguration(
+      '3.5.0-test',
+      new Map()
+    ).capability;
     const requests = path.join(path.dirname(session.record.reportFile), 'requests');
-    await atomicWriteJson(path.join(requests, `${requestId}.json`), {
-      version: 2,
-      requestId,
-      kind: 'resolve',
+    const responses = path.join(path.dirname(session.record.reportFile), 'responses');
+    const acknowledgeId = randomUUID();
+    await atomicWriteJson(path.join(requests, `${acknowledgeId}.json`), {
+      version: 3,
+      requestId: acknowledgeId,
+      capability,
+      kind: 'acknowledge_local',
       expectedRevision: 1,
-      action: 'overwrite',
-      source: 'mcp',
+      expectedLocalSha256: session.record.local.sha256,
+      createdAt: new Date().toISOString(),
+    });
+    const acknowledge = await waitForJson(path.join(responses, `${acknowledgeId}.json`));
+    expect(acknowledge.accepted).toBe(true);
+
+    const requestId = randomUUID();
+    await atomicWriteJson(path.join(requests, `${requestId}.json`), {
+      version: 3,
+      requestId,
+      capability,
+      kind: 'resolve',
+      expectedRevision: acknowledge.revision,
+      action: 'upload',
       createdAt: new Date().toISOString(),
     });
 
@@ -194,6 +256,297 @@ describe('Kent conflict bridge coordinator', () => {
     record = JSON.parse(await fs.promises.readFile(session.record.reportFile, 'utf8'));
     expect(record.status).toBe('uploaded');
     expect(record.result.uploadedAt).toBeTruthy();
+  });
+
+  test('MCP upload requires a candidate and submitted text is atomic, recoverable, and local-only', async () => {
+    const data = await fixture(path.join('nested', 'local.txt'));
+    const beforeRemote = await fs.promises.readFile(data.remoteFile);
+    const beforeLocal = await fs.promises.readFile(data.localFile);
+    const beforeMode = (await fs.promises.lstat(data.localFile)).mode & 0o777;
+    const session = await captureConflict(
+      data.workspace,
+      'batch-submit',
+      data.context,
+      'remote-changed',
+      data.remote
+    );
+    const capability = getConflictMcpConfiguration('3.5.0-test', new Map()).capability;
+    const decisionPromise = waitForConflictDecision(session, data.context);
+    await delay(20);
+
+    const missingCandidate = await sendRequest(session, capability, {
+      kind: 'resolve',
+      expectedRevision: 1,
+      action: 'upload',
+    });
+    expect(missingCandidate).toMatchObject({
+      accepted: false,
+      error: 'candidate_required',
+      revision: 1,
+    });
+
+    const submitted = await sendRequest(session, capability, {
+      kind: 'submit_local',
+      expectedRevision: 1,
+      expectedLocalSha256: session.record.local.sha256,
+      content: 'agent merged content\n',
+    });
+    expect(submitted).toMatchObject({ accepted: true, revision: 2 });
+    expect(await fs.promises.readFile(data.localFile, 'utf8')).toBe(
+      'agent merged content\n'
+    );
+    expect((await fs.promises.lstat(data.localFile)).mode & 0o777).toBe(beforeMode);
+    expect(await fs.promises.readFile(session.record.localSnapshot!)).toEqual(beforeLocal);
+    expect(await fs.promises.readFile(data.remoteFile)).toEqual(beforeRemote);
+
+    const resolved = await sendRequest(session, capability, {
+      kind: 'resolve',
+      expectedRevision: 2,
+      action: 'upload',
+    });
+    expect(resolved.accepted).toBe(true);
+    await expect(decisionPromise).resolves.toBe('overwrite');
+    const reference = await markConflictUploading(session);
+    await markConflictUploaded(reference);
+    expect(isConflictPathActive(data.localFile)).toBe(false);
+  });
+
+  test('dirty buffers, bad capabilities, and recovery budget exhaustion reject submission', async () => {
+    const data = await fixture();
+    const session = await captureConflict(
+      data.workspace,
+      'batch-rejections',
+      data.context,
+      'remote-changed',
+      data.remote
+    );
+    const capability = getConflictMcpConfiguration('3.5.0-test', new Map()).capability;
+    const decisionPromise = waitForConflictDecision(session, data.context);
+    await delay(20);
+
+    const unauthorized = await sendRequest(session, `${capability}x`, {
+      kind: 'submit_local',
+      expectedRevision: 1,
+      expectedLocalSha256: session.record.local.sha256,
+      content: 'blocked',
+    });
+    expect(unauthorized).toMatchObject({ accepted: false, error: 'unauthorized' });
+
+    (vscode.workspace.textDocuments as any[]).push({
+      isClosed: false,
+      isDirty: true,
+      uri: { fsPath: data.localFile },
+    });
+    const dirty = await sendRequest(session, capability, {
+      kind: 'submit_local',
+      expectedRevision: 1,
+      expectedLocalSha256: session.record.local.sha256,
+      content: 'blocked',
+    });
+    expect(dirty).toMatchObject({ accepted: false, error: 'dirty_buffer' });
+    (vscode.workspace.textDocuments as any[]).length = 0;
+
+    const cancelled = await sendRequest(session, capability, {
+      kind: 'resolve',
+      expectedRevision: 1,
+      action: 'cancel',
+    });
+    expect(cancelled.accepted).toBe(true);
+    await expect(decisionPromise).resolves.toBe('cancel');
+
+    await initializeConflictBridge([data.workspace], '3.5.0-test', {
+      globalStorageRoot: path.join(testRoot, randomUUID(), 'tiny-global'),
+      policy: { maxSnapshotBytes: 1, maxTotalBytes: 2 },
+    });
+    const limited = await captureConflict(
+      data.workspace,
+      'batch-budget',
+      data.context,
+      'remote-changed',
+      data.remote
+    );
+    const limitedCapability = getConflictMcpConfiguration(
+      '3.5.0-test',
+      new Map()
+    ).capability;
+    const limitedDecision = waitForConflictDecision(limited, data.context);
+    await delay(20);
+    const budget = await sendRequest(limited, limitedCapability, {
+      kind: 'submit_local',
+      expectedRevision: 1,
+      expectedLocalSha256: limited.record.local.sha256,
+      content: 'blocked',
+    });
+    expect(budget).toMatchObject({ accepted: false, error: 'recovery_unavailable' });
+    const limitedCancel = await sendRequest(limited, limitedCapability, {
+      kind: 'resolve',
+      expectedRevision: 1,
+      action: 'cancel',
+    });
+    expect(limitedCancel.accepted).toBe(true);
+    await expect(limitedDecision).resolves.toBe('cancel');
+  });
+
+  test('failed atomic replacement rolls the local file back and does not create a candidate', async () => {
+    const data = await fixture();
+    const original = await fs.promises.readFile(data.localFile);
+    const session = await captureConflict(
+      data.workspace,
+      'batch-rollback',
+      data.context,
+      'remote-changed',
+      data.remote
+    );
+    const capability = getConflictMcpConfiguration('3.5.0-test', new Map()).capability;
+    const decisionPromise = waitForConflictDecision(session, data.context);
+    await delay(20);
+    const originalRename = fs.promises.rename.bind(fs.promises);
+    const rename = jest.spyOn(fs.promises, 'rename').mockImplementation(
+      async (source: fs.PathLike, destination: fs.PathLike) => {
+      if (
+        String(source).endsWith('.tmp') &&
+        path.resolve(String(destination)) === path.resolve(data.localFile)
+      ) {
+        throw new Error('induced atomic replace failure');
+      }
+      return originalRename(source, destination);
+      }
+    );
+    const response = await sendRequest(session, capability, {
+      kind: 'submit_local',
+      expectedRevision: 1,
+      expectedLocalSha256: session.record.local.sha256,
+      content: 'must roll back',
+    });
+    rename.mockRestore();
+    expect(response.accepted).toBe(false);
+    expect(await fs.promises.readFile(data.localFile)).toEqual(original);
+    expect(session.record.candidate).toBeUndefined();
+    const cancel = await sendRequest(session, capability, {
+      kind: 'resolve',
+      expectedRevision: 1,
+      action: 'cancel',
+    });
+    expect(cancel.accepted).toBe(true);
+    await expect(decisionPromise).resolves.toBe('cancel');
+  });
+
+  test('symbolic-link local files are rejected before an extension-mediated write', async () => {
+    const data = await fixture();
+    const session = await captureConflict(
+      data.workspace,
+      'batch-symlink',
+      data.context,
+      'remote-changed',
+      data.remote
+    );
+    const capability = getConflictMcpConfiguration('3.5.0-test', new Map()).capability;
+    const decisionPromise = waitForConflictDecision(session, data.context);
+    await delay(20);
+    const originalLstat = fs.promises.lstat.bind(fs.promises);
+    const lstat = jest.spyOn(fs.promises, 'lstat').mockImplementation(async file => {
+      const stat = await originalLstat(file);
+      if (path.resolve(String(file)) !== path.resolve(data.localFile)) {
+        return stat;
+      }
+      return {
+        ...stat,
+        isFile: () => false,
+        isSymbolicLink: () => true,
+      } as fs.Stats;
+    });
+    const response = await sendRequest(session, capability, {
+      kind: 'submit_local',
+      expectedRevision: 1,
+      expectedLocalSha256: session.record.local.sha256,
+      content: 'blocked',
+    });
+    lstat.mockRestore();
+    expect(response).toMatchObject({ accepted: false, error: 'unsupported_file' });
+    const cancel = await sendRequest(session, capability, {
+      kind: 'resolve',
+      expectedRevision: 1,
+      action: 'cancel',
+    });
+    expect(cancel.accepted).toBe(true);
+    await expect(decisionPromise).resolves.toBe('cancel');
+  });
+
+  test('ancestor directory links reject capture before state or remote changes', async () => {
+    const data = await fixture();
+    const outside = path.join(testRoot, randomUUID(), 'outside-capture');
+    const linkedDirectory = path.join(data.workspace, 'linked');
+    const linkedFile = path.join(linkedDirectory, 'secret.txt');
+    await fs.promises.mkdir(outside, { recursive: true });
+    await fs.promises.writeFile(path.join(outside, 'secret.txt'), 'outside original\n');
+    await createDirectoryLink(outside, linkedDirectory);
+    const linkedStat = await fs.promises.stat(linkedFile);
+    const context = {
+      ...data.context,
+      srcFsPath: linkedFile,
+      sourceMtime: linkedStat.mtimeMs,
+      sourceSize: linkedStat.size,
+    };
+    const beforeRemote = await fs.promises.readFile(data.remoteFile);
+
+    await expect(
+      captureConflict(
+        data.workspace,
+        'batch-ancestor-link-capture',
+        context,
+        'remote-changed',
+        data.remote
+      )
+    ).rejects.toThrow('unsupported_file');
+    expect(await fs.promises.readFile(linkedFile, 'utf8')).toBe('outside original\n');
+    expect(await fs.promises.readFile(data.remoteFile)).toEqual(beforeRemote);
+    expect(await fs.promises.readdir(outside)).toEqual(['secret.txt']);
+  });
+
+  test('ancestor directory links reject submit and acknowledge without outside writes', async () => {
+    const data = await fixture(path.join('nested', 'local.txt'));
+    const originalLocal = await fs.promises.readFile(data.localFile);
+    const beforeRemote = await fs.promises.readFile(data.remoteFile);
+    const session = await captureConflict(
+      data.workspace,
+      'batch-ancestor-link-mutation',
+      data.context,
+      'remote-changed',
+      data.remote
+    );
+    const capability = getConflictMcpConfiguration('3.5.0-test', new Map()).capability;
+    const decisionPromise = waitForConflictDecision(session, data.context);
+    const outside = path.join(testRoot, randomUUID(), 'outside-mutation');
+    await fs.promises.mkdir(outside, { recursive: true });
+    await fs.promises.writeFile(path.join(outside, 'local.txt'), originalLocal);
+    await createDirectoryLink(outside, path.dirname(data.localFile));
+    await delay(20);
+
+    const submitted = await sendRequest(session, capability, {
+      kind: 'submit_local',
+      expectedRevision: 1,
+      expectedLocalSha256: session.record.local.sha256,
+      content: 'must stay inside workspace\n',
+    });
+    expect(submitted).toMatchObject({ accepted: false, error: 'unsupported_file' });
+
+    const acknowledged = await sendRequest(session, capability, {
+      kind: 'acknowledge_local',
+      expectedRevision: 1,
+      expectedLocalSha256: session.record.local.sha256,
+    });
+    expect(acknowledged).toMatchObject({ accepted: false, error: 'unsupported_file' });
+    expect(await fs.promises.readFile(path.join(outside, 'local.txt'))).toEqual(originalLocal);
+    expect(await fs.promises.readFile(data.remoteFile)).toEqual(beforeRemote);
+    expect(await fs.promises.readdir(outside)).toEqual(['local.txt']);
+
+    const cancelled = await sendRequest(session, capability, {
+      kind: 'resolve',
+      expectedRevision: 1,
+      action: 'cancel',
+    });
+    expect(cancelled).toMatchObject({ accepted: true, status: 'cancelled' });
+    await expect(decisionPromise).resolves.toBe('cancel');
   });
 
   test('transfer error callback records failed and never uploaded', async () => {
@@ -228,6 +581,57 @@ describe('Kent conflict bridge coordinator', () => {
     expect(session.record.status).toBe('pending');
     expect(session.record.revision).toBe(2);
     expect(session.record.staleReason).toContain('local-changed');
+  });
+
+  test('remote deletion rejects an inspected MCP candidate as stale without recreating it', async () => {
+    const data = await fixture();
+    const session = await captureConflict(
+      data.workspace,
+      'batch-remote-deleted',
+      data.context,
+      'remote-changed',
+      data.remote
+    );
+    const capability = getConflictMcpConfiguration('3.5.0-test', new Map()).capability;
+    const decisionPromise = waitForConflictDecision(session, data.context);
+    await delay(20);
+
+    const submitted = await sendRequest(session, capability, {
+      kind: 'submit_local',
+      expectedRevision: 1,
+      expectedLocalSha256: session.record.local.sha256,
+      content: 'candidate prepared before remote deletion\n',
+    });
+    expect(submitted).toMatchObject({ accepted: true, revision: 2 });
+    await fs.promises.unlink(data.remoteFile);
+
+    const stale = await sendRequest(session, capability, {
+      kind: 'resolve',
+      expectedRevision: 2,
+      action: 'upload',
+    });
+    expect(stale).toMatchObject({
+      accepted: false,
+      stale: true,
+      revision: 3,
+    });
+    expect(session.record.staleReason).toBe('remote-missing');
+    expect(session.record.remoteMissingAt).toBeTruthy();
+    expect(session.record.candidate).toBeUndefined();
+    expect(fs.existsSync(data.remoteFile)).toBe(false);
+
+    await expect(revalidateConflict(session, data.context)).resolves.toMatchObject({
+      valid: false,
+      revision: 3,
+    });
+    const cancelled = await sendRequest(session, capability, {
+      kind: 'resolve',
+      expectedRevision: 3,
+      action: 'cancel',
+    });
+    expect(cancelled.accepted).toBe(true);
+    await expect(decisionPromise).resolves.toBe('cancel');
+    expect(fs.existsSync(data.remoteFile)).toBe(false);
   });
 
   test('unknown remote timestamp is re-downloaded and hash change rejects stale decision', async () => {
@@ -357,15 +761,20 @@ describe('Kent conflict bridge coordinator', () => {
     );
     const decisionPromise = waitForConflictDecision(session, data.context);
     await delay(20);
-    const requestId = `request-${randomUUID()}`;
+    const requestId = randomUUID();
+    const capability = getConflictMcpConfiguration(
+      '3.5.0-test',
+      new Map()
+    ).capability;
     const directory = path.dirname(session.record.reportFile);
     await atomicWriteJson(path.join(directory, 'requests', `${requestId}.json`), {
-      version: 2,
+      version: 3,
       requestId,
+      capability,
       kind: 'resolve',
       expectedRevision: 1,
       action: 'cancel',
-      source: 'mcp',
+      createdAt: new Date().toISOString(),
     });
     mockQuickPicks[0].accept('Overwrite');
 

@@ -23,6 +23,7 @@ import {
   COMMAND_TRANSFER_QUEUE_CANCEL,
   COMMAND_TRANSFER_QUEUE_CLEAR,
 } from './constants';
+import { registerConflictMcpProvider } from './mcp/registration';
 
 async function setupWorkspaceFolder(dir) {
   const configs = await tryLoadConfigs(dir);
@@ -60,6 +61,7 @@ export async function activate(context: vscode.ExtensionContext) {
     String(context.extension.packageJSON.version || '0.1.0'),
     { globalStorageRoot: context.globalStorageUri.fsPath }
   );
+  context.subscriptions.push(registerConflictMcpProvider(context, workspaceFolders));
 
   setContextValue('enabled', true);
   app.sftpBarItem.show();
