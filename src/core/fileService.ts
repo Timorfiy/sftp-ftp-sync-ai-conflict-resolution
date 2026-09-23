@@ -15,6 +15,7 @@ import Scheduler from './scheduler';
 import { createRemoteIfNoneExist, removeRemoteFs } from './remoteFs';
 import TransferTask from './transferTask';
 import localFs from './localFs';
+import { isConflictStatePath } from '../fileHandlers/transfer/conflictStateIsolation';
 
 type Omit<T, U> = Pick<T, Exclude<keyof T, U>>;
 
@@ -747,8 +748,19 @@ export default class FileService {
 
     const ignore = Ignore.from(ignoreConfig);
     const ignoreFunc = fsPath => {
+      if (isConflictStatePath(fsPath)) {
+        return true;
+      }
       // vscode will always return path with / as separator
       const normalizedPath = path.normalize(fsPath);
+      const localRelativePath = path.relative(localContext, normalizedPath);
+      const legacyConflictPrefix = path.join('.kent-tmp', 'sftp-conflicts');
+      if (
+        localRelativePath === legacyConflictPrefix ||
+        localRelativePath.startsWith(`${legacyConflictPrefix}${path.sep}`)
+      ) {
+        return true;
+      }
       let relativePath;
       if (normalizedPath.indexOf(localContext) === 0) {
         // local path

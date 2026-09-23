@@ -59,6 +59,10 @@ jest.mock('../../src/modules/secrets', () => ({
 const vscode = require('vscode');
 const FileService = require('../../src/core/fileService').default;
 const { createRemoteIfNoneExist, removeRemoteFs } = require('../../src/core/remoteFs');
+const {
+  clearConflictStateIsolation,
+  configureConflictStateIsolation,
+} = require('../../src/fileHandlers/transfer/conflictStateIsolation');
 
 function createConfig(overrides = {}) {
   return {
@@ -280,6 +284,10 @@ describe('FileService watcher profile override', () => {
 });
 
 describe('FileService .vscode safeguard', () => {
+  afterEach(() => {
+    clearConflictStateIsolation();
+  });
+
   test('.vscode is ignored even when user "ignore" is empty', () => {
     const service = new FileService('/tmp', '/tmp', createConfig({ ignore: [] }));
     const { ignore } = service.getConfig();
@@ -304,6 +312,27 @@ describe('FileService .vscode safeguard', () => {
     const { ignore } = service.getConfig();
 
     expect(ignore('/tmp/index.js')).toBe(false);
+  });
+
+  test('legacy conflict state stays ignored even when user rules negate it', () => {
+    const service = new FileService(
+      '/tmp',
+      '/tmp',
+      createConfig({
+        ignore: ['!.kent-tmp', '!.kent-tmp/**'],
+      })
+    );
+    const { ignore } = service.getConfig();
+
+    expect(ignore('/tmp/.kent-tmp/sftp-conflicts/record/conflict.json')).toBe(true);
+  });
+
+  test('registered global conflict storage is always ignored', () => {
+    configureConflictStateIsolation('/private/conflict-state-v2', ['/tmp']);
+    const service = new FileService('/tmp', '/tmp', createConfig({ ignore: [] }));
+    const { ignore } = service.getConfig();
+
+    expect(ignore('/private/conflict-state-v2/workspaces/bucket/conflict.json')).toBe(true);
   });
 });
 

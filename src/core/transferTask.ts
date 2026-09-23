@@ -8,6 +8,7 @@ import logger from '../logger';
 import { BackupConfig } from './fileService';
 import localFs from './localFs';
 import { createBackup, BackupPriority, BackupStorage } from './backup';
+import { isConflictStatePath } from '../fileHandlers/transfer/conflictStateIsolation';
 
 let hasWarnedModifedTimePermission = false;
 
@@ -117,6 +118,9 @@ export default class TransferTask implements Task {
   }
 
   async run() {
+    if (isConflictStatePath(this.localFsPath)) {
+      return;
+    }
     try {
       const src = this._srcFsPath;
       const target = this._targetFsPath;
