@@ -7,6 +7,7 @@ const createConflictLifecycle = jest.fn(() => ({}));
 const createTransferRetryOptions = jest.fn(() => ({}));
 const startSpinner = jest.fn();
 const stopSpinner = jest.fn();
+const reportError = jest.fn(async () => undefined);
 
 class MockUri {}
 
@@ -30,7 +31,7 @@ jest.mock('../../../modules/remoteBackups', () => ({
 }));
 jest.mock('../../../helper', () => ({
   withRetry: jest.fn(async action => action()),
-  reportError: jest.fn(async () => undefined),
+  reportError,
 }));
 jest.mock('../transfer', () => ({
   sync,
@@ -59,13 +60,14 @@ function createContext({
 } = {}) {
   const scheduler = {
     add: jest.fn(),
-    run: jest.fn(async () => ({
+    run: jest.fn(async (): Promise<any> => ({
       operationId: 'bulk-handler-test',
       completed: 0,
       failed: 0,
       cancelled: 0,
       notStarted: 0,
       warnings: 0,
+      items: [],
       isPartial: false,
     })),
   };
@@ -127,6 +129,7 @@ describe('bulk sync handler authorization boundary', () => {
     expect(refreshRemoteExplorer).not.toHaveBeenCalled();
     expect(startSpinner).not.toHaveBeenCalled();
     expect(stopSpinner).not.toHaveBeenCalled();
+    expect(reportError).not.toHaveBeenCalled();
   }
 
   test.each([undefined, 'Cancel'])(
@@ -169,6 +172,89 @@ describe('bulk sync handler authorization boundary', () => {
     expect(state.scheduler.run).toHaveBeenCalledTimes(1);
     expect(remoteBackupsRefresh).toHaveBeenCalledTimes(1);
     expect(refreshRemoteExplorer).toHaveBeenCalledTimes(1);
+    expect(startSpinner).toHaveBeenCalledTimes(1);
+    expect(stopSpinner).toHaveBeenCalledTimes(1);
+  });
+
+  test('confirmed Local → Remote preserves warning-only success and reports recovery risk', async () => {
+    const state = createContext({ backupEnabled: true });
+    showWarningMessage.mockResolvedValueOnce('Sync Local → Remote');
+    state.scheduler.run.mockResolvedValueOnce({
+      operationId: 'bulk-warning',
+      completed: 1,
+      failed: 0,
+      cancelled: 0,
+      notStarted: 0,
+      warnings: 1,
+      items: [
+        {
+          id: 'bulk-warning:1',
+          localPath: 'C:\\workspace\\site\\index.html',
+          sourcePath: 'C:\\workspace\\site\\index.html',
+          targetPath: '/var/www/site/index.html',
+          status: 'completed',
+          attempts: 1,
+          warnings: ['Previous remote text may not be recoverable.'],
+        },
+      ],
+      isPartial: true,
+    });
+
+    await expect(sync2Remote(state.context)).resolves.toBeUndefined();
+
+    expect(runHook.mock.calls.map(call => call[0])).toEqual(['preSync', 'postSync']);
+    expect(remoteBackupsRefresh).toHaveBeenCalledTimes(1);
+    expect(refreshRemoteExplorer).toHaveBeenCalledTimes(1);
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        failureId: 'backup.overwrite-failed',
+        context: expect.objectContaining({
+          partialResult: expect.objectContaining({
+            operationId: 'bulk-warning',
+            completed: 1,
+            warnings: 1,
+          }),
+        }),
+      }),
+      expect.objectContaining({
+        operation: 'sync local to remote',
+        protocol: 'sftp',
+        retrySafety: 'unsafe',
+      })
+    );
+    expect(startSpinner).toHaveBeenCalledTimes(1);
+    expect(stopSpinner).toHaveBeenCalledTimes(1);
+  });
+
+  test('confirmed Local → Remote preserves a partial result failure and stops success-only work', async () => {
+    const state = createContext();
+    const partialFailure = Object.assign(
+      new Error('Transfer operation finished with partial results.'),
+      {
+        failureId: 'operation.partial',
+        context: {
+          partialResult: {
+            operationId: 'bulk-partial',
+            completed: 1,
+            failed: 1,
+            cancelled: 0,
+            notStarted: 0,
+            warnings: 0,
+            items: [],
+            isPartial: true,
+          },
+        },
+      }
+    );
+    showWarningMessage.mockResolvedValueOnce('Sync Local → Remote');
+    state.scheduler.run.mockRejectedValueOnce(partialFailure);
+
+    await expect(sync2Remote(state.context)).rejects.toBe(partialFailure);
+
+    expect(runHook.mock.calls.map(call => call[0])).toEqual(['preSync']);
+    expect(remoteBackupsRefresh).not.toHaveBeenCalled();
+    expect(refreshRemoteExplorer).not.toHaveBeenCalled();
+    expect(reportError).not.toHaveBeenCalled();
     expect(startSpinner).toHaveBeenCalledTimes(1);
     expect(stopSpinner).toHaveBeenCalledTimes(1);
   });
