@@ -453,19 +453,38 @@ and prevents every later task from being accepted against a Windows command
 that silently skips 18 JS suites. R1 should follow immediately so all later
 editor and protocol checks run against a reproducible candidate artifact.
 
-## 8. Remaining Owner Decisions
+## 8. Owner Decisions
 
-The following are intentionally unresolved and must be decided before their
-dependent tasks are accepted:
+### Approved on 2026-09-23
 
-1. exact `package.json.name`, display name, and private command prefix under
-   publisher `Timorfiy`;
-2. first public version for the new standalone extension ID;
-3. default number of local backup versions and the conflict-state age/count/
-   size retention limits;
-4. whether every publish tag requires manual GitHub Environment approval or a
+- Package name: `sftp-sync-ai`; publisher: `Timorfiy`; extension ID:
+  `Timorfiy.sftp-sync-ai`.
+- Display name: `SFTP/FTP Sync + AI Conflict Resolution`.
+- Private command prefix: `sftpSyncAI` (case-sensitive, capital `AI`).
+- Initial standalone version: `0.1.0`. This does not authorize publication or
+  imply an update/migration from `PhilipDaoud.sftp-neo`.
+- Conflict-state retention: 90 days, at most 250 inactive/terminal or
+  restart-orphaned records per workspace, 500 MiB total state, and 100 MiB per
+  snapshot. Cleanup must preserve active decisions. If a new snapshot cannot
+  fit without deleting active state, it is unavailable with an explicit
+  storage-limit reason; working files must not be silently overwritten.
+  These limits concern internal conflict state, not ordinary local backups.
+- Autonomous coordination: at most three independent tasks run concurrently.
+  After independent review and mandatory verification pass, the coordinator
+  may accept results, integrate code, push/open PRs, and start ready dependent
+  tasks. Prerequisite code must be included in the source branch first.
+  Unresolved product choices, scope expansion, real external services, and
+  first publication still require owner decisions. Unperformed mandatory
+  checks are not silently waived.
+
+### Remaining decisions
+
+The following must be resolved before their dependent work:
+
+1. default number of local backup versions;
+2. whether every publish tag requires manual GitHub Environment approval or a
    protected/signed version tag itself authorizes publishing; and
-5. minimum VS Code and Cursor versions after selecting the MCP/tool
+3. minimum VS Code and Cursor versions after selecting the MCP/tool
    registration API. The current `engines.vscode: ^1.90.0` is not evidence that
    the future bundled tool flow works at that version.
 

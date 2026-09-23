@@ -83,3 +83,5 @@ export const COMMAND_REMOTE_BACKUPS_REFRESH = command('remoteBackups.refresh');
 export const COMMAND_REMOTE_BACKUPS_OPEN = command('remoteBackups.open');
 export const COMMAND_REMOTE_BACKUPS_RESTORE = command('remoteBackups.restore');
 export const COMMAND_REMOTE_BACKUPS_DELETE = command('remoteBackups.delete');
+
+export const COMMAND_CLEAR_CONFLICT_STATE = command('clearConflictState');

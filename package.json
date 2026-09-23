@@ -374,6 +374,11 @@
         "command": "sftpSyncAI.selectNetworkInterface",
         "title": "Select Network Interface",
         "category": "SFTP"
+      },
+      {
+        "command": "sftpSyncAI.clearConflictState",
+        "title": "Clear Conflict State",
+        "category": "SFTP/FTP Sync + AI Conflict Resolution"
       }
     ],
     "menus": {
@@ -388,6 +393,10 @@
         },
         {
           "command": "sftpSyncAI.cancelAllTransfer",
+          "when": "sftpSyncAI.enabled"
+        },
+        {
+          "command": "sftpSyncAI.clearConflictState",
           "when": "sftpSyncAI.enabled"
         },
         {
