@@ -54,6 +54,12 @@ jest.mock('../../src/core/remoteFs', () => ({
 
 jest.mock('../../src/modules/secrets', () => ({
   getCredential: jest.fn(() => Promise.resolve(undefined)),
+  createCredentialEndpoint: jest.fn(config => ({
+    transport: config.protocol,
+    host: config.host.trim().toLowerCase(),
+    port: config.port,
+    username: config.username,
+  })),
 }));
 
 const vscode = require('vscode');
@@ -132,6 +138,22 @@ describe('FileService plaintext password warning', () => {
       expect.stringContaining('plaintext password'),
       "Don't show again"
     );
+  });
+
+  test('plaintext warning never contains the configured password', async () => {
+    const password = 'plaintext-warning-canary-94865a';
+    const service = new FileService(
+      '/tmp',
+      '/tmp',
+      createConfig({ password })
+    );
+    await service.getRemoteFileSystem(createConfig({ password }));
+
+    const displayed = JSON.stringify(
+      vscode.window.showWarningMessage.mock.calls
+    );
+    expect(displayed).toContain('plaintext password');
+    expect(displayed).not.toContain(password);
   });
 
   test('does not show warning when sentinel value "prompt" is used', async () => {

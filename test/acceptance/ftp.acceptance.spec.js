@@ -20,6 +20,12 @@ jest.mock('../../src/host', () => ({
 jest.mock('../../src/modules/secrets', () => ({
   storeCredential: jest.fn(),
   getCredential: jest.fn(async () => undefined),
+  createCredentialEndpoint: jest.fn(config => ({
+    transport: config.protocol,
+    host: config.host.trim().toLowerCase(),
+    port: config.port,
+    username: config.username,
+  })),
 }));
 jest.mock('../../src/core/remote-client/hostKeyStore', () => ({
   checkHostKey: jest.fn(async () => true),

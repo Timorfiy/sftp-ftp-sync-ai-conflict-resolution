@@ -377,7 +377,7 @@ The four options worth understanding before switching on:
 
 ## 🔐 Security
 
-The extension stores passwords & passphrases in your **OS credential store** (macOS Keychain, Windows Credential Manager, Linux libsecret) via VS Code's Secret Storage API — so your `sftp.json` stays clean and commit-safe.
+The extension stores passwords and passphrases in your **OS credential store** (macOS Keychain, Windows Credential Manager, Linux libsecret) via VS Code's Secret Storage API — so your `sftp.json` stays clean and commit-safe. Saved values are isolated by protocol, normalized host, effective port, username, and credential type. Keyboard-interactive answers are never saved.
 
 **How to use it:**
 
@@ -396,7 +396,7 @@ The extension stores passwords & passphrases in your **OS credential store** (ma
 
 The same works for private key `passphrase`.
 
-> 🧹 Manage saved credentials anytime with `SFTP: Delete Saved Password`.
+> 🧹 Manage endpoint-specific saved credentials anytime with `SFTP: Delete Saved Password`. The picker shows protocol, host, effective port, username, and credential type.
 
 > 🚫 **`.vscode` is always excluded from transfers**, regardless of your `ignore` option and even if `sftp.json` tries to override it. It commonly holds `sftp.json` itself, which bots actively probe for on the open web.
 

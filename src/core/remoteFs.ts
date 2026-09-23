@@ -1,11 +1,16 @@
 import upath from './upath';
-import { promptForPassword, showConfirmMessage, showWarningMessage } from '../host';
+import { createHash } from 'crypto';
+import { showConfirmMessage, showWarningMessage } from '../host';
 import logger from '../logger';
 import app from '../app';
 import { ConnectOption } from './remote-client/remoteClient';
-import { storeCredential } from '../modules/secrets';
+import {
+  createCredentialEndpoint,
+} from '../modules/secrets';
 import { checkHostKey } from './remote-client/hostKeyStore';
 import { setConnectionState, removeConnection } from '../modules/connectionHealth';
+import { RedactionScope } from '../security/redaction';
+import { createCredentialPrompt } from '../security/credentialPrompt';
 import {
   FileSystem,
   RemoteFileSystem,
@@ -14,10 +19,55 @@ import {
 } from './fs';
 import localFs from './localFs';
 
-function hashOption(opiton) {
-  return Object.keys(opiton)
-    .map(key => opiton[key])
-    .join('');
+const SECRET_IDENTITY_FIELDS = new Set([
+  'password',
+  'passphrase',
+]);
+
+function cacheIdentityValue(value: unknown, key?: string): unknown {
+  if (key === 'interactiveAuth' && Array.isArray(value)) {
+    return {
+      mode: 'predefined-answers',
+      count: value.length,
+    };
+  }
+  if (key && SECRET_IDENTITY_FIELDS.has(key)) {
+    return undefined;
+  }
+  if (
+    value === undefined ||
+    typeof value === 'function' ||
+    typeof value === 'symbol'
+  ) {
+    return undefined;
+  }
+  if (value === null || typeof value !== 'object') {
+    if (key === 'host' || key === 'protocol') {
+      return String(value).trim().toLocaleLowerCase('en-US');
+    }
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return value
+      .map(item => cacheIdentityValue(item))
+      .filter(item => item !== undefined);
+  }
+  const normalized: Record<string, unknown> = {};
+  for (const childKey of Object.keys(value).sort()) {
+    const childValue = cacheIdentityValue(
+      (value as Record<string, unknown>)[childKey],
+      childKey
+    );
+    if (childValue !== undefined) {
+      normalized[childKey] = childValue;
+    }
+  }
+  return normalized;
+}
+
+export function remoteCacheIdentity(option: Record<string, unknown>): string {
+  const canonical = JSON.stringify(cacheIdentityValue(option));
+  return createHash('sha256').update(canonical).digest('hex');
 }
 
 class KeepAliveRemoteFs {
@@ -28,6 +78,7 @@ class KeepAliveRemoteFs {
   private fs: RemoteFileSystem;
 
   private _identity: string;
+  private readonly redactionScope = new RedactionScope();
 
   setIdentity(identity: string) {
     this._identity = identity;
@@ -56,6 +107,10 @@ class KeepAliveRemoteFs {
     setConnectionState(this._identity, option.host, option.protocol, 'connecting');
 
     const connectOption = Object.assign({}, option);
+    this.redactionScope.registerConnectionOptions(
+      connectOption as unknown as Record<string, unknown>
+    );
+    const credentialEndpoint = createCredentialEndpoint(connectOption);
     // tslint:disable variable-name
     let FsConstructor: typeof SFTPFileSystem | typeof FTPFileSystem;
     if (option.protocol === 'sftp') {
@@ -93,20 +148,10 @@ class KeepAliveRemoteFs {
     });
     this.fs.onDisconnected(this.invalid.bind(this));
 
-    const askForPasswd = async (msg: string): Promise<string | undefined> => {
-      const value = await promptForPassword(msg);
-      if (value !== undefined && connectOption.username) {
-        const save = await showConfirmMessage(
-          `Save password for ${connectOption.username}@${connectOption.host} to Secret Storage?`,
-          'Save',
-          'Don\'t Save'
-        );
-        if (save) {
-          await storeCredential(connectOption.host, connectOption.username, 'password', value);
-        }
-      }
-      return value;
-    };
+    const requestSecret = createCredentialPrompt(
+      credentialEndpoint,
+      this.redactionScope
+    );
 
     const verifyHostKey = async (fp: string, host: string, port: number): Promise<boolean> => {
       return checkHostKey(host, port, fp, async (fingerprint, h) => {
@@ -125,7 +170,7 @@ class KeepAliveRemoteFs {
     app.sftpBarItem.showMsg('connecting...', connectOption.connectTimeout);
     this.pendingPromise = this.fs
       .connect(connectOption, {
-        askForPasswd,
+        requestSecret,
         verifyHostKey,
       })
       .then(
@@ -157,6 +202,7 @@ class KeepAliveRemoteFs {
 
   end() {
     this.fs.end();
+    this.redactionScope.dispose();
     if (this._identity) {
       removeConnection(this._identity);
     }
@@ -176,7 +222,7 @@ export function createRemoteIfNoneExist(option): Promise<FileSystem> {
     return getLocalFs();
   }
 
-  const identity = hashOption(option);
+  const identity = remoteCacheIdentity(option);
   const fs = fsTable[identity];
   if (fs !== undefined) {
     return fs.getFs(option);
@@ -189,7 +235,7 @@ export function createRemoteIfNoneExist(option): Promise<FileSystem> {
 }
 
 export function removeRemoteFs(option) {
-  const identity = hashOption(option);
+  const identity = remoteCacheIdentity(option);
   const fs = fsTable[identity];
   if (fs !== undefined) {
     fs.end();

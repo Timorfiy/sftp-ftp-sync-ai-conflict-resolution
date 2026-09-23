@@ -7,6 +7,7 @@ import * as fileOperations from '../../core/fileBaseOperations';
 import type { FileStats } from '../../core/fs/fileSystem';
 import localFs from '../../core/localFs';
 import logger from '../../logger';
+import { redactedErrorMessage } from '../../security/redaction';
 import { diff } from '../diff';
 import type { FileTransferContext } from './transfer';
 import type { RemoteBaseline } from './remoteBaseline';
@@ -108,7 +109,7 @@ function delay(milliseconds: number): Promise<void> {
 }
 
 function cleanError(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
+  return redactedErrorMessage(error);
 }
 
 function isNotFoundError(error: any): boolean {
