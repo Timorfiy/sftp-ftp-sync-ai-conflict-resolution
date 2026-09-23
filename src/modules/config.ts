@@ -144,6 +144,23 @@ const defaultConfig = {
   },
 };
 
+export interface ConfigDocument {
+  path: string;
+  configs: any[];
+}
+
+export class ConfigDocumentError extends Error {
+  readonly configPath: string;
+  readonly field?: string;
+
+  constructor(configPath: string, message: string, field?: string) {
+    super(message);
+    this.name = 'ConfigDocumentError';
+    this.configPath = configPath;
+    this.field = field;
+  }
+}
+
 function mergedDefault(config) {
   return {
     ...defaultConfig,
@@ -155,7 +172,7 @@ function mergedDefault(config) {
   };
 }
 
-function getConfigPath(basePath) {
+export function getConfigPath(basePath: string) {
   return path.join(basePath, CONFIG_PATH);
 }
 
@@ -173,11 +190,52 @@ export function validateConfig(config) {
   return null;
 }
 
-export function readConfigsFromFile(configPath): Promise<any[]> {
-  return fse.readJson(configPath).then(config => {
-    const configs = Array.isArray(config) ? config : [config];
-    return configs.map(mergedDefault);
+function configError(configPath: string, index: number, error: Error): ConfigDocumentError {
+  const firstMessage = error.message.split(', ')[0];
+  const separator = firstMessage.indexOf(':');
+  const field = separator > 0 ? firstMessage.slice(0, separator) : undefined;
+  const prefix = index > 0 ? `Connection ${index + 1}: ` : '';
+  return new ConfigDocumentError(configPath, `${prefix}${error.message}`, field);
+}
+
+export function parseConfigDocument(configPath: string, text: string): ConfigDocument {
+  let parsed: any;
+  try {
+    parsed = JSON.parse(text);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new ConfigDocumentError(configPath, `Invalid JSON: ${detail}`);
+  }
+
+  const rawConfigs = Array.isArray(parsed) ? parsed : [parsed];
+  if (rawConfigs.length === 0) {
+    throw new ConfigDocumentError(configPath, 'The configuration must contain at least one connection.');
+  }
+
+  const configs = rawConfigs.map((rawConfig, index) => {
+    const config = mergedDefault(rawConfig);
+    const validationError = validateConfig(config);
+    if (validationError) {
+      throw configError(configPath, index, validationError);
+    }
+    return config;
   });
+  return { path: configPath, configs };
+}
+
+export async function loadConfigDocument(configPath: string): Promise<ConfigDocument> {
+  let text: string;
+  try {
+    text = await fse.readFile(configPath, 'utf8');
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new ConfigDocumentError(configPath, `Unable to read configuration: ${detail}`);
+  }
+  return parseConfigDocument(configPath, text);
+}
+
+export async function readConfigsFromFile(configPath): Promise<any[]> {
+  return (await loadConfigDocument(configPath)).configs;
 }
 
 export function tryLoadConfigs(workspace): Promise<any[]> {
@@ -202,6 +260,61 @@ export function tryLoadConfigs(workspace): Promise<any[]> {
 //   return normalizeConfig(config);
 // }
 
+export function createNewConfigTemplate() {
+  return {
+    name: 'My Server',
+    host: 'localhost',
+    protocol: 'sftp',
+    port: 22,
+    username: 'username',
+    remotePath: '/',
+    uploadOnSave: false,
+    conflictCheck: true,
+    useTempFile: false,
+    openSsh: false,
+    concurrency: 4,
+    watcher: {
+      files: false,
+      autoUpload: false,
+      autoDelete: false,
+      autoRename: false,
+    },
+    syncOption: {
+      delete: false,
+      skipCreate: false,
+      ignoreExisting: false,
+      update: false,
+    },
+    ignore: [
+      '.vscode',
+      '.git',
+      '.github',
+      '.DS_Store',
+      'Thumbs.db',
+
+      'src',
+      '.env',
+      '.env.*',
+
+      'AGENTS.md',
+      'CLAUDE.md',
+      '.claude',
+      '.cursor',
+
+      '*.log',
+      '*.tmp',
+      '*.bak',
+    ],
+    backup: {
+      enabled: true,
+      location: 'local',
+      folder: '.vscode/sftp-backup',
+      versions: 100,
+      onDelete: false,
+    },
+  };
+}
+
 export function newConfig(basePath) {
   const configPath = getConfigPath(basePath);
 
@@ -215,45 +328,7 @@ export function newConfig(basePath) {
       return fse
         .outputJson(
           configPath,
-          {
-            name: 'My Server',
-            host: 'localhost',
-            protocol: 'sftp',
-            port: 22,
-            username: 'username',
-            remotePath: '/',
-            uploadOnSave: false,
-            useTempFile: false,
-            openSsh: false,
-            concurrency: 4,
-            ignore: [
-              '.vscode',
-              '.git',
-              '.github',
-              '.DS_Store',
-              'Thumbs.db',
-
-              'src',
-              '.env',
-              '.env.*',
-
-              'AGENTS.md',
-              'CLAUDE.md',
-              '.claude',
-              '.cursor',
-
-              '*.log',
-              '*.tmp',
-              '*.bak',
-            ],
-            backup: {
-              enabled: false,
-              location: 'remote',
-              folder: '.vscode/sftp-backup',
-              versions: 100,
-              onDelete: false,
-            },
-          },
+          createNewConfigTemplate(),
           { spaces: 4 }
         )
         .then(() => showTextDocument(vscode.Uri.file(configPath)));

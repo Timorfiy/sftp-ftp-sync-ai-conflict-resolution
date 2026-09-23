@@ -15,6 +15,7 @@ module.exports = async function createProtocolSandbox() {
   const root = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'sftp-sync-protocol-'));
   const denied = new Set();
   const disconnects = new Map();
+  const operations = [];
   let connectionCount = 0;
 
   function resolve(remotePath) {
@@ -37,6 +38,29 @@ module.exports = async function createProtocolSandbox() {
     return localPath;
   }
 
+  async function snapshot() {
+    const entries = [];
+    async function walk(localPath, remotePath) {
+      const dirents = await fs.promises.readdir(localPath, { withFileTypes: true });
+      for (const dirent of dirents.sort((left, right) => left.name.localeCompare(right.name))) {
+        const childLocal = path.join(localPath, dirent.name);
+        const childRemote = path.posix.join(remotePath, dirent.name);
+        if (dirent.isDirectory()) {
+          entries.push({ path: childRemote, type: 'directory' });
+          await walk(childLocal, childRemote);
+        } else {
+          entries.push({
+            path: childRemote,
+            type: 'file',
+            content: (await fs.promises.readFile(childLocal)).toString('base64'),
+          });
+        }
+      }
+    }
+    await walk(root, '/');
+    return entries;
+  }
+
   return {
     root,
     credentials: { username: 'test', password: 'test' },
@@ -48,6 +72,16 @@ module.exports = async function createProtocolSandbox() {
     get connectionCount() {
       return connectionCount;
     },
+    noteOperation(operation, target = '') {
+      operations.push({ operation, target });
+    },
+    get operations() {
+      return operations.slice();
+    },
+    clearOperations() {
+      operations.length = 0;
+    },
+    snapshot,
     deny(remotePath) {
       denied.add(normalizeRemote(remotePath));
     },
