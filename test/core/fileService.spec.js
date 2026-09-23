@@ -143,6 +143,39 @@ function createConfig(overrides = {}) {
   };
 }
 
+describe('FileService connection labels', () => {
+  test('uses the selected profile name', () => {
+    const service = new FileService('/tmp', '/tmp', createConfig({
+      profiles: { production: { host: 'prod.example.com' } },
+    }));
+    service.name = 'Website';
+
+    expect(service.getConnectionLabel('production')).toBe('Profile "production"');
+  });
+
+  test('uses a named base connection when profiles exist but none is selected', () => {
+    const service = new FileService('/tmp', '/tmp', createConfig({
+      profiles: { production: { host: 'prod.example.com' } },
+    }));
+    service.name = 'Website';
+
+    expect(service.getConnectionLabel(null)).toBe('Base connection "Website"');
+  });
+
+  test('uses the connection name when no profiles exist', () => {
+    const service = new FileService('/tmp', '/tmp', createConfig());
+    service.name = 'Website';
+
+    expect(service.getConnectionLabel(null)).toBe('Connection "Website"');
+  });
+
+  test('has a deterministic unnamed fallback', () => {
+    const service = new FileService('/tmp', '/tmp', createConfig());
+
+    expect(service.getConnectionLabel(null)).toBe('Default connection');
+  });
+});
+
 describe('FileService plaintext password warning', () => {
   beforeEach(() => {
     settingStore.sftp.suppressPlaintextPasswordWarning = false;

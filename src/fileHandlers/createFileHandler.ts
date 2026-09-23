@@ -16,6 +16,7 @@ export interface FileHandlerContext {
   target: UResource;
   fileService: FileService;
   config: ServiceConfig;
+  connectionLabel: string;
 }
 
 type FileHandlerContextMethod<R = void> = (this: FileHandlerContext) => R;
@@ -24,6 +25,7 @@ type FileHandlerContextMethodArg1<A, R = void> = (this: FileHandlerContext, a: A
 interface FileHandlerOption<T> {
   name: string;
   handle: FileHandlerContextMethodArg1<T, Promise<any>>;
+  beforeHandle?: FileHandlerContextMethodArg1<T, Promise<boolean>>;
   afterHandle?: FileHandlerContextMethod;
   config?: FileHandlerConfig;
   transformOption?: FileHandlerContextMethod<T>;
@@ -53,6 +55,7 @@ export function handleCtxFromUri(uri: Uri): FileHandlerContext {
     fileService,
     config,
     target,
+    connectionLabel: fileService.getConnectionLabel(),
   };
 }
 
@@ -66,9 +69,8 @@ export function allHandleCtxFromUri(uri: Uri): Array<FileHandlerContext> {
     }
   }
 
-  const configArr = fileService.getAllConfig();
-
-  return configArr.map(config => {
+  return fileService.getAvailableProfiles().map(profile => {
+    const config = fileService.getConfig(profile);
     const target = UResource.from(uri, {
       localBasePath: fileService.baseDir,
       remoteBasePath: config.remotePath,
@@ -83,8 +85,9 @@ export function allHandleCtxFromUri(uri: Uri): Array<FileHandlerContext> {
       fileService,
       config,
       target,
+      connectionLabel: fileService.getConnectionLabel(profile),
     };
-  })
+  });
 }
 
 export default function createFileHandler<T>(
@@ -106,6 +109,13 @@ export default function createFileHandler<T>(
     }
 
     if (invokeOption.ignore && invokeOption.ignore(target.localFsPath)) {
+      return;
+    }
+
+    if (
+      handlerOption.beforeHandle &&
+      !(await handlerOption.beforeHandle.call(handleCtx, invokeOption))
+    ) {
       return;
     }
 
