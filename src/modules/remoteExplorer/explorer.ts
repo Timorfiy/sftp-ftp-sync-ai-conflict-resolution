@@ -3,6 +3,7 @@ import { registerCommand, setContextValue } from '../../host';
 import {
   COMMAND_REMOTEEXPLORER_REFRESH,
   COMMAND_REMOTEEXPLORER_VIEW_CONTENT,
+  COMMAND_SYNC_REMOTE_TO_LOCAL,
   VIEW_REMOTE_EXPLORER,
 } from '../../constants';
 import { UResource } from '../../core';
@@ -11,6 +12,8 @@ import { REMOTE_SCHEME } from '../../constants';
 import { getFileService } from '../serviceManager';
 import RemoteTreeDataProvider, { ExplorerItem } from './treeDataProvider';
 import RemoteExplorerDragAndDropController from './dragAndDrop';
+
+const REMOTE_TO_LOCAL_COMMAND_URI = `file:///\${command:${COMMAND_SYNC_REMOTE_TO_LOCAL}}`;
 
 export default class RemoteExplorer {
   private _explorerView: vscode.TreeView<ExplorerItem>;
@@ -44,7 +47,7 @@ export default class RemoteExplorer {
       const uri = item.resource.uri;
       const fileService = getFileService(uri);
       if (!fileService) {
-        if (uri.toString(true) == "file:///${command:sftp.sync.remoteToLocal}") {
+        if (uri.toString(true) === REMOTE_TO_LOCAL_COMMAND_URI) {
           throw '';
         } else {
           throw new Error(`Config Not Found. (${uri.toString(true)})`);

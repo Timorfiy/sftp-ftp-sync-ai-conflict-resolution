@@ -22,7 +22,7 @@ app.sftpBarItem = new StatusBarItem(
       return 'SFTP';
     }
   },
-  'SFTP@PhilipDaoud',
+  'SFTP@Timorfiy',
   COMMAND_TOGGLE_OUTPUT
 );
 app.fsCache = new LRUCache<string, string>({ max: 6 });

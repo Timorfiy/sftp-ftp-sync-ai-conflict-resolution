@@ -3,7 +3,10 @@ import app from '../app';
 import { UResource, FileService, ServiceConfig } from '../core';
 import logger from '../logger';
 import { getFileService } from '../modules/serviceManager';
+import { COMMAND_SYNC_REMOTE_TO_LOCAL } from '../constants';
 import { isConflictStatePath } from './transfer/conflictStateIsolation';
+
+const REMOTE_TO_LOCAL_COMMAND_URI = `file:///\${command:${COMMAND_SYNC_REMOTE_TO_LOCAL}}`;
 
 interface FileHandlerConfig {
   _?: boolean;
@@ -29,7 +32,7 @@ interface FileHandlerOption<T> {
 export function handleCtxFromUri(uri: Uri): FileHandlerContext {
   const fileService = getFileService(uri);
   if (!fileService) {
-    if (uri.toString(true) == "file:///${command:sftp.sync.remoteToLocal}") {
+    if (uri.toString(true) === REMOTE_TO_LOCAL_COMMAND_URI) {
       throw '';
     } else {
       throw new Error(`Config Not Found. (${uri.toString(true)})`);
@@ -56,7 +59,7 @@ export function handleCtxFromUri(uri: Uri): FileHandlerContext {
 export function allHandleCtxFromUri(uri: Uri): Array<FileHandlerContext> {
   const fileService = getFileService(uri);
   if (!fileService) {
-    if (uri.toString(true) == "file:///${command:sftp.sync.remoteToLocal}") {
+    if (uri.toString(true) === REMOTE_TO_LOCAL_COMMAND_URI) {
       throw '';
     } else {
       throw new Error(`Config Not Found. (${uri.toString(true)})`);

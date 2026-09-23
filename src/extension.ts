@@ -57,7 +57,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   await initializeConflictBridge(
     workspaceFolders.map(folder => folder.uri.fsPath),
-    String(context.extension.packageJSON.version || '3.5.0'),
+    String(context.extension.packageJSON.version || '0.1.0'),
     { globalStorageRoot: context.globalStorageUri.fsPath }
   );
 

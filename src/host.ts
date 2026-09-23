@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { EXTENSION_NAME } from './constants';
+import { CONTEXT_NAMESPACE } from './constants';
 
 export function getOpenTextDocuments(): readonly vscode.TextDocument[] {
   return vscode.workspace.textDocuments;
@@ -79,7 +79,7 @@ export function promptForPassword(prompt: string): Promise<string | undefined> {
 }
 
 export function setContextValue(key: string, value: any) {
-  executeCommand('setContext', EXTENSION_NAME + '.' + key, value);
+  executeCommand('setContext', CONTEXT_NAMESPACE + '.' + key, value);
 }
 
 export function showErrorMessage(message: string, ...items: string[]) {
