@@ -4,6 +4,7 @@ import * as path from 'path';
 import { TextDecoder } from 'util';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { redactedErrorMessage } from '../security/redaction';
 import {
   requireSafeLocalPath,
   SafeLocalPathError,
@@ -75,7 +76,7 @@ const terminalStatuses = new Set(['uploaded', 'cancelled', 'failed', 'orphaned']
 const mutableStatuses = new Set(['capturing', 'pending', 'reviewing']);
 
 function safeMessage(error: unknown): string {
-  const text = error instanceof Error ? error.message : String(error);
+  const text = redactedErrorMessage(error);
   return text.replace(/[A-Za-z]:[\\/][^\s"']+|\/(?:[^\s/"']+\/)+[^\s"']+/g, '<path>').slice(0, 800);
 }
 
@@ -112,7 +113,11 @@ function loadConfiguration(): McpLaunchConfiguration {
   if (!raw) {
     throw new Error(`${MCP_CONFIG_ENV} is missing.`);
   }
-  return mcpLaunchConfigurationSchema.parse(JSON.parse(raw));
+  try {
+    return mcpLaunchConfigurationSchema.parse(JSON.parse(raw));
+  } catch {
+    throw new Error('MCP launch configuration is invalid. Restart the editor workspace to regenerate it.');
+  }
 }
 
 function workspaceStateRoot(

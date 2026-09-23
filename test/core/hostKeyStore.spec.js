@@ -46,18 +46,18 @@ describe('hostKeyStore workspace-scoped keys', () => {
     );
   });
 
-  test('rejects when user declines unknown key', async () => {
+  test('reports cancellation when user declines unknown key', async () => {
     fseMock.readJson.mockResolvedValue({});
 
-    const result = await checkHostKey(
-      host,
-      port,
-      fpA,
-      async () => 'reject',
-      '/workspace/one'
-    );
-
-    expect(result).toBe(false);
+    await expect(
+      checkHostKey(
+        host,
+        port,
+        fpA,
+        async () => 'reject',
+        '/workspace/one'
+      )
+    ).rejects.toMatchObject({ failureId: 'host-key.rejected' });
     expect(fseMock.outputJson).not.toHaveBeenCalled();
   });
 

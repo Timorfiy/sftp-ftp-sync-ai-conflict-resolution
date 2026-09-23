@@ -160,4 +160,49 @@ describe('backup during upload', () => {
     expect(backups[0]).toContain('.conflict.bak');
     expect(vol.readFileSync(backups[0], 'utf8')).toBe('old remote content');
   });
+
+  test('backup failure is fail-open and leaves an explicit upload warning', async () => {
+    vol.fromJSON({
+      '/workspace/index.php': 'new local content',
+      '/var/www/index.php': 'old remote content',
+    }, '/');
+
+    const remoteFs = createRemoteFs();
+    const failBackupFs = Object.create(remoteFs);
+    Object.defineProperty(failBackupFs, 'get', {
+      configurable: true,
+      value: () => Promise.reject(new Error('backup permission denied')),
+    });
+    const task = new TransferTask(
+      { fsPath: '/workspace/index.php', fileSystem: localfs },
+      { fsPath: '/var/www/index.php', fileSystem: failBackupFs },
+      {
+        fileType: FileType.File,
+        transferDirection: TransferDirection.LOCAL_TO_REMOTE,
+        transferOption: {
+          atime: Date.now(),
+          mtime: Date.now(),
+          perserveTargetMode: false,
+          backup: {
+            enabled: true,
+            folder: '.vscode/sftp-backup',
+            versions: 5,
+          },
+          remotePath: '/var/www',
+        },
+      }
+    );
+
+    await task.run();
+
+    expect(vol.readFileSync('/var/www/index.php', 'utf8')).toBe('new local content');
+    expect(task.getWarnings()).toEqual([
+      expect.objectContaining({
+        failureId: 'backup.overwrite-failed',
+        message: expect.stringContaining(
+          'previous remote text content may not be recoverable'
+        ),
+      }),
+    ]);
+  });
 });

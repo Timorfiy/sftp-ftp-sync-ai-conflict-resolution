@@ -5,6 +5,8 @@ import { FileSystem, FileType, FileEntry } from './fs';
 import { BackupConfig } from './fileService';
 import * as fileOperations from './fileBaseOperations';
 import logger from '../logger';
+import { redactedErrorMessage } from '../security/redaction';
+import { TypedFailure } from '../errors/actionable';
 
 export interface BackupPathInfo {
   originalPath: string;
@@ -22,6 +24,40 @@ export interface BackupStorage {
   fs: FileSystem;
   root: string;
   pathResolver: typeof path | typeof upath;
+}
+
+export type BackupSkipReason =
+  | 'disabled'
+  | 'target-missing'
+  | 'not-a-file'
+  | 'binary-or-unsupported';
+
+export type BackupResult =
+  | { status: 'created'; path: string; warnings: readonly string[] }
+  | { status: 'skipped'; reason: BackupSkipReason }
+  | { status: 'failed'; reason: string };
+
+export class DeleteBackupPreflightError extends TypedFailure {
+  readonly created: number;
+  readonly total: number;
+
+  constructor(created: number, total: number, cause?: unknown) {
+    super(
+      'backup.delete-preflight-failed',
+      `Delete backup preflight created ${created} of ${total} copies; nothing deleted.`,
+      {
+        backupProgress: {
+          created,
+          total,
+          nothingDeleted: true,
+        },
+      },
+      cause
+    );
+    this.name = 'DeleteBackupPreflightError';
+    this.created = created;
+    this.total = total;
+  }
 }
 
 type BackupFileKind = 'text' | 'binary' | 'unknown';
@@ -292,9 +328,9 @@ export async function createBackup(
   remotePath: string,
   storage?: BackupStorage,
   options: CreateBackupOptions = {}
-): Promise<string | null> {
+): Promise<BackupResult> {
   if (!backupConfig.enabled || backupConfig.versions <= 0) {
-    return null;
+    return { status: 'skipped', reason: 'disabled' };
   }
 
   const backupLocation = storage ? 'local' : 'remote';
@@ -304,11 +340,18 @@ export async function createBackup(
     const stat = await targetFs.lstat(targetPath);
     if (stat.type !== FileType.File) {
       logger.info(`skipping backup for ${targetPath}: not a file`);
-      return null;
+      return { status: 'skipped', reason: 'not-a-file' };
     }
   } catch (error) {
     logger.info(`skipping backup for ${targetPath}: ${error.message}`);
-    return null;
+    const code =
+      error && typeof error === 'object' && 'code' in error
+        ? String((error as { code?: unknown }).code || '')
+        : '';
+    if (code.toUpperCase() === 'ENOENT' || /not found|no such file/i.test(String(error))) {
+      return { status: 'skipped', reason: 'target-missing' };
+    }
+    return { status: 'failed', reason: redactedErrorMessage(error) };
   }
 
   const pathResolver = storage?.pathResolver ?? upath;
@@ -346,23 +389,25 @@ export async function createBackup(
   try {
     const inputStream = await getBackupInput(targetPath, targetFs);
     if (!inputStream) {
-      return null;
+      return { status: 'skipped', reason: 'binary-or-unsupported' };
     }
     await backupFs.ensureDir(backupDir);
     await backupFs.put(inputStream, backupPath);
     logger.info(`backup created: ${targetPath} -> ${backupPath}`);
   } catch (error) {
     logger.warn(`failed to create backup for ${targetPath}: ${error.message}`);
-    return null;
+    return { status: 'failed', reason: redactedErrorMessage(error) };
   }
 
+  const warnings: string[] = [];
   try {
     await pruneBackups(targetPath, targetFs, backupConfig, remotePath, storage);
   } catch (error) {
     logger.warn(`failed to prune backups for ${targetPath}: ${error.message}`);
+    warnings.push(redactedErrorMessage(error));
   }
 
-  return backupPath;
+  return { status: 'created', path: backupPath, warnings };
 }
 
 /**
@@ -414,12 +459,9 @@ export async function backupBeforeDelete(
 
   let backedUp = 0;
   for (const file of files) {
-    const backupPath = await createBackup(file, targetFs, backupConfig, remotePath, storage);
-    if (!backupPath) {
-      throw new Error(
-        `Aborted delete of '${targetPath}': could not back up '${file}'. ` +
-          `See the sftp output channel for details. Nothing has been deleted.`
-      );
+    const result = await createBackup(file, targetFs, backupConfig, remotePath, storage);
+    if (result.status !== 'created') {
+      throw new DeleteBackupPreflightError(backedUp, files.length, result);
     }
     backedUp += 1;
   }

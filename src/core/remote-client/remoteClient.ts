@@ -36,8 +36,19 @@ export enum ErrorCode {
   CONNECT_CANCELLED,
 }
 
+export type SecretRequestKind =
+  | 'password'
+  | 'passphrase'
+  | 'interactive-answer';
+
+export interface SecretRequest {
+  kind: SecretRequestKind;
+  prompt: string;
+  persist: boolean;
+}
+
 export interface Config {
-  askForPasswd(msg: string): Promise<string | undefined>;
+  requestSecret(request: SecretRequest): Promise<string | undefined>;
   verifyHostKey(fingerprint: string, host: string, port: number): Promise<boolean>;
 }
 
@@ -63,7 +74,11 @@ export default abstract class RemoteClient {
       return this._doConnect(connectOption, config);
     }
 
-    const password = await config.askForPasswd(`[${connectOption.host}]: Enter your password`);
+    const password = await config.requestSecret({
+      kind: 'password',
+      prompt: `[${connectOption.host}]: Enter your password`,
+      persist: true,
+    });
 
     // cancel connect
     if (password === undefined) {

@@ -2,11 +2,17 @@ import { Uri, window, ProgressLocation } from 'vscode';
 import * as path from 'path';
 import app from '../../app';
 import logger from '../../logger';
-import { simplifyPath, reportError } from '../../helper';
+import { simplifyPath } from '../../helper';
 import { UResource, FileService, TransferTask } from '../../core';
 import { validateConfig } from '../config';
 import watcherService from '../fileWatcher';
 import { transferQueueProvider } from '../transferQueue';
+import { redact } from '../../security/redaction';
+import {
+  CredentialMigrationCandidate,
+  credentialEndpointId,
+  migrateLegacyCredentials,
+} from '../secrets';
 import Trie from './trie';
 
 const WIN_DRIVE_REGEX = /^([a-zA-Z]):/;
@@ -18,31 +24,6 @@ const serviceManager = new Trie<FileService>(
     delimiter: path.sep,
   }
 );
-
-function maskConfig(config) {
-  const copy = {};
-  const MASK = '******';
-  Object.keys(config).forEach(key => {
-    const configValue = config[key];
-    switch (key) {
-      case 'username':
-      case 'password':
-      case 'passphrase':
-        copy[key] = MASK;
-        break;
-      case 'interactiveAuth':
-        if (Array.isArray(configValue)) {
-          copy[key] = configValue.map(() => MASK);
-        } else {
-          copy[key] = configValue;
-        }
-        break;
-      default:
-        copy[key] = configValue;
-    }
-  });
-  return copy;
-}
 
 function normalizePathForTrie(pathname) {
   if (isWindows) {
@@ -133,12 +114,15 @@ export function createFileService(config: any, workspace: string) {
   const normalizedBasePath = getBasePath(config.context, workspace);
   const service = new FileService(normalizedBasePath, workspace, config);
 
-  logger.info(`config at ${normalizedBasePath}`, maskConfig(config));
+  logger.info(`config at ${normalizedBasePath}`, redact(config));
 
   serviceManager.add(normalizedBasePath, service);
   service.name = config.name;
   service.setConfigValidator(validateConfig);
   service.setWatcherService(watcherService);
+  service.queuedTransfer(task => {
+    (task as any)._queueId = transferQueueProvider.add(task);
+  });
   service.beforeTransfer(task => {
     const { localFsPath, transferType } = task;
     app.sftpBarItem.showMsg(
@@ -146,7 +130,6 @@ export function createFileService(config: any, workspace: string) {
       simplifyPath(localFsPath)
     );
     updateProgress();
-    (task as any)._queueId = transferQueueProvider.add(task);
     transferQueueProvider.start((task as any)._queueId);
   });
   service.afterTransfer((error, task) => {
@@ -162,7 +145,7 @@ export function createFileService(config: any, workspace: string) {
       app.sftpBarItem.showMsg(`cancelled ${filename}`, filepath, 2000 * 2);
     } else if (error) {
       // if ((error as any).reported !== true) {
-      reportError(error, `when ${transferType} ${localFsPath}`);
+      logger.error(error, `when ${transferType} ${localFsPath}`);
       // }
       app.sftpBarItem.showMsg(`failed ${filename}`, filepath, 2000 * 2);
     } else {
@@ -207,6 +190,23 @@ export function getAllFileService(): FileService[] {
   }
 
   return serviceManager.getAllValues();
+}
+
+export function getCredentialMigrationCandidates(): CredentialMigrationCandidate[] {
+  const candidates = new Map<string, CredentialMigrationCandidate>();
+  for (const service of getAllFileService()) {
+    for (const candidate of service.getCredentialMigrationCandidates()) {
+      candidates.set(
+        `${credentialEndpointId(candidate.endpoint)}\u0000${candidate.legacyHost}`,
+        candidate
+      );
+    }
+  }
+  return [...candidates.values()];
+}
+
+export async function migrateLoadedServiceCredentials(): Promise<void> {
+  await migrateLegacyCredentials(getCredentialMigrationCandidates());
 }
 
 export function getRunningTransformTasks(): TransferTask[] {

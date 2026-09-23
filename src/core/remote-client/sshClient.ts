@@ -6,8 +6,37 @@ import localFs from '../localFs';
 import { FileSystem, RemoteFileSystem, SFTPFileSystem } from '../fs';
 import logger from '../../logger';
 import CustomError from '../customError';
+import { TypedFailure } from '../../errors/actionable';
 
 let MAX_OPEN_FD_NUM = 222;
+
+async function readConfiguredPrivateKey(
+  fs: FileSystem | RemoteFileSystem,
+  privateKeyPath: string
+): Promise<string> {
+  try {
+    return (await fs.readFile(privateKeyPath)).toString();
+  } catch (error) {
+    const code =
+      error && typeof error === 'object' && 'code' in error
+        ? String((error as { code?: unknown }).code || '').toUpperCase()
+        : '';
+    if (
+      code === 'ENOENT' ||
+      /no such file|not found|file unavailable/i.test(
+        error instanceof Error ? error.message : String(error)
+      )
+    ) {
+      throw new TypedFailure(
+        'configuration.invalid',
+        `Configured privateKeyPath "${privateKeyPath}" could not be read.`,
+        { openConfig: true },
+        error
+      );
+    }
+    throw error;
+  }
+}
 
 export default class SSHClient extends RemoteClient {
   private sftp: any;
@@ -71,13 +100,22 @@ export default class SSHClient extends RemoteClient {
         }
 
         if (curOpt.privateKeyPath) {
-          const buffer = await fs.readFile(curOpt.privateKeyPath);
-          curOpt.privateKey = buffer.toString();
+          curOpt.privateKey = await readConfiguredPrivateKey(
+            fs,
+            curOpt.privateKeyPath
+          );
         }
 
         const client = new SSHClient(curOpt);
         this.hoppingClients.push(client);
-        await client.connect({ ...curOpt, sock }, config);
+        await client.connect(
+          { ...curOpt, sock },
+          {
+            ...config,
+            requestSecret: request =>
+              config.requestSecret({ ...request, persist: false }),
+          }
+        );
       }
 
       const lastClient = this.hoppingClients[this.hoppingClients.length - 1];
@@ -92,8 +130,10 @@ export default class SSHClient extends RemoteClient {
     }
 
     if (lastOption.privateKeyPath) {
-      const buffer = await fs.readFile(lastOption.privateKeyPath);
-      lastOption.privateKey = buffer.toString();
+      lastOption.privateKey = await readConfiguredPrivateKey(
+        fs,
+        lastOption.privateKeyPath
+      );
     }
 
     await this._connectSSHClient(this._client, { ...lastOption, sock }, config);
@@ -264,9 +304,11 @@ export default class SSHClient extends RemoteClient {
 
     // explict compare to true, cause we want to distinct between string and true
     if (option.passphrase === true) {
-      option.passphrase = await config.askForPasswd(
-        `[${option.host}]: Enter your passphrase`
-      );
+      option.passphrase = await config.requestSecret({
+        kind: 'passphrase',
+        prompt: `[${option.host}]: Enter your passphrase`,
+        persist: true,
+      });
       if (option.passphrase === undefined) {
         throw new CustomError(ErrorCode.CONNECT_CANCELLED, 'cancelled');
       }
@@ -314,7 +356,11 @@ export default class SSHClient extends RemoteClient {
             }
 
             config
-              .askForPasswd(`[${option.host}]: ${prompt.prompt}`)
+              .requestSecret({
+                kind: 'interactive-answer',
+                prompt: `[${option.host}]: ${prompt.prompt}`,
+                persist: false,
+              })
               .then(answer => {
                 if (answer === undefined) {
                   return reject(
@@ -343,7 +389,7 @@ export default class SSHClient extends RemoteClient {
         config.verifyHostKey(fp, option.host, option.port ?? 22)
           .then(done)
           .catch(err => {
-            reject(new Error(`[${option.host}]: ${err.message}`));
+            reject(err);
             done(false);
           });
       };

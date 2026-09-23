@@ -7,7 +7,7 @@ describe('FTPClient', () => {
   let socket;
 
   const connectionConfig = {
-    askForPasswd: jest.fn(),
+    requestSecret: jest.fn(),
     verifyHostKey: jest.fn(),
   };
 

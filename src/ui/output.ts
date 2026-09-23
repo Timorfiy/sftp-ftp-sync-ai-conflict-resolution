@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import app from '../app';
 import { EXTENSION_NAME } from '../constants';
+import { redact, redactText } from '../security/redaction';
 import StatusBarItem from './statusBarItem';
 
 let isShow = false;
@@ -33,12 +34,12 @@ export function print(...args) {
       }
 
       if (arg instanceof Error) {
-        return arg.stack;
+        return redactText(arg.stack || arg.message);
       } else if (!arg.toString || arg.toString() === '[object Object]') {
-        return JSON.stringify(arg);
+        return JSON.stringify(redact(arg));
       }
 
-      return arg;
+      return typeof arg === 'string' ? redactText(arg) : arg;
     })
     .join(' ');
 

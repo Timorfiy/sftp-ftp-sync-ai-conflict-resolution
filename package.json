@@ -66,7 +66,7 @@
     "viewsWelcome": [
       {
         "view": "remoteExplorer",
-        "contents": "No SFTP configuration found in this workspace.\n[Create SFTP Config](command:sftpSyncAI.config)",
+        "contents": "No SFTP configuration found in this workspace.\n[Create SFTP Config](command:sftpSyncAI.config)\n[Test Connection](command:sftpSyncAI.testConnection)",
         "when": "!sftpSyncAI.hasConfig"
       },
       {
@@ -115,6 +115,11 @@
       {
         "command": "sftpSyncAI.config",
         "title": "Config",
+        "category": "SFTP"
+      },
+      {
+        "command": "sftpSyncAI.testConnection",
+        "title": "Test Connection",
         "category": "SFTP"
       },
       {
@@ -315,6 +320,11 @@
         }
       },
       {
+        "command": "sftpSyncAI.openTroubleshooting",
+        "title": "Open Troubleshooting",
+        "category": "SFTP"
+      },
+      {
         "command": "sftpSyncAI.remoteBackups.refresh",
         "title": "Refresh Backups",
         "category": "SFTP",
@@ -389,6 +399,9 @@
     ],
     "menus": {
       "commandPalette": [
+        {
+          "command": "sftpSyncAI.testConnection"
+        },
         {
           "command": "sftpSyncAI.setProfile",
           "when": "sftpSyncAI.enabled"
@@ -711,6 +724,11 @@
       ],
       "view/item/context": [
         {
+          "command": "sftpSyncAI.testConnection",
+          "group": "navigation@1",
+          "when": "view == remoteExplorer && viewItem == root"
+        },
+        {
           "command": "sftpSyncAI.transferQueue.cancel",
           "group": "inline",
           "when": "view == transferQueue && viewItem == activeTransfer"
@@ -864,7 +882,8 @@
     "test": "npm run compile && jest",
     "test:acceptance:ftp": "jest --runInBand --detectOpenHandles test/acceptance/ftp.acceptance.spec.js",
     "test:acceptance:sftp": "jest --runInBand --detectOpenHandles test/acceptance/sftp.acceptance.spec.js",
-    "package": "vsce package --out sftp-sync-ai-0.1.0.vsix",
+    "package": "vsce package --out sftp-sync-ai-0.1.0.vsix && node scripts/inspect-vsix.js sftp-sync-ai-0.1.0.vsix",
+    "package:inspect": "node scripts/inspect-vsix.js sftp-sync-ai-0.1.0.vsix",
     "package:list": "vsce ls --tree",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix"
@@ -889,7 +908,9 @@
     "typescript-eslint": "^8.61.0",
     "webpack": "^5.91.0",
     "webpack-cli": "^7.0.3",
-    "yargs-parser": "^22.0.0"
+    "yargs-parser": "^22.0.0",
+    "yauzl": "3.4.0",
+    "yazl": "^2.5.1"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.30.1",

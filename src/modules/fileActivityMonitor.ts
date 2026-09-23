@@ -17,6 +17,7 @@ import {
   getFileService,
   findAllFileService,
   disposeFileService,
+  migrateLoadedServiceCredentials,
 } from './serviceManager';
 import { reportError, isValidFile, isConfigFile, isInWorkspace } from '../helper';
 import { downloadFile, renameRemote, upload, uploadFile } from '../fileHandlers';
@@ -32,7 +33,7 @@ let willRenameWatcher: vscode.Disposable;
 let didRenameWatcher: vscode.Disposable;
 let willSaveWatcher: vscode.Disposable;
 
-async function handleConfigSave(uri: vscode.Uri) {
+export async function handleConfigSave(uri: vscode.Uri) {
   const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
   if (!workspaceFolder) {
     return;
@@ -40,13 +41,19 @@ async function handleConfigSave(uri: vscode.Uri) {
 
   const workspacePath = workspaceFolder.uri.fsPath;
 
-  // dispose old service
-  findAllFileService(service => service.workspace === workspacePath).forEach(disposeFileService);
-
-  // create new service
   try {
     const configs = await readConfigsFromFile(uri.fsPath);
+
+    // Replace services only after the updated configuration parsed
+    // successfully, then migrate against the complete cross-workspace set.
+    findAllFileService(service => service.workspace === workspacePath)
+      .forEach(disposeFileService);
     configs.forEach(config => createFileService(config, workspacePath));
+    try {
+      await migrateLoadedServiceCredentials();
+    } catch (error) {
+      reportError(error, 'migrate saved credentials after config reload');
+    }
   } catch (error) {
     reportError(error);
   } finally {

@@ -1,6 +1,4 @@
-import * as output from '../ui/output';
-import logger from '../logger';
-import { showErrorMessage } from '../host';
+import { ErrorContext, reportActionableError } from '../errors';
 
 const CONNECTION_ERROR_PATTERNS = [
   /ECONNRESET/i,
@@ -30,23 +28,18 @@ export function isConnectionError(err: unknown): boolean {
   const message = (err as Error).message || '';
   const code = (err as { code?: unknown }).code || '';
   const text = `${message} ${code}`;
-  return CONNECTION_ERROR_PATTERNS.some(pattern => pattern.test(text));
+  if (CONNECTION_ERROR_PATTERNS.some(pattern => pattern.test(text))) {
+    return true;
+  }
+  const cause = (err as { cause?: unknown; firstCause?: unknown }).cause ||
+    (err as { firstCause?: unknown }).firstCause;
+  return cause !== undefined && cause !== err ? isConnectionError(cause) : false;
 }
 
-export function reportError(err: Error | string, ctx?: string) {
-  let errorString: string;
-  if (err instanceof Error) {
-    errorString = err.message;
-    logger.error(`${err.stack}`, ctx);
-  } else {
-    errorString = err;
-    logger.error(errorString, ctx);
-  }
-
-  showErrorMessage(errorString, 'Detail').then(result => {
-    if (result === 'Detail') {
-      output.show();
-    }
-  });
-  return;
+export function reportError(
+  err: unknown,
+  ctx?: string | ErrorContext
+) {
+  const context = typeof ctx === 'string' ? { operation: ctx } : ctx;
+  return reportActionableError(err, context);
 }

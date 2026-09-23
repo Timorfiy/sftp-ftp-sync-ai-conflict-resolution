@@ -1,18 +1,20 @@
 import * as vscode from 'vscode';
 import TransferTask from '../core/transferTask';
+import { redactedErrorMessage } from '../security/redaction';
 
-interface QueueItem {
+export interface QueueItem {
   id: string;
   task: TransferTask;
   status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
   error?: string;
+  warning?: string;
   startTime?: number;
   endTime?: number;
 }
 
 let _idCounter = 0;
 
-class TransferQueueProvider implements vscode.TreeDataProvider<QueueItem> {
+export class TransferQueueProvider implements vscode.TreeDataProvider<QueueItem> {
   private _items: QueueItem[] = [];
   private _onDidChange: vscode.EventEmitter<QueueItem | undefined> = new vscode.EventEmitter<QueueItem | undefined>();
   readonly onDidChangeTreeData: vscode.Event<QueueItem | undefined> = this._onDidChange.event;
@@ -26,7 +28,7 @@ class TransferQueueProvider implements vscode.TreeDataProvider<QueueItem> {
 
   start(id: string) {
     const item = this._items.find(i => i.id === id);
-    if (item) {
+    if (item && item.status !== 'cancelled') {
       item.status = 'running';
       item.startTime = Date.now();
       this._onDidChange.fire(item);
@@ -36,16 +38,22 @@ class TransferQueueProvider implements vscode.TreeDataProvider<QueueItem> {
   done(id: string, error?: Error) {
     const item = this._items.find(i => i.id === id);
     if (item) {
-      item.status = error ? 'failed' : 'completed';
+      item.status = item.task.isCancelled?.()
+        ? 'cancelled'
+        : error
+          ? 'failed'
+          : 'completed';
       item.endTime = Date.now();
-      if (error) {
-        item.error = error.message;
+      if (error && item.status === 'failed') {
+        item.error = redactedErrorMessage(error);
+      } else {
+        item.error = undefined;
       }
+      const warnings = item.task.getWarnings?.() || [];
+      item.warning = warnings.length > 0
+        ? warnings.map(warning => warning.message).join('\n')
+        : undefined;
       this._onDidChange.fire(item);
-      // Auto-remove completed items after 5 seconds
-      setTimeout(() => {
-        this.remove(id);
-      }, 5000);
     }
   }
 
@@ -56,7 +64,6 @@ class TransferQueueProvider implements vscode.TreeDataProvider<QueueItem> {
       item.endTime = Date.now();
       item.task.cancel();
       this._onDidChange.fire(item);
-      setTimeout(() => this.remove(id), 3000);
     }
   }
 
@@ -85,7 +92,7 @@ class TransferQueueProvider implements vscode.TreeDataProvider<QueueItem> {
       id: item.id,
       label,
       iconPath: new vscode.ThemeIcon(icon),
-      tooltip: item.error || label,
+      tooltip: item.error || item.warning || label,
       contextValue: item.status === 'pending' || item.status === 'running' ? 'activeTransfer' : 'transfer',
       collapsibleState: vscode.TreeItemCollapsibleState.None,
     };

@@ -150,13 +150,14 @@ describe('backup lifecycle', () => {
     vol.fromJSON({ '/var/www/index.php': 'original content' }, '/');
     const fs = createRemoteFs();
 
-    const backupPath = await createBackup('/var/www/index.php', fs, {
+    const backupResult = await createBackup('/var/www/index.php', fs, {
       enabled: true,
       folder: '.vscode/sftp-backup',
       versions: 5,
     }, '/var/www');
 
-    expect(backupPath).not.toBeNull();
+    expect(backupResult.status).toBe('created');
+    const backupPath = backupResult.path;
     expect(backupPath.startsWith('/var/www/.vscode/sftp-backup/index.php.')).toBe(true);
     expect(backupPath.endsWith('.bak')).toBe(true);
     expect(vol.existsSync(backupPath)).toBe(true);
@@ -172,14 +173,14 @@ describe('backup lifecycle', () => {
     vol.fromJSON({ [targetPath]: content }, '/');
     const fs = createRemoteFs();
 
-    const backupPath = await createBackup(targetPath, fs, {
+    const backupResult = await createBackup(targetPath, fs, {
       enabled: true,
       folder: '.vscode/sftp-backup',
       versions: 100,
     }, '/var/www');
 
-    expect(backupPath).not.toBeNull();
-    expect(vol.readFileSync(backupPath, 'utf8')).toBe(content);
+    expect(backupResult.status).toBe('created');
+    expect(vol.readFileSync(backupResult.path, 'utf8')).toBe(content);
   });
 
   test.each(['image.png', 'image.jpg', 'image.webp', 'video.mp4', 'font.woff2', 'file.pdf']) (
@@ -189,13 +190,16 @@ describe('backup lifecycle', () => {
       vol.fromJSON({ [targetPath]: Buffer.from([0x00, 0x01, 0x02, 0x03]) }, '/');
       const fs = createRemoteFs();
 
-      const backupPath = await createBackup(targetPath, fs, {
+      const backupResult = await createBackup(targetPath, fs, {
         enabled: true,
         folder: '.vscode/sftp-backup',
         versions: 100,
       }, '/var/www');
 
-      expect(backupPath).toBeNull();
+      expect(backupResult).toEqual({
+        status: 'skipped',
+        reason: 'binary-or-unsupported',
+      });
       expect(vol.existsSync('/var/www/.vscode/sftp-backup')).toBe(false);
     }
   );
@@ -204,27 +208,30 @@ describe('backup lifecycle', () => {
     vol.fromJSON({ '/var/www/payload.asset': Buffer.from([0x41, 0x00, 0x42, 0x01]) }, '/');
     const fs = createRemoteFs();
 
-    const backupPath = await createBackup('/var/www/payload.asset', fs, {
+    const backupResult = await createBackup('/var/www/payload.asset', fs, {
       enabled: true,
       folder: '.vscode/sftp-backup',
       versions: 100,
     }, '/var/www');
 
-    expect(backupPath).toBeNull();
+    expect(backupResult).toEqual({
+      status: 'skipped',
+      reason: 'binary-or-unsupported',
+    });
   });
 
   test('createBackup stores unknown extensions when sampled content is text', async () => {
     vol.fromJSON({ '/var/www/template.custom': 'custom text template' }, '/');
     const fs = createRemoteFs();
 
-    const backupPath = await createBackup('/var/www/template.custom', fs, {
+    const backupResult = await createBackup('/var/www/template.custom', fs, {
       enabled: true,
       folder: '.vscode/sftp-backup',
       versions: 100,
     }, '/var/www');
 
-    expect(backupPath).not.toBeNull();
-    expect(vol.readFileSync(backupPath, 'utf8')).toBe('custom text template');
+    expect(backupResult.status).toBe('created');
+    expect(vol.readFileSync(backupResult.path, 'utf8')).toBe('custom text template');
   });
 
   test('createBackup keeps only the configured number of versions', async () => {
@@ -261,14 +268,15 @@ describe('backup lifecycle', () => {
       pathResolver: path,
     };
 
-    const backupPath = await createBackup('/var/www/index.php', remoteFs, {
+    const backupResult = await createBackup('/var/www/index.php', remoteFs, {
       enabled: true,
       location: 'local',
       folder: '.vscode/sftp-backup',
       versions: 5,
     }, '/var/www', storage);
 
-    expect(backupPath).not.toBeNull();
+    expect(backupResult.status).toBe('created');
+    const backupPath = backupResult.path;
     expect(backupPath.startsWith(path.join('/workspace', '.vscode/sftp-backup', 'index.php.'))).toBe(true);
     expect(backupPath.endsWith('.bak')).toBe(true);
     expect(vol.existsSync(backupPath)).toBe(true);
@@ -530,7 +538,18 @@ describe('backupBeforeDelete', () => {
 
     await expect(
       backupBeforeDelete('/var/www/site', flaky, baseConfig, '/var/www')
-    ).rejects.toThrow(/could not back up/);
+    ).rejects.toMatchObject({
+      failureId: 'backup.delete-preflight-failed',
+      created: 1,
+      total: 2,
+      context: {
+        backupProgress: {
+          created: 1,
+          total: 2,
+          nothingDeleted: true,
+        },
+      },
+    });
   });
 
   test('a failed backup leaves the delete to the caller, which never runs', async () => {

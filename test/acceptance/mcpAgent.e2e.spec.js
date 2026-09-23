@@ -75,6 +75,7 @@ jest.mock('../../src/host', () => ({
   getUserSetting: jest.fn(() => ({ get: jest.fn(() => false), update: jest.fn() })),
 }));
 jest.mock('../../src/modules/secrets', () => ({
+  ...jest.requireActual('../../src/modules/secrets'),
   storeCredential: jest.fn(),
   getCredential: jest.fn(async () => undefined),
 }));
@@ -161,7 +162,7 @@ async function waitForConflict(client, expectedPath) {
       await client.callTool({ name: 'conflicts_list', arguments: {} })
     );
     const conflict = result.conflicts.find(item => item.path === expectedPath);
-    if (conflict) {
+    if (conflict && (conflict.status === 'pending' || conflict.status === 'reviewing')) {
       return conflict;
     }
     await new Promise(resolve => setTimeout(resolve, 50));
@@ -228,9 +229,10 @@ for (const protocol of ['ftp', 'sftp']) {
     });
     let transport;
     let client;
+    const uploads = [];
     try {
       await remoteFs.connect(option, {
-        askForPasswd: async () => 'test',
+        requestSecret: async () => 'test',
         verifyHostKey: async () => true,
       });
       initRemoteBaselineStore(memoryMemento());
@@ -294,6 +296,7 @@ for (const protocol of ['ftp', 'sftp']) {
           direction: TransferDirection.LOCAL_TO_REMOTE,
           lifecycle: createConflictLifecycle({ fileService, config }),
         });
+        uploads.push(upload.then(() => undefined, () => undefined));
         const conflict = await waitForConflict(client, `${label}.txt`);
         return { remotePath, localPath, changed, upload, conflict };
       }
@@ -566,13 +569,14 @@ for (const protocol of ['ftp', 'sftp']) {
       expect(failure.result.error).toBeTruthy();
       expect(quickPicks.every(item => item.manualClicks === 0)).toBe(true);
     } finally {
+      await disposeConflictBridge();
+      await Promise.all(uploads);
       if (client) {
         await client.close().catch(() => {});
       } else if (transport) {
         await transport.close().catch(() => {});
       }
       remoteFs.end();
-      await disposeConflictBridge();
       await server.close();
       await fs.promises.rm(localRoot, { recursive: true, force: true });
     }

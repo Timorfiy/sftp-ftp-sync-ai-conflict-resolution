@@ -90,6 +90,7 @@ module.exports = async function startSFTPServer({
     client.on('error', () => {});
     client.once('close', () => clients.delete(client));
     client.on('authentication', context => {
+      sandbox.noteOperation('AUTH', context.method);
       if (
         context.method === 'password' &&
         context.username === sandbox.credentials.username &&
@@ -159,6 +160,7 @@ module.exports = async function startSFTPServer({
           }
 
           sftp.on('REALPATH', (reqid, remotePath) => {
+            sandbox.noteOperation('REALPATH', remotePath);
             try {
               const normalized = sandbox.resolve(remotePath).normalized;
               sftp.name(reqid, [{ filename: normalized, longname: normalized, attrs: {} }]);
@@ -169,6 +171,7 @@ module.exports = async function startSFTPServer({
 
           for (const event of ['LSTAT', 'STAT']) {
             sftp.on(event, async (reqid, remotePath) => {
+              sandbox.noteOperation(event, remotePath);
               try {
                 sftp.attrs(reqid, attrs(await fs.promises.stat(sandbox.assertAllowed(remotePath))));
               } catch (error) {
@@ -178,7 +181,13 @@ module.exports = async function startSFTPServer({
           }
 
           sftp.on('OPENDIR', async (reqid, remotePath) => {
+            sandbox.noteOperation('OPENDIR', remotePath);
             try {
+              if (sandbox.consumeDisconnect('list')) {
+                sftp.status(reqid, STATUS_CODE.FAILURE, 'Connection lost by fixture');
+                disconnectClient(client);
+                return;
+              }
               const localPath = sandbox.assertAllowed(remotePath);
               const stat = await fs.promises.stat(localPath);
               if (!stat.isDirectory()) throw Object.assign(new Error('Not a directory'), { code: 'ENOTDIR' });
@@ -189,6 +198,7 @@ module.exports = async function startSFTPServer({
           });
 
           sftp.on('READDIR', async (reqid, handle) => {
+            sandbox.noteOperation('READDIR');
             const opened = lookup(handle);
             if (!opened || opened.type !== 'dir') return status(reqid);
             if (opened.sent) return sftp.status(reqid, STATUS_CODE.EOF);
@@ -206,6 +216,7 @@ module.exports = async function startSFTPServer({
           });
 
           sftp.on('OPEN', async (reqid, remotePath, flags, openAttrs) => {
+            sandbox.noteOperation(flags & OPEN_MODE.WRITE ? 'OPEN_WRITE' : 'OPEN_READ', remotePath);
             try {
               const operation = flags & OPEN_MODE.WRITE ? 'upload' : 'download';
               const injectDisconnect =
@@ -241,6 +252,7 @@ module.exports = async function startSFTPServer({
           });
 
           sftp.on('WRITE', async (reqid, handle, offset, data) => {
+            sandbox.noteOperation('WRITE');
             const opened = lookup(handle);
             if (!opened || opened.type !== 'file') return status(reqid);
             try {
@@ -268,6 +280,7 @@ module.exports = async function startSFTPServer({
           });
 
           sftp.on('FSETSTAT', async (reqid, handle, values) => {
+            sandbox.noteOperation('FSETSTAT');
             const opened = lookup(handle);
             if (!opened || opened.type !== 'file') return status(reqid);
             try {
@@ -295,6 +308,7 @@ module.exports = async function startSFTPServer({
           });
 
           sftp.on('SETSTAT', async (reqid, remotePath, values) => {
+            sandbox.noteOperation('SETSTAT', remotePath);
             try {
               await applyAttrs(sandbox.assertAllowed(remotePath), values);
               sftp.status(reqid, STATUS_CODE.OK);
@@ -305,6 +319,7 @@ module.exports = async function startSFTPServer({
 
           const simple = (event, operation) => {
             sftp.on(event, async (reqid, ...args) => {
+              sandbox.noteOperation(event, args[0]);
               try {
                 await operation(...args);
                 sftp.status(reqid, STATUS_CODE.OK);
@@ -321,6 +336,7 @@ module.exports = async function startSFTPServer({
             sandbox.assertAllowed(to)
           ));
           sftp.on('EXTENDED', async (reqid, extension, ...args) => {
+            sandbox.noteOperation(`EXTENDED:${extension}`, args[0]);
             if (extension !== 'posix-rename@openssh.com') {
               return sftp.status(reqid, STATUS_CODE.OP_UNSUPPORTED);
             }
@@ -348,6 +364,9 @@ module.exports = async function startSFTPServer({
     return {
       port: server.address().port,
       sandbox,
+      get activeConnections() {
+        return clients.size;
+      },
       async disconnectClients() {
         await Promise.all([...clients].map(client => new Promise(resolve => {
           client.once('close', resolve);

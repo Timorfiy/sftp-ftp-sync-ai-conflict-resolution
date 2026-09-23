@@ -280,6 +280,11 @@ connect and can save the value to the OS credential store (macOS Keychain,
 Windows Credential Manager, Linux libsecret) rather than to the file, which
 keeps `sftp.json` safe to commit.
 
+Saved credentials are isolated by protocol, normalized host, effective port,
+username, and credential type. Keyboard-interactive answers are memory-only
+and are never written to Secret Storage. Use `SFTP: Delete Saved Password` to
+select and remove an endpoint-specific password or passphrase.
+
 Setting `passphrase` to `true` forces the prompt for an encrypted key without
 storing anything in the file.
 

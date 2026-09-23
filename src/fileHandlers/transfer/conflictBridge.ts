@@ -3,6 +3,7 @@ import { createHash, randomUUID } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { COMMAND_OPEN_TROUBLESHOOTING } from '../../constants';
 import * as fileOperations from '../../core/fileBaseOperations';
 import type { FileStats } from '../../core/fs/fileSystem';
 import localFs from '../../core/localFs';
@@ -20,6 +21,7 @@ import {
   McpLaunchConfiguration,
 } from '../../mcp/conflictContract';
 import { suppressWatcherFor } from '../../modules/watcherSuppression';
+import { redactedErrorMessage } from '../../security/redaction';
 import { diff } from '../diff';
 import type { FileTransferContext } from './transfer';
 import type { RemoteBaseline } from './remoteBaseline';
@@ -90,6 +92,7 @@ export interface ConflictRecord extends StoredConflictRecord {
 export interface ConflictSession {
   root: string;
   record: ConflictRecord;
+  generation: number;
 }
 
 export interface ConflictReportRef {
@@ -109,6 +112,7 @@ const activeQuickPicks = new Map<string, vscode.QuickPick<vscode.QuickPickItem>>
 let manualUiQueue: Promise<void> = Promise.resolve();
 let conflictSequence = 0;
 let stateStore: ConflictStateStore | undefined;
+let bridgeGeneration = 0;
 let bridgeCapability = '';
 let bridgeWorkspaces: readonly string[] = [];
 let notificationsEnabled = true;
@@ -123,7 +127,7 @@ function delay(milliseconds: number): Promise<void> {
 }
 
 function cleanError(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
+  return redactedErrorMessage(error);
 }
 
 function bridgeError(message: string, cause: unknown): Error {
@@ -306,7 +310,7 @@ export async function initializeConflictBridge(
   version: string,
   options: ConflictBridgeInitializationOptions
 ): Promise<void> {
-  await stateStore?.dispose();
+  await disposeConflictBridge();
   stateStore = new ConflictStateStore({
     globalStorageRoot: options.globalStorageRoot,
     workspaces,
@@ -334,6 +338,13 @@ export async function initializeConflictBridge(
 }
 
 export async function disposeConflictBridge(): Promise<void> {
+  bridgeGeneration += 1;
+  for (const quickPick of [...activeQuickPicks.values()]) {
+    quickPick.hide();
+  }
+  activeQuickPicks.clear();
+  resolvedSessions.clear();
+  manualUiQueue = Promise.resolve();
   const store = stateStore;
   stateStore = undefined;
   bridgeWorkspaces = [];
@@ -427,7 +438,7 @@ export async function captureConflict(
     },
     baseline: baseline ? { mtime: baseline.mtime, size: baseline.size } : null,
   };
-  const session = { root, record };
+  const session = { root, record, generation: bridgeGeneration };
   holdConflictPath(context.srcFsPath);
   await writeConflictRecord(root, record);
   await captureLocalRecovery(session, context.srcFsPath);
@@ -760,7 +771,7 @@ function conflictDetail(reason: UploadConflictReason): string {
 function showQuickPickOnce(
   session: ConflictSession,
   context: FileTransferContext
-): Promise<ConflictDecisionAction | 'open_diff' | undefined> {
+): Promise<ConflictDecisionAction | 'open_diff' | 'troubleshoot' | undefined> {
   return new Promise(resolve => {
     const quickPick = vscode.window.createQuickPick();
     quickPick.title = `SFTP/FTP Sync + AI Conflict Resolution blocked upload of ${path.basename(context.srcFsPath)}`;
@@ -768,13 +779,16 @@ function showQuickPickOnce(
     quickPick.ignoreFocusOut = true;
     quickPick.items = [
       { label: 'Open Diff', description: 'Compare the captured remote file with local content' },
+      { label: 'Troubleshoot', description: 'Open the bundled recovery guide' },
       { label: 'Overwrite', description: 'Upload this file' },
       { label: 'Overwrite All', description: 'Upload every remaining conflict in this batch' },
       { label: 'Cancel upload', description: 'Keep the remote file unchanged' },
     ];
     activeQuickPicks.set(session.record.id, quickPick);
     let finished = false;
-    const finish = (value: ConflictDecisionAction | 'open_diff' | undefined) => {
+    const finish = (
+      value: ConflictDecisionAction | 'open_diff' | 'troubleshoot' | undefined
+    ) => {
       if (finished) {
         return;
       }
@@ -789,6 +803,8 @@ function showQuickPickOnce(
       const label = quickPick.selectedItems[0]?.label;
       if (label === 'Open Diff') {
         finish('open_diff');
+      } else if (label === 'Troubleshoot') {
+        finish('troubleshoot');
       } else if (label === 'Overwrite') {
         finish('overwrite');
       } else if (label === 'Overwrite All') {
@@ -808,13 +824,25 @@ async function showManualUi(
   session: ConflictSession,
   context: FileTransferContext
 ): Promise<ConflictDecisionAction | undefined> {
-  while (!resolvedSessions.has(session.record.id)) {
+  while (
+    session.generation === bridgeGeneration &&
+    !resolvedSessions.has(session.record.id)
+  ) {
     const choice = await showQuickPickOnce(session, context);
     if (!choice) {
       return undefined;
     }
     if (choice === 'open_diff') {
       await openNativeDiff(session, context).catch(() => undefined);
+      continue;
+    }
+    if (choice === 'troubleshoot') {
+      await vscode.commands.executeCommand(
+        COMMAND_OPEN_TROUBLESHOOTING,
+        session.record.reason === 'timestamp-unavailable'
+          ? 'ftp-timestamps'
+          : 'conflicts'
+      );
       continue;
     }
     return choice;
@@ -1150,12 +1178,18 @@ export async function waitForConflictDecision(
   session: ConflictSession,
   context: FileTransferContext
 ): Promise<ConflictDecisionAction> {
+  if (session.generation !== bridgeGeneration) {
+    return 'cancel';
+  }
   let manualDecision: ConflictDecisionAction | undefined;
   void enqueueManualUi(session, context).then(choice => {
     manualDecision = choice;
   });
 
   for (;;) {
+    if (session.generation !== bridgeGeneration) {
+      return 'cancel';
+    }
     if (manualDecision) {
       const decision = manualDecision;
       manualDecision = undefined;
@@ -1183,6 +1217,9 @@ export async function waitForConflictDecision(
     }
 
     const requests = await pendingRequests(session);
+    if (session.generation !== bridgeGeneration) {
+      return 'cancel';
+    }
     for (const envelope of requests) {
       const parsed = conflictBridgeRequestSchema.safeParse(envelope.request);
       if (!parsed.success || parsed.data.requestId !== envelope.requestId) {
@@ -1332,7 +1369,7 @@ async function updateConflictByReference(
   if (!record) {
     return;
   }
-  const session = { root: reference.root, record };
+  const session = { root: reference.root, record, generation: bridgeGeneration };
   await updateSession(session, status, changes);
   if (isTerminal(status)) {
     releaseConflictPath(record.localFile);

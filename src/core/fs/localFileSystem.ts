@@ -62,8 +62,12 @@ export default class LocalFileSystem extends FileSystem {
     return new Promise((resolve, reject) => {
       try {
         const stream = fs.createReadStream(path, option);
-        stream.once('error', reject);
-        resolve(stream);
+        const onError = error => reject(error);
+        stream.once('error', onError);
+        stream.once('open', () => {
+          stream.removeListener('error', onError);
+          resolve(stream);
+        });
       } catch (err) {
         reject(err);
       }

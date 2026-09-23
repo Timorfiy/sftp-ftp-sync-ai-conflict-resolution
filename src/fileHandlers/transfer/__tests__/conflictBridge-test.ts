@@ -68,10 +68,11 @@ jest.mock('../../../logger', () => ({
 import { randomUUID } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as fileOperations from '../../../core/fileBaseOperations';
 import * as vscode from 'vscode';
+import * as fileOperations from '../../../core/fileBaseOperations';
 import { FileType } from '../../../core/fs/fileSystem';
 import { TransferDirection } from '../../../core/transferTask';
+import { RedactionScope } from '../../../security/redaction';
 import {
   acceptBatchOverwrite,
   atomicWriteJson,
@@ -195,6 +196,30 @@ describe('Kent conflict bridge coordinator', () => {
         fs.existsSync(path.join(workspace, '.kent-tmp', 'sftp-conflicts'))
       ).toBe(false);
     }
+  });
+
+  test('disposing the bridge cancels a waiting conflict without leaving its UI or polling alive', async () => {
+    const data = await fixture();
+    const beforeRemote = await fs.promises.readFile(data.remoteFile);
+    const session = await captureConflict(
+      data.workspace,
+      'dispose-pending',
+      data.context,
+      'remote-changed',
+      data.remote
+    );
+    const waiting = waitForConflictDecision(session, data.context);
+    await delay(20);
+    expect(mockQuickPicks).toHaveLength(1);
+
+    await disposeConflictBridge();
+
+    await expect(waiting).resolves.toBe('cancel');
+    expect(mockQuickPicks[0].hide).toHaveBeenCalledTimes(1);
+    expect(mockQuickPicks[0].dispose).toHaveBeenCalledTimes(1);
+    expect(await fs.promises.readFile(data.remoteFile)).toEqual(beforeRemote);
+    await expect(waitForConflictDecision(session, data.context)).resolves.toBe('cancel');
+    expect(mockQuickPicks).toHaveLength(1);
   });
 
   test('MCP decision resumes the live promise, closes QuickPick, and records upload callback', async () => {
@@ -790,6 +815,29 @@ describe('Kent conflict bridge coordinator', () => {
     expect(session.record.decision?.source).toBe('cursor');
   });
 
+  test('manual recovery opens the exact local conflict troubleshooting section', async () => {
+    const data = await fixture();
+    const session = await captureConflict(
+      data.workspace,
+      'batch-troubleshoot',
+      data.context,
+      'timestamp-unavailable',
+      data.remote
+    );
+    const decisionPromise = waitForConflictDecision(session, data.context);
+    await delay(20);
+
+    mockQuickPicks[0].accept('Troubleshoot');
+    await delay(20);
+
+    expect(vscode.commands.executeCommand).toHaveBeenCalledWith(
+      'sftpSyncAI.openTroubleshooting',
+      'ftp-timestamps'
+    );
+    mockQuickPicks[1].accept('Cancel upload');
+    await expect(decisionPromise).resolves.toBe('cancel');
+  });
+
   test('old extension-session conflicts become orphaned on initialization', async () => {
     const workspace = path.join(testRoot, randomUUID());
     const stateRoot = path.join(workspace, '.kent-tmp', 'sftp-conflicts');
@@ -837,6 +885,35 @@ describe('Kent conflict bridge coordinator', () => {
       'legacy snapshot'
     );
     expect(fs.existsSync(stateRoot)).toBe(false);
+  });
+
+  test('persists redacted conflict failure and tool-visible error strings', async () => {
+    const data = await fixture();
+    const session = await captureConflict(
+      data.workspace,
+      'redaction-batch',
+      data.context,
+      'remote-changed',
+      data.remote
+    );
+    const reference = await markConflictUploading(session);
+    const canary = 'conflict-password-canary-2d719b2c';
+    const scope = new RedactionScope();
+    scope.register(canary);
+
+    await markConflictFailed(
+      reference,
+      new Error(`Upload authentication failed: ${canary}`)
+    );
+
+    const record = JSON.parse(
+      await fs.promises.readFile(session.record.reportFile, 'utf8')
+    );
+    expect(record.result.error).toBe(
+      'Upload authentication failed: [REDACTED]'
+    );
+    expect(JSON.stringify(record)).not.toContain(canary);
+    scope.dispose();
   });
 
   test('corrupt legacy reports remain protected and surface migration failure until repaired', async () => {

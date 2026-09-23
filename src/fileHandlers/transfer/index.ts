@@ -7,8 +7,36 @@ import { remoteBackupsProvider } from '../../modules/remoteBackups';
 import { withRetry } from '../../helper';
 import { createConflictLifecycle, UploadConflictAbortError } from './conflictCheck';
 import { createTransferRetryOptions } from './retryOptions';
+import {
+  TransferOperation,
+  TransferOperationResult,
+} from '../../core/transferOperation';
+import { reportError } from '../../helper';
+import { TypedFailure } from '../../errors/actionable';
 
 export { createTransferRetryOptions } from './retryOptions';
+
+function reportTransferWarnings(
+  result: TransferOperationResult,
+  operation: string,
+  protocol: string
+): void {
+  if (result.warnings <= 0) {
+    return;
+  }
+  void reportError(
+    new TypedFailure(
+      'backup.overwrite-failed',
+      'One or more configured overwrite backups failed.',
+      { partialResult: result }
+    ),
+    {
+      operation,
+      protocol: protocol === 'ftp' ? 'ftp' : 'sftp',
+      retrySafety: 'unsafe',
+    }
+  );
+}
 
 function createTransferHandle(direction: TransferDirection) {
   return async function handle(this: FileHandlerContext, option) {
@@ -27,14 +55,19 @@ function createTransferHandle(direction: TransferDirection) {
     const preHook = isUpload ? 'preUpload' : 'preDownload';
     const postHook = isUpload ? 'postUpload' : 'postDownload';
     const lifecycle = createConflictLifecycle(this);
+    const operation = new TransferOperation();
 
     await runHook(preHook, hooks, hookCtx, workspacePath);
 
+    let result: TransferOperationResult;
     try {
-      await withRetry(
+      result = await withRetry(
         async () => {
           const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
-          const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
+          const scheduler = this.fileService.createTransferScheduler(
+            this.config.concurrency,
+            operation
+          );
           let transferConfig;
           if (direction === TransferDirection.REMOTE_TO_LOCAL) {
             transferConfig = {
@@ -64,11 +97,12 @@ function createTransferHandle(direction: TransferDirection) {
             };
           }
           await transfer(transferConfig, task => scheduler.add(task));
-          await scheduler.run();
+          const transferResult = await scheduler.run();
 
           if (isUpload) {
             remoteBackupsProvider.refresh();
           }
+          return transferResult;
         },
         createTransferRetryOptions(this, direction)
       );
@@ -80,6 +114,7 @@ function createTransferHandle(direction: TransferDirection) {
     }
 
     await runHook(postHook, hooks, hookCtx, workspacePath);
+    reportTransferWarnings(result, isUpload ? 'upload' : 'download', this.config.protocol);
   };
 }
 
@@ -117,12 +152,17 @@ export const sync2Remote = createFileHandler<SyncOption>({
     option.filePerm = this.config.filePerm;
     option.dirPerm = this.config.dirPerm;
     const lifecycle = createConflictLifecycle(this);
+    const operation = new TransferOperation();
 
+    let result: TransferOperationResult;
     try {
-      await withRetry(
+      result = await withRetry(
         async () => {
           const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
-          const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
+          const scheduler = this.fileService.createTransferScheduler(
+            this.config.concurrency,
+            operation
+          );
           await sync(
             {
               srcFsPath: localFsPath,
@@ -137,9 +177,10 @@ export const sync2Remote = createFileHandler<SyncOption>({
             },
             task => scheduler.add(task)
           );
-          await scheduler.run();
+          const transferResult = await scheduler.run();
 
           remoteBackupsProvider.refresh();
+          return transferResult;
         },
         createTransferRetryOptions(this, TransferDirection.LOCAL_TO_REMOTE)
       );
@@ -151,6 +192,7 @@ export const sync2Remote = createFileHandler<SyncOption>({
     }
 
     await runHook('postSync', hooks, hookCtx, workspacePath);
+    reportTransferWarnings(result, 'sync local to remote', this.config.protocol);
   },
   transformOption() {
     const config = this.config;
@@ -188,13 +230,17 @@ export const sync2Local = createFileHandler<SyncOption>({
     };
     const workspacePath = this.fileService.workspace;
     const lifecycle = createConflictLifecycle(this);
+    const operation = new TransferOperation();
 
     await runHook('preSync', hooks, hookCtx, workspacePath);
 
     await withRetry(
       async () => {
         const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
-        const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
+        const scheduler = this.fileService.createTransferScheduler(
+          this.config.concurrency,
+          operation
+        );
         await sync(
           {
             srcFsPath: remoteFsPath,

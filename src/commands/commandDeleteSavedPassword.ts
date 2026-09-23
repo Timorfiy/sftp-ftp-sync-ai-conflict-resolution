@@ -1,14 +1,22 @@
 import * as vscode from 'vscode';
 import { COMMAND_DELETE_SAVED_PASSWORD } from '../constants';
 import { showInformationMessage } from '../host';
-import { getAllFileService } from '../modules/serviceManager';
-import { getCredential, deleteCredential } from '../modules/secrets';
+import { getCredentialMigrationCandidates } from '../modules/serviceManager';
+import {
+  CredentialEndpoint,
+  CredentialKind,
+  credentialEndpointId,
+  deleteCredential,
+  deleteLegacyCredential,
+  findLegacyCredentials,
+  getCredential,
+} from '../modules/secrets';
 import { checkCommand } from './abstract/createCommand';
 
 interface CredentialItem extends vscode.QuickPickItem {
-  host: string;
-  username: string;
-  type: 'password' | 'passphrase';
+  endpoint?: CredentialEndpoint;
+  credentialKind: CredentialKind;
+  legacyKey?: string;
 }
 
 export default checkCommand({
@@ -16,42 +24,35 @@ export default checkCommand({
 
   async handleCommand() {
     const items: CredentialItem[] = [];
+    const candidates = getCredentialMigrationCandidates();
+    const endpoints = new Map<string, CredentialEndpoint>();
 
-    for (const service of getAllFileService()) {
-      const configs = [service.getConfig()];
-      if (service.getAvailableProfiles().length > 0) {
-        configs.push(...service.getAllConfig());
-      }
-
-      for (const config of configs) {
-        const host = config.host;
-        const username = config.username;
-        if (!host || !username) {
+    for (const candidate of candidates) {
+      endpoints.set(credentialEndpointId(candidate.endpoint), candidate.endpoint);
+    }
+    for (const endpoint of endpoints.values()) {
+      for (const kind of ['password', 'passphrase'] as const) {
+        if ((await getCredential(endpoint, kind)) === undefined) {
           continue;
         }
-
-        const password = await getCredential(host, username, 'password');
-        if (password !== undefined) {
-          items.push({
-            host,
-            username,
-            type: 'password',
-            label: `$(key) Password for ${username}@${host}`,
-            description: config.name || '',
-          });
-        }
-
-        const passphrase = await getCredential(host, username, 'passphrase');
-        if (passphrase !== undefined) {
-          items.push({
-            host,
-            username,
-            type: 'passphrase',
-            label: `$(lock) Passphrase for ${username}@${host}`,
-            description: config.name || '',
-          });
-        }
+        items.push({
+          endpoint,
+          credentialKind: kind,
+          label: `${kind === 'password' ? '$(key)' : '$(lock)'} ${kind}`,
+          description:
+            `${endpoint.transport}://${endpoint.username}@${endpoint.host}:${endpoint.port}`,
+        });
       }
+    }
+    for (const legacy of await findLegacyCredentials(candidates)) {
+      items.push({
+        credentialKind: legacy.kind,
+        legacyKey: legacy.key,
+        label: `$(warning) Legacy ${legacy.kind}`,
+        description:
+          `${legacy.username}@${legacy.host}` +
+          (legacy.ambiguous ? ' — ambiguous endpoint; not migrated' : ''),
+      });
     }
 
     if (items.length === 0) {
@@ -59,7 +60,7 @@ export default checkCommand({
       return;
     }
 
-    const selected = await vscode.window.showQuickPick(items, {
+    const selected = await vscode.window.showQuickPick<CredentialItem>(items, {
       placeHolder: 'Select saved credential(s) to delete',
       canPickMany: true,
     });
@@ -69,7 +70,11 @@ export default checkCommand({
     }
 
     for (const item of selected) {
-      await deleteCredential(item.host, item.username, item.type);
+      if (item.legacyKey) {
+        await deleteLegacyCredential(item.legacyKey);
+      } else if (item.endpoint) {
+        await deleteCredential(item.endpoint, item.credentialKind);
+      }
     }
 
     showInformationMessage(

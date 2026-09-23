@@ -6,6 +6,8 @@ import { checkCommand } from './abstract/createCommand';
 import localFs from '../core/localFs';
 import { createBackup, BackupStorage } from '../core/backup';
 import * as fileOperations from '../core/fileBaseOperations';
+import { showInformationMessage } from '../host';
+import { reportError } from '../helper';
 
 export default checkCommand({
   id: COMMAND_REMOTE_BACKUPS_RESTORE,
@@ -39,14 +41,28 @@ export default checkCommand({
             pathResolver: path,
           };
         }
-        await createBackup(item.originalPath, remoteFs, config.backup, config.remotePath, storage);
+        const backupResult = await createBackup(
+          item.originalPath,
+          remoteFs,
+          config.backup,
+          config.remotePath,
+          storage
+        );
+        if (backupResult.status === 'failed') {
+          throw new Error(
+            'The current remote file could not be backed up, so restore was not started.'
+          );
+        }
       }
 
       const backupFs = item.location === 'local' ? localFs : remoteFs;
       await fileOperations.transferFile(item.backupPath, item.originalPath, backupFs, remoteFs);
-      vscode.window.showInformationMessage(`Restored backup to ${item.originalPath}`);
+      showInformationMessage(`Restored backup to ${item.originalPath}`);
     } catch (error) {
-      vscode.window.showErrorMessage(`Failed to restore backup: ${error.message}`);
+      void reportError(error, {
+        operation: 'restore backup',
+        retrySafety: 'unsafe',
+      });
     }
   },
 });
