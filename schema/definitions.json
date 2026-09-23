@@ -14,14 +14,17 @@
         "description": "Watch external modification.",
         "properties": {
           "files": {
-            "type": "string",
-            "description": "A glob pattern.",
-            "default": "**/*"
+            "oneOf": [
+              { "type": "string" },
+              { "enum": [false] }
+            ],
+            "description": "A glob pattern, or false to disable the watcher.",
+            "default": false
           },
           "autoUpload": {
             "type": "boolean",
             "description": "Upload when the file changes. Safe to combine with uploadOnSave: a save inside VS Code uploads once, not twice.",
-            "default": true
+            "default": false
           },
           "autoDelete": {
             "type": "boolean",
@@ -34,10 +37,9 @@
             "default": false
           }
         },
-        "required": ["files"],
         "default": {
-          "files": "**/*",
-          "autoUpload": true,
+          "files": false,
+          "autoUpload": false,
           "autoDelete": false,
           "autoRename": false
         }
@@ -88,22 +90,22 @@
           "delete": {
             "type": "boolean",
             "description": "Delete extraneous files from dest dirs.",
-            "default": true
+            "default": false
           },
           "skipCreate": {
             "type": "boolean",
             "description": "Skip creating new files on dest.",
-            "default": true
+            "default": false
           },
           "ignoreExisting": {
             "type": "boolean",
             "description": "Skip updating files that exist on dest.",
-            "default": true
+            "default": false
           },
           "update": {
             "type": "boolean",
             "description": "Update the dest only if a newer version is on the src filesystem.",
-            "default": true
+            "default": false
           }
         }
       },

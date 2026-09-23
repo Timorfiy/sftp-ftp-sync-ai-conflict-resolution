@@ -22,6 +22,7 @@ export const COMMAND_OPEN_TROUBLESHOOTING = command('openTroubleshooting');
 
 // commands in package.json
 export const COMMAND_CONFIG = command('config');
+export const COMMAND_TEST_CONNECTION = command('testConnection');
 export const COMMAND_SET_PROFILE = command('setProfile');
 export const COMMAND_SELECT_NETWORK_INTERFACE = command('selectNetworkInterface');
 export const COMMAND_CANCEL_ALL_TRANSFER = command('cancelAllTransfer');

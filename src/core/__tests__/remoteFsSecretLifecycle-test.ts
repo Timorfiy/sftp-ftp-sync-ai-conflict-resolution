@@ -1,4 +1,8 @@
 const mockConnectErrors: Array<Error | undefined> = [];
+const mockConnections: Array<{ option: any; callbacks: any; fs: any }> = [];
+let mockConnectObserver: ((option: any, callbacks: any) => Promise<void>) | undefined;
+let mockProbeStageError: Error | undefined;
+let mockClosedConnections = 0;
 
 jest.mock('vscode', () => ({
   StatusBarAlignment: { Left: 1 },
@@ -58,7 +62,11 @@ jest.mock('../fs', () => {
 
     constructor(_resolver: unknown, _options: unknown) {}
 
-    async connect(): Promise<void> {
+    async connect(option: any, callbacks: any): Promise<void> {
+      mockConnections.push({ option, callbacks, fs: this });
+      if (mockConnectObserver) {
+        await mockConnectObserver(option, callbacks);
+      }
       const error = mockConnectErrors.shift();
       if (error) {
         this.closed = true;
@@ -75,7 +83,19 @@ jest.mock('../fs', () => {
       };
     }
 
+    async lstat() {
+      if (mockProbeStageError) {
+        throw mockProbeStageError;
+      }
+      return { type: actual.FileType.Directory };
+    }
+
+    async list() {
+      return [];
+    }
+
     end() {
+      mockClosedConnections += 1;
       this.closed = true;
     }
   }
@@ -87,7 +107,10 @@ jest.mock('../fs', () => {
   };
 });
 
-import FileService from '../fileService';
+import FileService, { prepareRemoteConnectionOption } from '../fileService';
+import { probeConnection } from '../connectionProbe';
+import { checkHostKey } from '../remote-client/hostKeyStore';
+import { TypedFailure } from '../../errors/actionable';
 import {
   createCredentialEndpoint,
   initSecrets,
@@ -168,6 +191,11 @@ describe('remote secret scope lifecycle', () => {
 
   beforeEach(() => {
     mockConnectErrors.length = 0;
+    mockConnections.length = 0;
+    mockConnectObserver = undefined;
+    mockProbeStageError = undefined;
+    mockClosedConnections = 0;
+    (checkHostKey as jest.Mock).mockReset().mockResolvedValue(true);
     storage = new MemorySecretStorage();
     initSecrets({ secrets: storage } as any);
     expect(getAllRemoteFs()).toHaveLength(0);
@@ -246,4 +274,82 @@ describe('remote secret scope lifecycle', () => {
     expect(getAllRemoteFs()).toHaveLength(0);
     expect(redactText(password)).toBe(password);
   });
+
+  test('connection probe shares endpoint-scoped credentials without caching or retaining secrets', async () => {
+    const config = createConfig();
+    const endpoint = createCredentialEndpoint(config);
+    const password = 'probe-password-canary';
+    const passphrase = 'probe-passphrase-canary';
+    await storeCredential(endpoint, 'password', password);
+    await storeCredential(endpoint, 'passphrase', passphrase);
+    mockConnectObserver = async (option, callbacks) => {
+      expect(option.password).toBe(password);
+      expect(option.passphrase).toBe(passphrase);
+      expect(typeof callbacks.requestSecret).toBe('function');
+      expect(callbacks.askForPasswd).toBeUndefined();
+      expect(redactText(`${password} ${passphrase}`)).toBe('[REDACTED] [REDACTED]');
+    };
+
+    const options = await prepareRemoteConnectionOption(config as any, 'C:\\workspace');
+    const result = await probeConnection(options, '/', 'base');
+
+    expect(result).toMatchObject({ ok: true, protocol: 'sftp', profile: 'base' });
+    expect(mockConnections).toHaveLength(1);
+    expect(mockClosedConnections).toBe(1);
+    expect(getAllRemoteFs()).toHaveLength(0);
+    expect(redactText(`${password} ${passphrase}`)).toBe(`${password} ${passphrase}`);
+  });
+
+  test.each(['connect', 'lstat'])('failed probe releases its connection and scope after %s', async stage => {
+    const config = createConfig();
+    const password = `probe-${stage}-secret-canary`;
+    await storeCredential(createCredentialEndpoint(config), 'password', password);
+    mockConnectObserver = async () => {
+      expect(redactText(password)).toBe('[REDACTED]');
+    };
+    const error = Object.assign(new Error(password), {
+      code: stage === 'connect' ? 'ECONNREFUSED' : 'EACCES',
+    });
+    if (stage === 'connect') {
+      mockConnectErrors.push(error);
+    } else {
+      mockProbeStageError = error;
+    }
+
+    const options = await prepareRemoteConnectionOption(config as any, 'C:\\workspace');
+    const result = await probeConnection(options, '/', 'base');
+
+    expect(result).toMatchObject({
+      ok: false,
+      category: stage === 'connect' ? 'Network' : 'Permission',
+    });
+    expect(JSON.stringify(result)).not.toContain(password);
+    expect(mockClosedConnections).toBe(1);
+    expect(getAllRemoteFs()).toHaveLength(0);
+    expect(redactText(password)).toBe(password);
+  });
+
+  test.each(['host-key.changed', 'host-key.rejected'] as const)(
+    'shared connection factory preserves %s through Test Connection',
+    async failureId => {
+      const config = createConfig();
+      const password = 'host-key-probe-secret-canary';
+      await storeCredential(createCredentialEndpoint(config), 'password', password);
+      (checkHostKey as jest.Mock).mockRejectedValue(
+        new TypedFailure(failureId, password, { protocol: 'sftp' })
+      );
+      mockConnectObserver = async (option, callbacks) => {
+        await callbacks.verifyHostKey('test-fingerprint', option.host, option.port);
+      };
+
+      const options = await prepareRemoteConnectionOption(config as any, 'C:\\workspace');
+      const result = await probeConnection(options, '/', 'base');
+
+      expect(result).toMatchObject({ ok: false, category: 'Host key' });
+      expect(JSON.stringify(result)).not.toContain(password);
+      expect(mockClosedConnections).toBe(1);
+      expect(getAllRemoteFs()).toHaveLength(0);
+      expect(redactText(password)).toBe(password);
+    }
+  );
 });

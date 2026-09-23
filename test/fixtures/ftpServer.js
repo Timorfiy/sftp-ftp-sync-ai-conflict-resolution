@@ -157,6 +157,7 @@ module.exports = async function startFTPServer({
       const space = line.indexOf(' ');
       const verb = (space < 0 ? line : line.slice(0, space)).toUpperCase();
       const argument = space < 0 ? '' : line.slice(space + 1);
+      sandbox.noteOperation(verb, verb === 'PASS' ? '[redacted]' : argument);
       try {
         if (verb === 'AUTH') {
           reply('234 Proceed with TLS');
@@ -268,6 +269,9 @@ module.exports = async function startFTPServer({
     port,
     peers,
     sandbox,
+    get activeConnections() {
+      return sessions.size;
+    },
     async disconnectClients() {
       await Promise.all([...sessions].map(socket => new Promise(resolve => {
         socket.once('close', resolve);
