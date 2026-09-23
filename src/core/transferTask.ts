@@ -1,5 +1,6 @@
 import { Readable } from 'stream';
 import * as path from 'path';
+import { randomUUID } from 'crypto';
 import * as fileOperations from './fileBaseOperations';
 import { FileSystem, FileType } from './fs';
 import { Task } from './scheduler';
@@ -176,7 +177,12 @@ export default class TransferTask implements Task {
           this._transferDirection === TransferDirection.REMOTE_TO_LOCAL &&
           !this._cancelled &&
           retryCount < REMOTE_DOWNLOAD_RETRY_LIMIT &&
-          isTransientTransferError(error);
+          isTransientTransferError(error) &&
+          // Real remote filesystems need the handler-level retry to clear the
+          // cached client and reconnect. Replaying immediately on the same
+          // broken control connection can hang (FTP) or fail deterministically
+          // (SFTP). The local/mocked source path keeps the narrow stream retry.
+          typeof (this._srcFs as FileSystem & { getClient?: unknown }).getClient !== 'function';
         if (!canRetry) {
           throw error;
         }
@@ -235,49 +241,67 @@ export default class TransferTask implements Task {
 
     // Set the mode if it's specified in the config, otherwise get mode from server.
     let mode = filePerm ? parseInt(String(filePerm), 8) : this._TransferOption.mode;
-    let targetFd; // Destination file
-    let uploadFd; // Temp file or destination file when no temp file is used
-    const uploadTarget = target + (useTempFile ? ".new" : "");
+    let targetFd; // Existing destination handle used only to preserve mode.
+    let uploadFd; // Staging file or destination file when no staging is used.
+    let uploadFdClosed = false;
+    let committed = false;
+    const stageDownload =
+      this._transferDirection === TransferDirection.REMOTE_TO_LOCAL;
+    const useStagingFile = !!useTempFile || stageDownload;
+    const uploadTarget = stageDownload
+      ? `${target}.sftp-sync-${randomUUID()}.tmp`
+      : target + (useTempFile ? '.new' : '');
 
-    // Use mode first.
-    // Then check perserveTargetMode and fallback to fallbackMode if fail to get mode of target
-    if (mode === undefined && perserveTargetMode) {
-      if (useTempFile) {
-        [targetFd, uploadFd] = await Promise.all([
-          targetFs.open(target, 'r')  // Get handle for reading the target mode
-            .catch(() => null), // Return null if target file doesn't exist
-          targetFs.open(uploadTarget, 'w')  // Get handle for the file upload
-        ]);
-      } else {
-        targetFd = uploadFd = await targetFs.open(uploadTarget, 'w');
-      }
-
-      if (targetFd) {
-        [this._handle, mode] = await Promise.all([
-          srcFs.get(src),
-          targetFs
-            .fstat(targetFd)
-            .then(stat => stat.mode)
-            .catch(() => fallbackMode),
-        ]);
-
-        if (useTempFile) {
-          targetFs.close(targetFd);
+    const closeUploadFd = async () => {
+      if (uploadFd !== undefined && !uploadFdClosed) {
+        uploadFdClosed = true;
+        const remoteClient = (targetFs as FileSystem & {
+          getClient?: () => { isClosed?: () => boolean };
+        }).getClient?.();
+        if (remoteClient?.isClosed?.()) {
+          return;
         }
-
-      } else {
-        this._handle = await srcFs.get(src);
-        mode = fallbackMode;
+        await targetFs.close(uploadFd);
       }
-
-    } else {
-      [this._handle, uploadFd] = await Promise.all([
-        srcFs.get(src),
-        targetFs.open(uploadTarget, 'w'),
-      ]);
-    }
+    };
 
     try {
+      // Use mode first. Then check perserveTargetMode and fall back to
+      // fallbackMode if the existing target mode cannot be read.
+      if (mode === undefined && perserveTargetMode) {
+        if (useStagingFile) {
+          [targetFd, uploadFd] = await Promise.all([
+            targetFs.open(target, 'r').catch(() => null),
+            targetFs.open(uploadTarget, 'w'),
+          ]);
+        } else {
+          targetFd = uploadFd = await targetFs.open(uploadTarget, 'w');
+        }
+
+        if (targetFd) {
+          [this._handle, mode] = await Promise.all([
+            srcFs.get(src),
+            targetFs
+              .fstat(targetFd)
+              .then(stat => stat.mode)
+              .catch(() => fallbackMode),
+          ]);
+        } else {
+          this._handle = await srcFs.get(src);
+          mode = fallbackMode;
+        }
+      } else {
+        [this._handle, uploadFd] = await Promise.all([
+          srcFs.get(src),
+          targetFs.open(uploadTarget, 'w'),
+        ]);
+      }
+
+      if (targetFd !== undefined && targetFd !== uploadFd) {
+        await targetFs.close(targetFd);
+        targetFd = undefined;
+      }
+
       if (useTempFile) {
         logger.info("uploading temp file: " + uploadTarget);
       }
@@ -303,7 +327,14 @@ export default class TransferTask implements Task {
         }
       }
 
-      if (useTempFile) {
+      if (useStagingFile) {
+        await closeUploadFd();
+      }
+
+      if (stageDownload) {
+        await targetFs.renameAtomic(uploadTarget, target);
+        committed = true;
+      } else if (useTempFile) {
         logger.info("moving from: " + target + ".new" + " to: " + target);
         if(openSsh) {
           await targetFs.renameAtomic(uploadTarget, target);
@@ -315,10 +346,17 @@ export default class TransferTask implements Task {
           }
           await targetFs.rename(uploadTarget, target);
         }
+        committed = true;
       }
 
     } finally {
-      await targetFs.close(uploadFd);
+      if (targetFd !== undefined && targetFd !== uploadFd) {
+        await targetFs.close(targetFd).catch(() => {});
+      }
+      await closeUploadFd().catch(() => {});
+      if (stageDownload && !committed) {
+        await targetFs.unlink(uploadTarget).catch(() => {});
+      }
     }
   }
 }

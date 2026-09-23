@@ -19,6 +19,8 @@ function createTask(direction, put) {
     open: jest.fn(async () => ({ path: '/target/index.php' })),
     put,
     close: jest.fn(async () => {}),
+    unlink: jest.fn(async () => {}),
+    renameAtomic: jest.fn(async () => {}),
   };
   const task = new TransferTask(
     { fsPath: '/source/index.php', fileSystem: srcFs },
@@ -76,6 +78,20 @@ describe('TransferTask transient download recovery', () => {
     const { task, targetFs } = createTask(TransferDirection.LOCAL_TO_REMOTE, put);
 
     await expect(task.run()).rejects.toThrow('ETIMEDOUT');
+
+    expect(targetFs.put).toHaveBeenCalledTimes(1);
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  test('leaves reconnecting a real remote filesystem to the handler-level retry', async () => {
+    const timeout = Object.assign(new Error('connection closed during download'), {
+      code: 'ECONNRESET',
+    });
+    const put = jest.fn().mockRejectedValue(timeout);
+    const { task, srcFs, targetFs } = createTask(TransferDirection.REMOTE_TO_LOCAL, put);
+    srcFs.getClient = jest.fn(() => ({ isClosed: () => true }));
+
+    await expect(task.run()).rejects.toThrow('connection closed');
 
     expect(targetFs.put).toHaveBeenCalledTimes(1);
     expect(logger.warn).not.toHaveBeenCalled();

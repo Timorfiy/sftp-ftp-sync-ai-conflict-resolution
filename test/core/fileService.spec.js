@@ -58,7 +58,7 @@ jest.mock('../../src/modules/secrets', () => ({
 
 const vscode = require('vscode');
 const FileService = require('../../src/core/fileService').default;
-const { createRemoteIfNoneExist } = require('../../src/core/remoteFs');
+const { createRemoteIfNoneExist, removeRemoteFs } = require('../../src/core/remoteFs');
 const {
   clearConflictStateIsolation,
   configureConflictStateIsolation,
@@ -167,6 +167,28 @@ describe('FileService plaintext password warning', () => {
 
     expect(vscode.window.showWarningMessage).toHaveBeenCalledTimes(1);
     expect(settingStore.sftp.suppressPlaintextPasswordWarning).toBe(true);
+  });
+});
+
+describe('FileService remote connection identity', () => {
+  beforeEach(() => {
+    createRemoteIfNoneExist.mockClear();
+    removeRemoteFs.mockClear();
+  });
+
+  test('uses the workspace-scoped identity when clearing a cached connection', async () => {
+    const config = createConfig({ password: 'prompt' });
+    const service = new FileService('/tmp', 'C:\\workspace\\site', config);
+    await service.getRemoteFileSystem(config);
+
+    service.clearRemoteFileSystem(config);
+
+    expect(createRemoteIfNoneExist).toHaveBeenCalledWith(
+      expect.objectContaining({ workspace: 'C:\\workspace\\site' })
+    );
+    expect(removeRemoteFs).toHaveBeenCalledWith(
+      expect.objectContaining({ workspace: 'C:\\workspace\\site' })
+    );
   });
 });
 

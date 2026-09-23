@@ -856,6 +856,8 @@
     "compile": "webpack --mode production",
     "dev": "webpack --mode development --watch",
     "test": "jest",
+    "test:acceptance:ftp": "jest --runInBand --detectOpenHandles test/acceptance/ftp.acceptance.spec.js",
+    "test:acceptance:sftp": "jest --runInBand --detectOpenHandles test/acceptance/sftp.acceptance.spec.js",
     "package": "vsce package --out sftp-sync-ai-0.1.0.vsix",
     "package:list": "vsce ls --tree",
     "lint": "eslint src",

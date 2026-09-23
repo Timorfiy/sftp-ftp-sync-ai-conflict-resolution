@@ -98,6 +98,13 @@ export default class SSHClient extends RemoteClient {
 
     await this._connectSSHClient(this._client, { ...lastOption, sock }, config);
     this.sftp = await this._getSftp(this._client);
+    // ssh2 can emit a channel-level error while it rejects pending request
+    // callbacks during disconnect. Individual filesystem operations still
+    // receive their own errors; this listener prevents the channel event from
+    // becoming an uncaught EventEmitter error.
+    this.sftp.on('error', err => {
+      logger.debug(`SFTP channel error: ${err.message || err}`);
+    });
 
     if (lastOption.limitOpenFilesOnRemote) {
       if (typeof lastOption.limitOpenFilesOnRemote !== 'boolean') {
