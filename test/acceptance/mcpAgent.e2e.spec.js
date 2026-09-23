@@ -161,6 +161,13 @@ async function waitForConflict(client, expectedPath) {
     const result = structured(
       await client.callTool({ name: 'conflicts_list', arguments: {} })
     );
+    if (!result.ok || !Array.isArray(result.conflicts)) {
+      throw new Error(
+        `conflicts_list failed while waiting for ${expectedPath}: ${JSON.stringify(
+          result.error || result
+        )}`
+      );
+    }
     const conflict = result.conflicts.find(item => item.path === expectedPath);
     if (conflict && (conflict.status === 'pending' || conflict.status === 'reviewing')) {
       return conflict;

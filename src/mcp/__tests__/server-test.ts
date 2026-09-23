@@ -181,6 +181,60 @@ describe('conflict MCP server contract', () => {
     }
   });
 
+  test('listing skips unpublished and atomically replacing reports without hiding unsafe records', async () => {
+    const data = await fixture();
+    try {
+      const workspaceRoot = path.join(
+        data.stateRoot,
+        'workspaces',
+        data.config.workspaces[0].bucket
+      );
+      const unpublishedId = `${data.conflictId}-unpublished`;
+      await fs.promises.mkdir(
+        path.join(workspaceRoot, unpublishedId, 'requests'),
+        { recursive: true }
+      );
+      await fs.promises.mkdir(
+        path.join(workspaceRoot, unpublishedId, 'responses'),
+        { recursive: true }
+      );
+
+      const whilePublishing = structured(
+        await data.client.callTool({
+          name: 'conflicts_list',
+          arguments: {},
+        })
+      );
+      expect(whilePublishing).toMatchObject({ ok: true });
+      expect(whilePublishing.conflicts).toHaveLength(1);
+      expect(whilePublishing.conflicts[0].conflictId).toBe(data.conflictId);
+
+      const previous = `${data.reportFile}.previous`;
+      await fs.promises.rename(data.reportFile, previous);
+      const whileReplacing = structured(
+        await data.client.callTool({
+          name: 'conflicts_list',
+          arguments: {},
+        })
+      );
+      expect(whileReplacing).toMatchObject({ ok: true, conflicts: [] });
+      await fs.promises.rename(previous, data.reportFile);
+
+      await fs.promises.rm(data.reportFile);
+      await fs.promises.mkdir(data.reportFile);
+      const unsafe = structured(
+        await data.client.callTool({
+          name: 'conflicts_list',
+          arguments: {},
+        })
+      );
+      expect(unsafe.error.code).toBe('invalid_record');
+    } finally {
+      await data.clientTransport.close();
+      await data.serverTransport.close();
+    }
+  });
+
   test('locates unique multi-root records while preserving disambiguation and path safety', async () => {
     const data = await fixture();
     try {

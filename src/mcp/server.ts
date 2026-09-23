@@ -287,6 +287,9 @@ async function listRecords(
         await requireSafeLocalPath(root, expectedReport, { type: 'file' });
       } catch (error) {
         if (error instanceof SafeLocalPathError) {
+          if (error.reason === 'unavailable') {
+            continue;
+          }
           throw new ToolFailure('invalid_record', 'A conflict record failed path validation.');
         }
         throw error;

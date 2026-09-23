@@ -98,6 +98,7 @@ export interface ConflictSession {
 export interface ConflictReportRef {
   root: string;
   id: string;
+  generation: number;
 }
 
 interface RequestEnvelope {
@@ -1353,8 +1354,19 @@ export async function acceptBatchOverwrite(
 }
 
 export async function markConflictUploading(session: ConflictSession): Promise<ConflictReportRef> {
+  if (session.generation !== bridgeGeneration || !stateStore) {
+    throw new Error('Conflict bridge session expired.');
+  }
+  const store = stateStore;
   await updateSession(session, 'uploading');
-  return { root: session.root, id: session.record.id };
+  if (session.generation !== bridgeGeneration || stateStore !== store) {
+    throw new Error('Conflict bridge session expired.');
+  }
+  return {
+    root: session.root,
+    id: session.record.id,
+    generation: session.generation,
+  };
 }
 
 async function updateConflictByReference(
@@ -1362,14 +1374,26 @@ async function updateConflictByReference(
   status: ConflictStatus,
   changes: Partial<ConflictRecord>
 ): Promise<void> {
-  const record = await requireStateStore().readRecord<ConflictRecord>(
+  if (reference.generation !== bridgeGeneration || !stateStore) {
+    return;
+  }
+  const store = stateStore;
+  const record = await store.readRecord<ConflictRecord>(
     reference.root,
     reference.id
   );
-  if (!record) {
+  if (
+    !record ||
+    reference.generation !== bridgeGeneration ||
+    stateStore !== store
+  ) {
     return;
   }
-  const session = { root: reference.root, record, generation: bridgeGeneration };
+  const session = {
+    root: reference.root,
+    record,
+    generation: reference.generation,
+  };
   await updateSession(session, status, changes);
   if (isTerminal(status)) {
     releaseConflictPath(record.localFile);

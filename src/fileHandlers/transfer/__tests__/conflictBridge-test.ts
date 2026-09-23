@@ -222,6 +222,45 @@ describe('Kent conflict bridge coordinator', () => {
     expect(mockQuickPicks).toHaveLength(1);
   });
 
+  test('stale upload callbacks cannot mutate records or path guards after reinitialization', async () => {
+    const data = await fixture();
+    const oldSession = await captureConflict(
+      data.workspace,
+      'old-generation',
+      data.context,
+      'remote-changed',
+      data.remote
+    );
+    const oldReference = await markConflictUploading(oldSession);
+    const oldReport = oldSession.record.reportFile;
+
+    await initializeConflictBridge([data.workspace], '3.5.0-test', {
+      globalStorageRoot: path.join(testRoot, randomUUID(), 'replacement-global'),
+    });
+    await expect(markConflictUploading(oldSession)).rejects.toThrow(
+      'Conflict bridge session expired.'
+    );
+    const newSession = await captureConflict(
+      data.workspace,
+      'new-generation',
+      data.context,
+      'remote-changed',
+      data.remote
+    );
+    expect(isConflictPathActive(data.localFile)).toBe(true);
+
+    await expect(markConflictUploaded(oldReference)).resolves.toBeUndefined();
+    await expect(
+      markConflictFailed(oldReference, new Error('stale failure'))
+    ).resolves.toBeUndefined();
+
+    const oldRecord = JSON.parse(await fs.promises.readFile(oldReport, 'utf8'));
+    expect(oldRecord.status).toBe('uploading');
+    expect(oldRecord.result).toBeUndefined();
+    expect(isConflictPathActive(data.localFile)).toBe(true);
+    expect(newSession.record.status).toBe('pending');
+  });
+
   test('MCP decision resumes the live promise, closes QuickPick, and records upload callback', async () => {
     const data = await fixture();
     const session = await captureConflict(
