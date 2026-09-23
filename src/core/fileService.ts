@@ -18,6 +18,12 @@ import { FileSystem } from './fs';
 import Scheduler from './scheduler';
 import { createRemoteIfNoneExist, removeRemoteFs } from './remoteFs';
 import TransferTask from './transferTask';
+import {
+  TransferBatchFailure,
+  TransferOperation,
+  TransferOperationResult,
+} from './transferOperation';
+import { TypedFailure } from '../errors/actionable';
 import localFs from './localFs';
 import { isConflictStatePath } from '../fileHandlers/transfer/conflictStateIsolation';
 
@@ -144,8 +150,17 @@ interface TransferScheduler {
   // readonly _scheduler: Scheduler;
   size: number;
   add(x: TransferTask): void;
-  run(): Promise<void>;
+  run(): Promise<TransferOperationResult>;
   stop(): void;
+  readonly operation: TransferOperation;
+}
+
+function hasBlockingTransferOutcome(result: TransferOperationResult): boolean {
+  return (
+    result.failed > 0 ||
+    result.cancelled > 0 ||
+    result.notStarted > 0
+  );
 }
 
 type ConfigValidator = (x: any) => { message: string } | null | undefined;
@@ -197,8 +212,10 @@ function filesIgnoredFromConfig(config: FileServiceConfig): string[] {
     ignoreFromFile = fs.readFileSync(ignoreFile).toString();
     cache.set(ignoreFile, ignoreFromFile);
   } else {
-    throw new Error(
-      `File ${ignoreFile} not found. Check your config of "ignoreFile"`
+    throw new TypedFailure(
+      'configuration.invalid',
+      `File ${ignoreFile} not found. Check your config of "ignoreFile".`,
+      { openConfig: true }
     );
   }
 
@@ -314,7 +331,11 @@ function mergeConfigWithExternalRefer(
     const remoteMap = getUserSetting(SETTING_KEY_REMOTE);
     const remote = remoteMap.get<Record<string, any>>(config.remote);
     if (!remote) {
-      throw new Error(`Can't not find remote "${config.remote}"`);
+      throw new TypedFailure(
+        'configuration.invalid',
+        `Cannot find the configured remote reference "${config.remote}".`,
+        { openConfig: true }
+      );
     }
     const remoteKeyMapping = new Map([['scheme', 'protocol']]);
 
@@ -464,7 +485,11 @@ function getCompleteConfig(
     const evnVarName = mergedConfig.agent.slice(1);
     const val = process.env[evnVarName];
     if (!val) {
-      throw new Error(`Environment variable "${evnVarName}" not found`);
+      throw new TypedFailure(
+        'configuration.invalid',
+        `Environment variable "${evnVarName}" configured for agent was not found.`,
+        { openConfig: true }
+      );
     }
     mergedConfig.agent = val;
   }
@@ -492,6 +517,7 @@ function mergeProfile(
 }
 
 enum Event {
+  QUEUED_TRANSFER = 'QUEUED_TRANSFER',
   BEFORE_TRANSFER = 'BEFORE_TRANSFER',
   AFTER_TRANSFER = 'AFTER_TRANSFER',
 }
@@ -608,11 +634,18 @@ export default class FileService {
     this._eventEmitter.on(Event.BEFORE_TRANSFER, listener);
   }
 
+  queuedTransfer(listener: (task: TransferTask) => void) {
+    this._eventEmitter.on(Event.QUEUED_TRANSFER, listener);
+  }
+
   afterTransfer(listener: (err: Error | null, task: TransferTask) => void) {
     this._eventEmitter.on(Event.AFTER_TRANSFER, listener);
   }
 
-  createTransferScheduler(concurrency): TransferScheduler {
+  createTransferScheduler(
+    concurrency,
+    operation: TransferOperation = new TransferOperation()
+  ): TransferScheduler {
     // eslint-disable-next-line @typescript-eslint/no-this-alias -- captured for use inside the scheduler closures below
     const fileService = this;
     const scheduler = new Scheduler({
@@ -620,47 +653,77 @@ export default class FileService {
       concurrency,
     });
     scheduler.onTaskStart(task => {
+      operation.start(task as TransferTask);
       this._pendingTransferTasks.add(task as TransferTask);
       this._eventEmitter.emit(Event.BEFORE_TRANSFER, task);
     });
     scheduler.onTaskDone((err, task) => {
+      operation.finish(task as TransferTask, err);
       this._pendingTransferTasks.delete(task as TransferTask);
       this._eventEmitter.emit(Event.AFTER_TRANSFER, err, task);
     });
 
-    let runningPromise: Promise<void> | null = null;
+    let runningPromise: Promise<TransferOperationResult> | null = null;
     let isStopped: boolean = false;
+    let firstError: unknown;
+    scheduler.onTaskDone(error => {
+      if (error && firstError === undefined) {
+        firstError = error;
+      }
+    });
     const transferScheduler: TransferScheduler = {
+      operation,
       get size() {
         return scheduler.size;
       },
       stop() {
         isStopped = true;
-        scheduler.empty();
+        for (const queued of scheduler.drain()) {
+          const task = queued as TransferTask;
+          operation.cancelQueued(task);
+          fileService._eventEmitter.emit(Event.AFTER_TRANSFER, null, task);
+        }
+        if (scheduler.pendingCount <= 0) {
+          fileService._removeScheduler(transferScheduler);
+        }
       },
       add(task: TransferTask) {
         if (isStopped) {
+          operation.markNotStarted(task);
           return;
         }
 
+        operation.add(task);
+        fileService._eventEmitter.emit(Event.QUEUED_TRANSFER, task);
         scheduler.add(task);
       },
       run() {
         if (isStopped) {
-          return Promise.resolve();
+          const result = operation.result();
+          return hasBlockingTransferOutcome(result)
+            ? Promise.reject(new TransferBatchFailure(result, firstError))
+            : Promise.resolve(result);
         }
 
         if (scheduler.size <= 0) {
           fileService._removeScheduler(transferScheduler);
-          return Promise.resolve();
+          const result = operation.result();
+          return hasBlockingTransferOutcome(result)
+            ? Promise.reject(new TransferBatchFailure(result, firstError))
+            : Promise.resolve(result);
         }
 
         if (!runningPromise) {
-          runningPromise = new Promise(resolve => {
+          runningPromise = new Promise((resolve, reject) => {
             scheduler.onIdle(() => {
               runningPromise = null;
               fileService._removeScheduler(transferScheduler);
-              resolve();
+              const result = operation.result();
+              if (hasBlockingTransferOutcome(result)) {
+                reject(new TransferBatchFailure(result, firstError));
+              } else {
+                resolve(result);
+              }
             });
             scheduler.start();
           });
@@ -696,10 +759,12 @@ export default class FileService {
       logger.info(`Using profile: ${useProfile}`);
       const profile = config.profiles![useProfile];
       if (!profile) {
-        throw new Error(
+        throw new TypedFailure(
+          'configuration.invalid',
           `Unkown Profile "${useProfile}".` +
             ' Please check your profile setting.' +
-            ' You can set a profile by running command `SFTP: Set Profile`.'
+            ' You can set a profile by running command `SFTP: Set Profile`.',
+          { openConfig: true }
         );
       }
       config = mergeProfile(config, profile);
@@ -714,7 +779,11 @@ export default class FileService {
       if (hasProfile && app.state.profile == null) {
         errorMsg += ' You might want to set a profile first.';
       }
-      throw new Error(errorMsg);
+      throw new TypedFailure(
+        'configuration.invalid',
+        errorMsg,
+        { openConfig: true }
+      );
     }
 
     return this._resolveServiceConfig(completeConfig);

@@ -65,6 +65,7 @@ jest.mock('../../../logger', () => ({
 import { randomUUID } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as vscode from 'vscode';
 import * as fileOperations from '../../../core/fileBaseOperations';
 import { FileType } from '../../../core/fs/fileSystem';
 import { TransferDirection } from '../../../core/transferTask';
@@ -380,6 +381,29 @@ describe('Kent conflict bridge coordinator', () => {
     expect(response.accepted).toBe(false);
     expect(response.error).toBe('already_resolved');
     expect(session.record.decision?.source).toBe('cursor');
+  });
+
+  test('manual recovery opens the exact local conflict troubleshooting section', async () => {
+    const data = await fixture();
+    const session = await captureConflict(
+      data.workspace,
+      'batch-troubleshoot',
+      data.context,
+      'timestamp-unavailable',
+      data.remote
+    );
+    const decisionPromise = waitForConflictDecision(session, data.context);
+    await delay(20);
+
+    mockQuickPicks[0].accept('Troubleshoot');
+    await delay(20);
+
+    expect(vscode.commands.executeCommand).toHaveBeenCalledWith(
+      'sftpSyncAI.openTroubleshooting',
+      'ftp-timestamps'
+    );
+    mockQuickPicks[1].accept('Cancel upload');
+    await expect(decisionPromise).resolves.toBe('cancel');
   });
 
   test('old extension-session conflicts become orphaned on initialization', async () => {

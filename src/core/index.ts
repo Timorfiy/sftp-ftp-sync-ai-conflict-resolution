@@ -5,6 +5,7 @@ import * as backup from './backup';
 import UResource, { Resource } from './uResource';
 import Scheduler from './scheduler';
 import TransferTask from './transferTask';
+export * from './transferOperation';
 import Ignore from './ignore';
 export * from './transferTask';
 export * from './fs';

@@ -177,6 +177,29 @@ describe('Test Connection command', () => {
     expect(showErrorMessage).toHaveBeenCalledWith(displayed, 'Open Config');
   });
 
+  test('reports credential cancellation as information without an irrelevant config action', async () => {
+    probeConnection.mockResolvedValue({
+      ok: false,
+      category: 'Cancelled',
+      message: 'The connection test was cancelled before it completed.',
+      nextStep: 'No remote data was changed. Run Test Connection again when you are ready.',
+    });
+
+    await runTestConnection(explorerItem({
+      name: 'SFTP site',
+      protocol: 'sftp',
+      host: '127.0.0.1',
+      username: 'user',
+      remotePath: '/site',
+    }));
+
+    expect(showInformationMessage).toHaveBeenCalledWith(
+      'Test Connection - Cancelled: The connection test was cancelled before it completed. ' +
+      'No remote data was changed. Run Test Connection again when you are ready.'
+    );
+    expect(showErrorMessage).not.toHaveBeenCalled();
+  });
+
   test('handles no workspace as Configuration before networking', async () => {
     getWorkspaceFolders.mockReturnValue(undefined);
     await runTestConnection();

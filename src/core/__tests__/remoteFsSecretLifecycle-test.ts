@@ -109,6 +109,8 @@ jest.mock('../fs', () => {
 
 import FileService, { prepareRemoteConnectionOption } from '../fileService';
 import { probeConnection } from '../connectionProbe';
+import { checkHostKey } from '../remote-client/hostKeyStore';
+import { TypedFailure } from '../../errors/actionable';
 import {
   createCredentialEndpoint,
   initSecrets,
@@ -193,6 +195,7 @@ describe('remote secret scope lifecycle', () => {
     mockConnectObserver = undefined;
     mockProbeStageError = undefined;
     mockClosedConnections = 0;
+    (checkHostKey as jest.Mock).mockReset().mockResolvedValue(true);
     storage = new MemorySecretStorage();
     initSecrets({ secrets: storage } as any);
     expect(getAllRemoteFs()).toHaveLength(0);
@@ -325,4 +328,28 @@ describe('remote secret scope lifecycle', () => {
     expect(getAllRemoteFs()).toHaveLength(0);
     expect(redactText(password)).toBe(password);
   });
+
+  test.each(['host-key.changed', 'host-key.rejected'] as const)(
+    'shared connection factory preserves %s through Test Connection',
+    async failureId => {
+      const config = createConfig();
+      const password = 'host-key-probe-secret-canary';
+      await storeCredential(createCredentialEndpoint(config), 'password', password);
+      (checkHostKey as jest.Mock).mockRejectedValue(
+        new TypedFailure(failureId, password, { protocol: 'sftp' })
+      );
+      mockConnectObserver = async (option, callbacks) => {
+        await callbacks.verifyHostKey('test-fingerprint', option.host, option.port);
+      };
+
+      const options = await prepareRemoteConnectionOption(config as any, 'C:\\workspace');
+      const result = await probeConnection(options, '/', 'base');
+
+      expect(result).toMatchObject({ ok: false, category: 'Host key' });
+      expect(JSON.stringify(result)).not.toContain(password);
+      expect(mockClosedConnections).toBe(1);
+      expect(getAllRemoteFs()).toHaveLength(0);
+      expect(redactText(password)).toBe(password);
+    }
+  );
 });

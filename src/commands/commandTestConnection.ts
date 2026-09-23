@@ -256,6 +256,12 @@ export async function runTestConnection(item?: any): Promise<void> {
     await vscode.window.showInformationMessage(`Test Connection succeeded: ${result.message}`);
     return;
   }
+  if (result.category === 'Cancelled') {
+    await vscode.window.showInformationMessage(
+      `Test Connection - ${result.category}: ${result.message} ${result.nextStep}`
+    );
+    return;
+  }
   const action = await vscode.window.showErrorMessage(
     `Test Connection - ${result.category}: ${result.message} ${result.nextStep}`,
     'Open Config'

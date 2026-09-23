@@ -1,7 +1,6 @@
 import { Readable } from 'stream';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
-import * as fileOperations from './fileBaseOperations';
 import { FileSystem, FileType } from './fs';
 import { Task } from './scheduler';
 import logger from '../logger';
@@ -9,6 +8,8 @@ import { BackupConfig } from './fileService';
 import localFs from './localFs';
 import { createBackup, BackupPriority, BackupStorage } from './backup';
 import { isConflictStatePath } from '../fileHandlers/transfer/conflictStateIsolation';
+import { BackupResult } from './backup';
+import { withPathFailure } from '../errors/actionable';
 
 let hasWarnedModifedTimePermission = false;
 
@@ -67,6 +68,11 @@ export interface TransferOption {
   onTransferError?: (error: unknown) => Promise<void>;
 }
 
+export interface TransferWarning {
+  failureId: 'backup.overwrite-failed';
+  message: string;
+}
+
 export default class TransferTask implements Task {
   readonly fileType: FileType;
   private readonly _srcFsPath: string;
@@ -77,6 +83,7 @@ export default class TransferTask implements Task {
   private readonly _TransferOption: TransferOption;
   private _handle: Readable;
   private _cancelled: boolean;
+  private readonly _warnings: TransferWarning[] = [];
   // private _fileStatus: FileStatus;
 
   constructor(
@@ -118,6 +125,9 @@ export default class TransferTask implements Task {
   }
 
   async run() {
+    if (this._cancelled) {
+      return;
+    }
     if (isConflictStatePath(this.localFsPath)) {
       return;
     }
@@ -130,15 +140,21 @@ export default class TransferTask implements Task {
         case FileType.File:
           await this._transferFileWithRetry();
           break;
-        case FileType.SymbolicLink:
-          await fileOperations.transferSymlink(
-            src,
-            target,
-            srcFs,
-            targetFs,
-            this._TransferOption
-          );
+        case FileType.SymbolicLink: {
+          const linkTarget = await this._source(() => srcFs.readlink(src));
+          try {
+            await this._target(() => targetFs.symlink(linkTarget, target));
+          } catch (error) {
+            const code =
+              error && typeof error === 'object' && 'code' in error
+                ? (error as { code?: unknown }).code
+                : undefined;
+            if (code !== 4 && code !== 'EEXIST') {
+              throw error;
+            }
+          }
           break;
+        }
         default:
           logger.warn(`Unsupported file type (type = ${this.fileType}). File ${src}`);
       }
@@ -155,14 +171,52 @@ export default class TransferTask implements Task {
   }
 
   cancel() {
-    if (this._handle && !this._cancelled) {
+    if (!this._cancelled) {
       this._cancelled = true;
+    }
+    if (this._handle) {
       FileSystem.abortReadableStream(this._handle);
     }
   }
 
   isCancelled(): boolean {
     return this._cancelled;
+  }
+
+  getWarnings(): readonly TransferWarning[] {
+    return [...this._warnings];
+  }
+
+  private _sourcePathKind(): 'local' | 'remote' {
+    return this._transferDirection === TransferDirection.LOCAL_TO_REMOTE
+      ? 'local'
+      : 'remote';
+  }
+
+  private _targetPathKind(): 'local' | 'remote' {
+    return this._transferDirection === TransferDirection.LOCAL_TO_REMOTE
+      ? 'remote'
+      : 'local';
+  }
+
+  private _source<T>(operation: () => Promise<T>): Promise<T> {
+    return withPathFailure(this._sourcePathKind(), operation);
+  }
+
+  private _target<T>(operation: () => Promise<T>): Promise<T> {
+    return withPathFailure(this._targetPathKind(), operation);
+  }
+
+  private _recordBackupResult(result: BackupResult): void {
+    if (result.status !== 'failed') {
+      return;
+    }
+    this._warnings.push({
+      failureId: 'backup.overwrite-failed',
+      message:
+        `Backup failed before overwriting ${this._targetFsPath}. ` +
+        'The upload continued; the previous remote text content may not be recoverable.',
+    });
   }
 
   private async _transferFileWithRetry() {
@@ -229,7 +283,7 @@ export default class TransferTask implements Task {
           pathResolver: path,
         };
       }
-      await createBackup(
+      const backupResult = await createBackup(
         target,
         targetFs,
         this._TransferOption.backup,
@@ -237,6 +291,7 @@ export default class TransferTask implements Task {
         storage,
         { priority: this._TransferOption.backupPriority }
       );
+      this._recordBackupResult(backupResult);
     }
 
     // Set the mode if it's specified in the config, otherwise get mode from server.
@@ -261,7 +316,7 @@ export default class TransferTask implements Task {
         if (remoteClient?.isClosed?.()) {
           return;
         }
-        await targetFs.close(uploadFd);
+        await this._target(() => targetFs.close(uploadFd));
       }
     };
 
@@ -271,51 +326,56 @@ export default class TransferTask implements Task {
       if (mode === undefined && perserveTargetMode) {
         if (useStagingFile) {
           [targetFd, uploadFd] = await Promise.all([
-            targetFs.open(target, 'r').catch(() => null),
-            targetFs.open(uploadTarget, 'w'),
+            this._target(() => targetFs.open(target, 'r')).catch(() => null),
+            this._target(() => targetFs.open(uploadTarget, 'w')),
           ]);
         } else {
-          targetFd = uploadFd = await targetFs.open(uploadTarget, 'w');
+          targetFd = uploadFd = await this._target(() =>
+            targetFs.open(uploadTarget, 'w')
+          );
         }
 
         if (targetFd) {
           [this._handle, mode] = await Promise.all([
-            srcFs.get(src),
-            targetFs
-              .fstat(targetFd)
+            this._source(() => srcFs.get(src)),
+            this._target(() => targetFs.fstat(targetFd))
               .then(stat => stat.mode)
               .catch(() => fallbackMode),
           ]);
         } else {
-          this._handle = await srcFs.get(src);
+          this._handle = await this._source(() => srcFs.get(src));
           mode = fallbackMode;
         }
       } else {
         [this._handle, uploadFd] = await Promise.all([
-          srcFs.get(src),
-          targetFs.open(uploadTarget, 'w'),
+          this._source(() => srcFs.get(src)),
+          this._target(() => targetFs.open(uploadTarget, 'w')),
         ]);
       }
 
       if (targetFd !== undefined && targetFd !== uploadFd) {
-        await targetFs.close(targetFd);
+        await this._target(() => targetFs.close(targetFd));
         targetFd = undefined;
       }
 
       if (useTempFile) {
         logger.info("uploading temp file: " + uploadTarget);
       }
-      await targetFs.put(this._handle, uploadTarget, {
-        mode,
-        fd: uploadFd,
-        autoClose: false,
-      });
+      await this._target(() =>
+        targetFs.put(this._handle, uploadTarget, {
+          mode,
+          fd: uploadFd,
+          autoClose: false,
+        })
+      );
       if (atime && mtime) {
         try {
-          await targetFs.futimes(
-            uploadFd,
-            Math.floor(atime / 1000),
-            Math.floor(mtime / 1000)
+          await this._target(() =>
+            targetFs.futimes(
+              uploadFd,
+              Math.floor(atime / 1000),
+              Math.floor(mtime / 1000)
+            )
           );
         } catch (error) {
           if (!hasWarnedModifedTimePermission) {
@@ -332,19 +392,19 @@ export default class TransferTask implements Task {
       }
 
       if (stageDownload) {
-        await targetFs.renameAtomic(uploadTarget, target);
+        await this._target(() => targetFs.renameAtomic(uploadTarget, target));
         committed = true;
       } else if (useTempFile) {
         logger.info("moving from: " + target + ".new" + " to: " + target);
         if(openSsh) {
-          await targetFs.renameAtomic(uploadTarget, target);
+          await this._target(() => targetFs.renameAtomic(uploadTarget, target));
         } else {
           try {
-            await targetFs.unlink(target);
+            await this._target(() => targetFs.unlink(target));
           } catch(error) {
             // Just ignore
           }
-          await targetFs.rename(uploadTarget, target);
+          await this._target(() => targetFs.rename(uploadTarget, target));
         }
         committed = true;
       }

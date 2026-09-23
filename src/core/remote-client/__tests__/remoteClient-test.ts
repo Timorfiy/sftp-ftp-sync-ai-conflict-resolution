@@ -12,6 +12,7 @@ import RemoteClient, {
   SecretRequest,
 } from '../remoteClient';
 import SSHClient from '../sshClient';
+import { classifyError } from '../../../errors/actionable';
 
 class TestRemoteClient extends RemoteClient {
   received?: ConnectOption;
@@ -135,5 +136,27 @@ describe('typed remote authentication requests', () => {
       persist: false,
     });
     expect(finishedAnswers).toEqual(['interactive-answer-canary']);
+  });
+
+  test('missing configured private key keeps Configuration and Open Config', async () => {
+    const ssh = new SSHClient(option());
+
+    let error: unknown;
+    try {
+      await (ssh as any)._doConnect(
+        option({
+          privateKeyPath:
+            'C:\\missing\\sftp-sync-ai-private-key-routing-test.pem',
+        }),
+        config(jest.fn(async () => undefined))
+      );
+    } catch (caught) {
+      error = caught;
+    }
+    const actionable = classifyError(error);
+
+    expect(actionable.id).toBe('configuration.invalid');
+    expect(actionable.actions).toContain('open-config');
+    expect(actionable.troubleshootingSection).toBe('configuration');
   });
 });

@@ -28,6 +28,7 @@ import {
   COMMAND_TRANSFER_QUEUE_CANCEL,
   COMMAND_TRANSFER_QUEUE_CLEAR,
 } from './constants';
+import { initializeErrorReporter } from './errors';
 
 async function setupWorkspaceFolder(dir) {
   const configs = await tryLoadConfigs(dir);
@@ -46,6 +47,7 @@ function setup(workspaceFolders: readonly vscode.WorkspaceFolder[]) {
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
+  initializeErrorReporter(context);
   initRemoteBaselineStore(context.workspaceState);
   initSecrets(context);
 

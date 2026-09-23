@@ -30,6 +30,7 @@ jest.mock('../../../modules/remoteBackups', () => ({
 }));
 jest.mock('../../../helper', () => ({
   withRetry: jest.fn(async action => action()),
+  reportError: jest.fn(async () => undefined),
 }));
 jest.mock('../transfer', () => ({
   sync,
@@ -58,7 +59,15 @@ function createContext({
 } = {}) {
   const scheduler = {
     add: jest.fn(),
-    run: jest.fn(async () => undefined),
+    run: jest.fn(async () => ({
+      operationId: 'bulk-handler-test',
+      completed: 0,
+      failed: 0,
+      cancelled: 0,
+      notStarted: 0,
+      warnings: 0,
+      isPartial: false,
+    })),
   };
   const fileService = {
     baseDir: 'C:\\workspace',

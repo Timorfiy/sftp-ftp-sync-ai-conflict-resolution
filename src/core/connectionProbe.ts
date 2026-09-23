@@ -1,14 +1,22 @@
 import { FileType, RemoteFileSystem } from './fs';
 import { createEphemeralRemoteFs } from './remoteFs';
-import { ConnectOption } from './remote-client/remoteClient';
+import {
+  ConnectOption,
+  ErrorCode,
+} from './remote-client/remoteClient';
+import CustomError from './customError';
 import { RedactionScope } from '../security/redaction';
+import { classifyError, FailureId, TypedFailure } from '../errors/actionable';
 
 export type ConnectionProbeCategory =
   | 'Configuration'
   | 'Authentication'
   | 'Network'
   | 'Remote path'
+  | 'Local path'
   | 'Permission'
+  | 'Host key'
+  | 'Cancelled'
   | 'Connection';
 
 export type ConnectionProbeResult =
@@ -49,6 +57,18 @@ const NETWORK_CODES = new Set([
   '426',
 ]);
 
+const TYPED_PROBE_CATEGORIES: Partial<Record<FailureId, ConnectionProbeCategory>> = {
+  'configuration.invalid': 'Configuration',
+  'authentication.rejected': 'Authentication',
+  'network.unreachable': 'Network',
+  'path.remote-unavailable': 'Remote path',
+  'path.local-unavailable': 'Local path',
+  'permission.denied': 'Permission',
+  'host-key.changed': 'Host key',
+  'host-key.rejected': 'Host key',
+  'operation.cancelled': 'Cancelled',
+};
+
 function failure(
   category: ConnectionProbeCategory,
   message: string,
@@ -69,6 +89,24 @@ export function classifyConnectionProbeError(
   error: unknown,
   stage: ProbeStage
 ): ConnectionProbeResult {
+  if (
+    error instanceof CustomError &&
+    Number(error.code) === ErrorCode.CONNECT_CANCELLED
+  ) {
+    return failure(
+      'Cancelled',
+      'The connection test was cancelled before it completed.',
+      'No remote data was changed. Run Test Connection again when you are ready.'
+    );
+  }
+  if (error instanceof TypedFailure) {
+    const actionable = classifyError(error);
+    return failure(
+      TYPED_PROBE_CATEGORIES[actionable.id] || 'Connection',
+      actionable.summary,
+      actionable.nextStep
+    );
+  }
   const protocolError = (error || {}) as ProtocolError;
   const code = protocolError.code;
   const codeText = String(code || '').toUpperCase();
