@@ -309,4 +309,18 @@ describe('first-release documentation surface', () => {
     expect([...new Set(documented)].filter(label => !contributed.has(label)))
       .toEqual([]);
   });
+
+  test('README names the actual bulk-upload confirmation button', () => {
+    const { buildBulkSyncConfirmationCopy } = require('../src/fileHandlers/transfer/bulkSyncConfirmation');
+    const copy = buildBulkSyncConfirmationCopy({
+      direction: 'localToRemote',
+      connectionLabel: 'RC fixture',
+      localPath: 'C:/fixture',
+      remotePath: '/fixture',
+      deleteDestination: false,
+      backup: { enabled: true, versions: 100, folder: '.vscode/sftp-backup', location: 'local', onDelete: false },
+    });
+    const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
+    expect(readme).toContain(`**${copy.confirmLabel}** may overwrite many remote files.`);
+  });
 });
