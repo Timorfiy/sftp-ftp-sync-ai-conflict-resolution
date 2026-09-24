@@ -24,7 +24,8 @@ function redactedMessage(error) {
 }
 
 function inspectVsix(vsixPath) {
-  const vsix = path.resolve(vsixPath || 'sftp-sync-ai-0.1.0.vsix');
+  const manifest = require('../package.json');
+  const vsix = path.resolve(vsixPath || `${manifest.name}-${manifest.version}.vsix`);
   return new Promise((resolve, reject) => {
     if (!fs.existsSync(vsix)) {
       reject(new Error(`VSIX not found: ${vsix}`));

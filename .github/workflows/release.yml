@@ -1,0 +1,338 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Strict version tag matching package.json (for example v0.1.0)
+        required: true
+        type: string
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  quality:
+    name: Reusable quality gate
+    uses: ./.github/workflows/quality.yml
+
+  build:
+    name: Build one inspected release bundle
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      bundle-name: ${{ steps.metadata.outputs.bundle-name }}
+      artifact-hash: ${{ steps.metadata.outputs.artifact-hash }}
+      version: ${{ steps.metadata.outputs.version }}
+
+    steps:
+      - name: Checkout release source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install pinned dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build and inspect release bundle
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: node scripts/release.js build --tag "$RELEASE_TAG" --source-sha "$SOURCE_SHA" --output-dir release-bundle
+
+      - name: Record immutable bundle metadata
+        id: metadata
+        shell: bash
+        run: |
+          echo "bundle-name=release-bundle-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+          echo "artifact-hash=$(node -p "require('./release-bundle/provenance.json').artifact.sha256")" >> "$GITHUB_OUTPUT"
+          echo "version=$(node -p "require('./release-bundle/provenance.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Upload immutable release bundle
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: ${{ steps.metadata.outputs.bundle-name }}
+          path: release-bundle/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
+  validate-marketplace:
+    name: Validate Visual Studio Marketplace plan
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout release source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install pinned dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Download build-once bundle
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: ${{ needs.build.outputs.bundle-name }}
+          path: release-bundle
+
+      - name: Verify bundle and Marketplace command
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        run: |
+          node scripts/release.js verify --tag "$RELEASE_TAG" --source-sha "$GITHUB_SHA" --output-dir release-bundle
+          test "$(node -p "require('./node_modules/@vscode/vsce/package.json').version")" = "4.0.0"
+          node scripts/release.js plan --channel marketplace --tag "$RELEASE_TAG" --source-sha "$GITHUB_SHA" --output-dir release-bundle
+
+      - name: Summarize common artifact
+        run: |
+          echo "### Visual Studio Marketplace validation" >> "$GITHUB_STEP_SUMMARY"
+          echo "Validated SHA-256: \`${{ needs.build.outputs.artifact-hash }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "No publication or publish secret was used." >> "$GITHUB_STEP_SUMMARY"
+
+  validate-open-vsx:
+    name: Validate Open VSX plan
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout release source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install pinned dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Download build-once bundle
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: ${{ needs.build.outputs.bundle-name }}
+          path: release-bundle
+
+      - name: Verify bundle and Open VSX command
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        run: |
+          node scripts/release.js verify --tag "$RELEASE_TAG" --source-sha "$GITHUB_SHA" --output-dir release-bundle
+          test "$(node -p "require('./node_modules/ovsx/package.json').version")" = "1.2.0"
+          node scripts/release.js plan --channel open-vsx --tag "$RELEASE_TAG" --source-sha "$GITHUB_SHA" --output-dir release-bundle
+
+      - name: Summarize common artifact
+        run: |
+          echo "### Open VSX validation" >> "$GITHUB_STEP_SUMMARY"
+          echo "Validated SHA-256: \`${{ needs.build.outputs.artifact-hash }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "No publication or publish secret was used." >> "$GITHUB_STEP_SUMMARY"
+
+  validate-github:
+    name: Validate GitHub Release plan
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout release source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install pinned dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Download build-once bundle
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: ${{ needs.build.outputs.bundle-name }}
+          path: release-bundle
+
+      - name: Verify bundle and GitHub Release command
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        run: |
+          node scripts/release.js verify --tag "$RELEASE_TAG" --source-sha "$GITHUB_SHA" --output-dir release-bundle
+          gh --version
+          node scripts/release.js plan --channel github --tag "$RELEASE_TAG" --source-sha "$GITHUB_SHA" --output-dir release-bundle
+
+      - name: Summarize common artifact
+        run: |
+          echo "### GitHub Release validation" >> "$GITHUB_STEP_SUMMARY"
+          echo "Validated SHA-256: \`${{ needs.build.outputs.artifact-hash }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "No release, tag, or publish secret was created or used." >> "$GITHUB_STEP_SUMMARY"
+
+  validation-barrier:
+    name: All release channel validations passed
+    needs:
+      - build
+      - validate-marketplace
+      - validate-open-vsx
+      - validate-github
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Confirm common immutable artifact
+        run: echo "All channels validated SHA-256 ${{ needs.build.outputs.artifact-hash }}"
+
+  publish-marketplace:
+    name: Publish Visual Studio Marketplace
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs:
+      - build
+      - validation-barrier
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: release
+
+    steps:
+      - name: Require enabled protected environment
+        env:
+          RELEASE_ENABLED: ${{ vars.RELEASE_ENABLED }}
+        run: test "$RELEASE_ENABLED" = "true"
+
+      - name: Checkout release source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install pinned dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Download build-once bundle
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: ${{ needs.build.outputs.bundle-name }}
+          path: release-bundle
+
+      - name: Re-verify immutable bundle
+        run: node scripts/release.js verify --tag "$GITHUB_REF_NAME" --source-sha "$GITHUB_SHA" --output-dir release-bundle
+
+      - name: Publish prebuilt VSIX to Visual Studio Marketplace
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          test -n "$VSCE_PAT"
+          VSIX="$(node -p "'release-bundle/' + require('./release-bundle/provenance.json').artifact.name")"
+          npx --no-install vsce publish --packagePath "$VSIX" --skip-duplicate
+
+  publish-open-vsx:
+    name: Publish Open VSX
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs:
+      - build
+      - validation-barrier
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: release
+
+    steps:
+      - name: Require enabled protected environment
+        env:
+          RELEASE_ENABLED: ${{ vars.RELEASE_ENABLED }}
+        run: test "$RELEASE_ENABLED" = "true"
+
+      - name: Checkout release source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install pinned dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Download build-once bundle
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: ${{ needs.build.outputs.bundle-name }}
+          path: release-bundle
+
+      - name: Re-verify immutable bundle
+        run: node scripts/release.js verify --tag "$GITHUB_REF_NAME" --source-sha "$GITHUB_SHA" --output-dir release-bundle
+
+      - name: Publish prebuilt VSIX to Open VSX
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: |
+          test -n "$OVSX_PAT"
+          VSIX="$(node -p "'release-bundle/' + require('./release-bundle/provenance.json').artifact.name")"
+          npx --no-install ovsx publish "$VSIX" --skip-duplicate
+
+  publish-github:
+    name: Publish GitHub Release
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs:
+      - build
+      - validation-barrier
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: release
+    permissions:
+      contents: write
+
+    steps:
+      - name: Require enabled protected environment
+        env:
+          RELEASE_ENABLED: ${{ vars.RELEASE_ENABLED }}
+        run: test "$RELEASE_ENABLED" = "true"
+
+      - name: Checkout release source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install pinned dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Download build-once bundle
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: ${{ needs.build.outputs.bundle-name }}
+          path: release-bundle
+
+      - name: Re-verify immutable bundle
+        run: node scripts/release.js verify --tag "$GITHUB_REF_NAME" --source-sha "$GITHUB_SHA" --output-dir release-bundle
+
+      - name: Create or verify idempotent GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/publish-github-release.js release-bundle "$GITHUB_REF_NAME"
