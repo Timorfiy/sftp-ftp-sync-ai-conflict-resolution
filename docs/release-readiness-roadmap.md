@@ -490,6 +490,17 @@ or a protected/signed version tag itself authorizes publishing before the
 dependent release-automation work. First publication remains separately
 authorized in either case.
 
+### Owner-approved verification deferral — 2026-09-24
+
+The independent human fresh-user/usability walkthrough of the README is
+deferred until before first publication. Independent agent documentation
+validation and the required functional, real-editor, loopback, and CI checks
+continue for the release candidate; they are not substitutes for human
+usability evidence. The risk remains that a new target user may encounter
+unclear instructions. R9 can complete after its other criteria pass, and R11
+must retain this human check in the pre-publication checklist without claiming
+it passed. This decision does not authorize publication or defer functional QA.
+
 ## 9. Acceptance and Traceability Checklist
 
 ### SFTPSYNC-1 requirement coverage
