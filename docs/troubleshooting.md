@@ -1,6 +1,8 @@
 # Troubleshooting
 
-This guide is bundled with SFTP/FTP Sync + AI Conflict Resolution and opens locally. It applies equally to plain FTP and SFTP unless a section says otherwise. FTPS support is experimental: TLS negotiation and certificate behavior can vary by server.
+This bundled guide applies equally to plain FTP and SFTP unless a section says
+otherwise. FTPS support is experimental: TLS negotiation and certificate
+behavior can vary by server.
 
 The extension does not send telemetry or diagnostics. **Copy Diagnostics** copies a small, redacted allowlist containing the failure ID, operation/protocol, retry safety, troubleshooting section, low-level error code/message, and partial-result counts. It never includes connection/config objects, credentials, interactive answers, file contents, or stacks.
 
@@ -14,7 +16,9 @@ Only retry operations that the error action explicitly marks safe. Connection, r
 
 Open `.vscode/sftp.json` and fix the named setting. Check `protocol`, `host`, `port`, `username`, `remotePath`, profiles, and JSON syntax. Plain FTP uses `protocol: "ftp"`; SFTP uses `protocol: "sftp"`. FTPS is selected through FTP secure options and remains experimental.
 
-Existing configurations are not silently migrated. Generated configurations and their documented defaults apply only when a new configuration is created.
+Existing configurations are not silently migrated. Generated values apply only
+when **SFTP: Config** creates a new file. See the tested
+[defaults matrix](options.md#generated-values-and-omission-behavior).
 
 ## Authentication
 
@@ -44,7 +48,8 @@ Confirm server ownership and file/directory modes for FTP or SFTP. On Windows, c
 
 SFTP host keys protect server identity. If a saved key changes, stop and verify the new SHA-256 fingerprint through a trusted channel with the server owner. Then remove or update the matching known-host entry manually and reconnect.
 
-The extension never automatically accepts a changed key. Rejecting an unknown key is treated as cancellation, not a generic transfer failure.
+The extension never automatically accepts a changed key. Rejecting an unknown
+key is treated as cancellation, not a generic transfer failure.
 
 ## FTP timestamps
 
@@ -54,9 +59,19 @@ This limitation is specific to FTP metadata. SFTP normally supplies exact timest
 
 ## Conflicts
 
-Open the diff, inspect the captured remote snapshot, and choose an explicit action. Cancelling the conflict prompt keeps the remote item unchanged and is reported as cancellation.
+Open the diff, inspect the captured remote snapshot, and choose an explicit
+action. Cancelling keeps the remote item unchanged. For the agent path, fetch
+context/diff, submit or acknowledge the local merge, resolve the newest
+revision, and wait for `uploaded`, `failed`, `cancelled`, or `stale`. On
+`stale`, fetch the refreshed revision and review again. Manual fallback remains
+available.
 
-Conflict snapshots have separate bounded forensic retention. If a snapshot cannot fit the state budget without removing active decisions, the snapshot is reported unavailable rather than silently replacing a workspace file.
+Conflict snapshots have separate bounded forensic retention: 90 days, at most
+250 inactive/terminal or restart-orphaned records per workspace, 500 MiB total,
+and 100 MiB per snapshot. Active decisions are preserved. If a snapshot cannot
+fit, it is reported unavailable rather than silently replacing a workspace
+file. **SFTP/FTP Sync + AI Conflict Resolution: Clear Conflict State** clears inactive records after
+confirmation.
 
 ## Overwrite backups
 

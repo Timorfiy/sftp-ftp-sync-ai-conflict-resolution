@@ -1,4 +1,9 @@
-# SFTP/FTP conflict resolution
+# SFTP/FTP conflict resolution for editor agents
+
+This server is registered automatically by
+`Timorfiy.sftp-sync-ai` in supported VS Code and Cursor versions. Use the
+editor's already-running agent and model. The extension does not provide a
+model, AI-provider account, or API key.
 
 Use these tools only for conflicts reported by this extension.
 
@@ -10,6 +15,10 @@ Use these tools only for conflicts reported by this extension.
 
 Every mutation is revision checked. If a tool reports `stale`, inspect the refreshed conflict and repeat from the newest revision. Upload is refused until local content has been submitted or acknowledged. Remote content is never changed by submit or acknowledge.
 
-Only workspace-relative conflict files are exposed. Binary content, unavailable snapshots, dirty editor buffers, symbolic links, oversized input, exhausted conflict-state storage, terminal records, and records orphaned by an editor restart cannot be mutated through these tools. Manual conflict resolution remains available.
+Only workspace-relative conflict files are exposed. Binary content, unavailable
+snapshots, dirty editor buffers, symbolic links, oversized input, exhausted
+conflict-state storage, terminal records, and records orphaned by an editor
+restart cannot be mutated through these tools. Manual conflict resolution
+remains available through the conflict picker.
 
 FTP and SFTP are supported equally. FTPS remains experimental.

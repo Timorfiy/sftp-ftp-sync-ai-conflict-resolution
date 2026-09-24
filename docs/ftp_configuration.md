@@ -1,7 +1,5 @@
-# FTP(s) configuration
+# FTP and experimental FTPS configuration
 
-This page has been folded into the single, complete reference:
-
-**→ [`sftp.json` — FTP and FTPS](./options.md#ftp-and-ftps)**
-
-Covers `secure`, `secureOptions`, `passive`, and the legacy FTP compatibility options.
+Start with the strict-JSON [plain FTP example](../README.md#plain-ftp). Plain
+FTP is not transport-encrypted. FTPS settings are experimental in version
+0.1.0. See [FTP and FTPS options](options.md#ftp-and-experimental-ftps).

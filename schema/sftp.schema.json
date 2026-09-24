@@ -1,60 +1,40 @@
 {
   "allOf": [
-    {
-      "$ref": "definitions.json#/rootOption"
-    },
-    {
-      "$ref": "definitions.json#/option"
-    },
-    {
-      "$ref": "definitions.json#/host"
-    },
-    {
-      "$ref": "definitions.json#/sftp"
-    },
+    { "$ref": "definitions.json#/rootOption" },
+    { "$ref": "definitions.json#/option" },
+    { "$ref": "definitions.json#/host" },
+    { "$ref": "definitions.json#/sftp" },
     {
       "type": "object",
+      "required": ["host", "username"],
       "properties": {
         "protocol": {
           "enum": ["sftp"],
-          "description": "sftp connection protocol."
+          "default": "sftp"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "default": 22
         },
         "hop": {
           "oneOf": [
-            {
-              "$ref": "#/definitions/hop"
-            },
+            { "$ref": "#/definitions/hop" },
             {
               "type": "array",
-              "items": {
-                "$ref": "#/definitions/hop"
-              }
+              "items": { "$ref": "#/definitions/hop" }
             }
-          ],
-          "default": {
-            "host": "bridgeHost",
-            "port": "bridgePort"
-          }
+          ]
         },
         "profiles": {
-          "description": "A collection of profiles. Using key as name. The profile will be merge to top level config.",
-          "patternProperties": {
-            "^.*$": {
-              "allOf": [
-                {
-                  "$ref": "definitions.json#/option"
-                },
-                {
-                  "$ref": "definitions.json#/host"
-                },
-                {
-                  "$ref": "definitions.json#/sftp"
-                }
-              ]
-            }
-          },
-          "default": {
-            "profileName": {}
+          "type": "object",
+          "additionalProperties": {
+            "allOf": [
+              { "$ref": "definitions.json#/option" },
+              { "$ref": "definitions.json#/host" },
+              { "$ref": "definitions.json#/sftp" }
+            ]
           }
         }
       }
@@ -63,12 +43,8 @@
   "definitions": {
     "hop": {
       "allOf": [
-        {
-          "$ref": "definitions.json#/host"
-        },
-        {
-          "$ref": "definitions.json#/sftp"
-        }
+        { "$ref": "definitions.json#/host" },
+        { "$ref": "definitions.json#/sftp" }
       ]
     }
   }

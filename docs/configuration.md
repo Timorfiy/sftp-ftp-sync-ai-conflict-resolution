@@ -1,14 +1,8 @@
 # Configuration
 
-**→ [Complete `sftp.json` option reference](./options.md)**
+Use the canonical [quick start](../README.md#quick-start) for strict-JSON SFTP
+and FTP examples, then consult the [complete option reference](options.md).
 
-Jump to a section:
-
-- [All options, with defaults](./options.md#complete-sftpjson-option-reference)
-- [FTP and FTPS](./options.md#ftp-and-ftps)
-- [Local protocol](./options.md#local)
-- [SSH algorithm overrides](./options.md#ssh-algorithm-overrides)
-- [SSH connection chain (`hop`)](./options.md#ssh-connection-chain)
-- [Profiles](./options.md#profiles)
-- [Option details](./options.md#option-details) — `watcher`, `backup`, `hooks`, `remote`, and others
-- [Safety notes](./options.md#safety-notes)
+New generated configurations use explicit safe values. Existing
+`.vscode/sftp.json` files are not migrated, so omission behavior may differ
+from the generated template. The reference documents both.
