@@ -127,6 +127,7 @@ export function workspaceBucketId(workspace: string): string {
 }
 
 export function legacyConflictRoot(workspace: string): string {
+  // Historical on-disk path, retained only for recovery and transfer exclusion.
   return path.join(path.resolve(workspace), '.kent-tmp', 'sftp-conflicts');
 }
 

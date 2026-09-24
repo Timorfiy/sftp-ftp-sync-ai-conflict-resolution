@@ -88,7 +88,7 @@ class Journey {
   async record(id, expected, observed) {
     const record = this.sanitize({ id, status: 'PASS', utc: new Date().toISOString(),
       candidateSha256: pin.sha256, source: pin.source,
-      operator: 'Kent (gpt-6-astra implementation agent)', expected, observed });
+      operator: 'gpt-6-astra implementation agent', expected, observed });
     this.records.push(record);
     await fs.appendFile(path.join(this.root, 'observations.jsonl'), JSON.stringify(record) + '\n');
     console.log(`PASS ${id}`);

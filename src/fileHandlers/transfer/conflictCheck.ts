@@ -122,7 +122,7 @@ export function createConflictLifecycle(
           overwriteAll = false;
         } else {
           context.conflictOverwrite = reason === 'remote-changed';
-          context.kentConflictReport = await markConflictUploading(session);
+          context.conflictReport = await markConflictUploading(session);
           return;
         }
       }
@@ -137,7 +137,7 @@ export function createConflictLifecycle(
       }
 
       context.conflictOverwrite = reason === 'remote-changed';
-      context.kentConflictReport = await markConflictUploading(session);
+      context.conflictReport = await markConflictUploading(session);
     },
 
     async afterFileTransfer(context) {
@@ -145,8 +145,8 @@ export function createConflictLifecycle(
         return;
       }
 
-      if (context.kentConflictReport) {
-        await markConflictUploaded(context.kentConflictReport);
+      if (context.conflictReport) {
+        await markConflictUploaded(context.conflictReport);
       }
 
       try {
@@ -165,8 +165,8 @@ export function createConflictLifecycle(
     },
 
     async afterFileTransferError(context, error) {
-      if (context.kentConflictReport) {
-        await markConflictFailed(context.kentConflictReport, error);
+      if (context.conflictReport) {
+        await markConflictFailed(context.conflictReport, error);
       }
     },
   };

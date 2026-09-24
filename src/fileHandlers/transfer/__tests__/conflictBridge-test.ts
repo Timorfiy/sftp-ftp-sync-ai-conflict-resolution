@@ -164,7 +164,7 @@ async function createDirectoryLink(target: string, link: string): Promise<void> 
   );
 }
 
-describe('Kent conflict bridge coordinator', () => {
+describe('Conflict bridge coordinator', () => {
   beforeEach(() => {
     mockQuickPicks.length = 0;
     jest.clearAllMocks();

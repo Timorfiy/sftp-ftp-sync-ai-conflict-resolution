@@ -1,6 +1,6 @@
 {
   "name": "rc-qualification-probe",
-  "publisher": "kent-qa",
+  "publisher": "sftp-sync-qa",
   "displayName": "RC qualification probe (local test only)",
   "version": "0.0.1",
   "engines": { "vscode": "^1.104.0" },

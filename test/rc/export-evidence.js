@@ -46,7 +46,7 @@ async function exportEvidence(root, output) {
   }
   const summary = {
     candidate: pin, predecessor: matrix.predecessor,
-    operator: 'Kent (gpt-6-astra implementation agent)', signedAt: new Date().toISOString(),
+    operator: 'gpt-6-astra implementation agent', signedAt: new Date().toISOString(),
     scope: 'Windows installed editor / native UI / loopback FTP+SFTP / scripted MCP, no publication',
     humanUsability: 'NOT RUN: owner deferred until before first publication (2026-09-24)',
     rows,

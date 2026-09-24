@@ -21,7 +21,7 @@ numbers are not versions of this standalone extension.
 * Bind both control and passive data sockets, including FTPS, listings, backups and conflict snapshots. Fail explicitly when the selected adapter disappears; do not fall back to system routing.
 * Add **SFTP: Select Network Interface** with per-connection/profile selection and a system-routing option. Preserve unrelated configuration text and refuse stale editor changes.
 * Include upstream 3.5.0's mandatory .vscode transfer exclusion and safer new-config defaults.
-* Preserve the locally deployed Kent conflict bridge and its transfer lifecycle tests in the fork sources. FTP keepalive and retries remain opt-in.
+* Preserve the locally deployed conflict bridge and its transfer lifecycle tests in the fork sources. FTP keepalive and retries remain opt-in.
 
 ## 3.5.0 - 2026-09-10
 
@@ -40,9 +40,9 @@ numbers are not versions of this standalone extension.
   if your project uploads its source directly. Existing `sftp.json` files are
   untouched.
 
-## 3.5.0 (Kent fork) - 2026-08-26
+## 3.5.0 (Conflict bridge) - 2026-08-26
 
-Kent Agent Bridge release.
+Editor-agent conflict bridge release.
 
 * **Live conflict coordinator:** A blocked upload now remains suspended until Cursor or the local Codex MCP bridge resolves the exact transfer.
 * **Protocol v2:** Atomic workspace-local conflict state includes captured remote snapshots, SHA-256 hashes, revisions, request/response IPC, terminal transfer results, and orphan-session detection.

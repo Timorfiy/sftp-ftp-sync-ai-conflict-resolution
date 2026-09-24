@@ -223,8 +223,8 @@ Cursor on Windows.
 
 ## 6. Independently Verifiable Task Proposals
 
-These are proposals only. They must not be created or started in Kent until the
-owner approves this roadmap.
+These are proposals only. They must not be created or started in the task
+coordinator until the owner approves this roadmap.
 
 ### R0 — Restore a trusted quality gate (M)
 
@@ -534,7 +534,7 @@ it passed. This decision does not authorize publication or defer functional QA.
 
 - [x] No extension behavior, existing user documentation, schema, dependency,
   CI workflow, or Git history is changed by SFTPSYNC-1.
-- [x] No VSIX is published and no follow-up Kent task is created or started.
+- [x] No VSIX is published and no follow-up task is created or started.
 - [x] No real server or external AI service is used.
 - [x] Owner gives final approval to this roadmap.
 - [ ] Remaining owner decisions in section 8 are resolved before the dependent

@@ -281,7 +281,7 @@ function notifyWindows(title: string, message: string): void {
     return;
   }
   try {
-    const script = `Add-Type -AssemblyName System.Windows.Forms\nAdd-Type -AssemblyName System.Drawing\n$kentTitle=[Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('${encodePowerShell(title)}'))\n$kentText=[Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('${encodePowerShell(message.slice(0, 220))}'))\n$kentNotify=New-Object System.Windows.Forms.NotifyIcon\n$kentNotify.Icon=[System.Drawing.SystemIcons]::Warning\n$kentNotify.BalloonTipIcon=[System.Windows.Forms.ToolTipIcon]::Warning\n$kentNotify.BalloonTipTitle=$kentTitle\n$kentNotify.BalloonTipText=$kentText\n$kentNotify.Visible=$true\n[System.Media.SystemSounds]::Exclamation.Play()\n$kentNotify.ShowBalloonTip(10000)\nStart-Sleep -Seconds 12\n$kentNotify.Dispose()`;
+    const script = `Add-Type -AssemblyName System.Windows.Forms\nAdd-Type -AssemblyName System.Drawing\n$sftpTitle=[Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('${encodePowerShell(title)}'))\n$sftpText=[Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('${encodePowerShell(message.slice(0, 220))}'))\n$sftpNotify=New-Object System.Windows.Forms.NotifyIcon\n$sftpNotify.Icon=[System.Drawing.SystemIcons]::Warning\n$sftpNotify.BalloonTipIcon=[System.Windows.Forms.ToolTipIcon]::Warning\n$sftpNotify.BalloonTipTitle=$sftpTitle\n$sftpNotify.BalloonTipText=$sftpText\n$sftpNotify.Visible=$true\n[System.Media.SystemSounds]::Exclamation.Play()\n$sftpNotify.ShowBalloonTip(10000)\nStart-Sleep -Seconds 12\n$sftpNotify.Dispose()`;
     const child = spawn(
       'powershell.exe',
       ['-NoProfile', '-NonInteractive', '-EncodedCommand', encodePowerShell(script)],

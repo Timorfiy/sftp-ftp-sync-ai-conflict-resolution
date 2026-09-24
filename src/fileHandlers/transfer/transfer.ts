@@ -28,7 +28,7 @@ export interface FileTransferContext {
   sourceMtime: number;
   sourceSize: number;
   conflictOverwrite?: boolean;
-  kentConflictReport?: ConflictReportRef;
+  conflictReport?: ConflictReportRef;
 }
 
 export interface TransferLifecycleOption {
