@@ -7,7 +7,8 @@ import {
   VIEW_REMOTE_EXPLORER,
 } from '../../constants';
 import { UResource } from '../../core';
-import { toRemotePath } from '../../helper';
+import { reportError, toRemotePath } from '../../helper';
+import logger from '../../logger';
 import { REMOTE_SCHEME } from '../../constants';
 import { getFileService } from '../serviceManager';
 import RemoteTreeDataProvider, { ExplorerItem } from './treeDataProvider';
@@ -42,7 +43,20 @@ export default class RemoteExplorer {
     setContextValue('hasRemoteFilter', false);
   }
 
-  refresh(item?: ExplorerItem) {
+  async refresh(item?: ExplorerItem): Promise<void> {
+    try {
+      await this._refresh(item);
+    } catch (error) {
+      void reportError(error, {
+        operation: 'refresh Remote Explorer',
+        pathKind: 'remote',
+        retrySafety: 'safe',
+        openConfig: true,
+      }).catch(actionError => logger.error(actionError, 'Remote Explorer recovery action'));
+    }
+  }
+
+  private async _refresh(item?: ExplorerItem): Promise<void> {
     if (item && !UResource.isRemote(item.resource.uri)) {
       const uri = item.resource.uri;
       const fileService = getFileService(uri);
@@ -66,7 +80,7 @@ export default class RemoteExplorer {
       });
     }
 
-    this._treeDataProvider.refresh(item);
+    await this._treeDataProvider.refresh(item);
   }
 
   purge(remoteUri: vscode.Uri) {
@@ -96,11 +110,11 @@ export default class RemoteExplorer {
     return this._treeDataProvider.getFilter();
   }
 
-  private _refreshSelection() {
+  private async _refreshSelection(): Promise<void> {
     if (this._explorerView.selection.length) {
-      this._explorerView.selection.forEach(item => this.refresh(item));
+      await Promise.all(this._explorerView.selection.map(item => this.refresh(item)));
     } else {
-      this.refresh();
+      await this.refresh();
     }
   }
 }

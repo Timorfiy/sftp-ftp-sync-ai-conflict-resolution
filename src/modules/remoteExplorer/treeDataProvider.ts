@@ -17,6 +17,8 @@ import {
 import { getAllFileService } from '../serviceManager';
 import { getExtensionSetting } from '../ext';
 import { isRemotePathAtOrUnder } from '../../helper';
+import { ActionableError, actionableMessage, classifyError, ErrorContext, reportActionableError } from '../../errors';
+import logger from '../../logger';
 
 type Id = number;
 
@@ -70,6 +72,7 @@ export default class RemoteTreeData
   private _rootsMap: Map<Id, ExplorerRoot> | null;
   private _map: Map<vscode.Uri['query'], ExplorerItem>;
   private _filterQuery: string = '';
+  private readonly _listingFailures = new Map<string, ActionableError>();
 
   private _onDidChangeFolder: vscode.EventEmitter<ExplorerItem | undefined> = new vscode.EventEmitter<
     ExplorerItem | undefined
@@ -78,28 +81,39 @@ export default class RemoteTreeData
   readonly onDidChangeTreeData: vscode.Event<ExplorerItem | undefined> = this._onDidChangeFolder.event;
   readonly onDidChange: vscode.Event<vscode.Uri> = this._onDidChangeFile.event;
 
-  async refresh(item?: ExplorerItem): Promise<any> {
+  async refresh(item?: ExplorerItem): Promise<void> {
     // refresh root
     if (!item) {
       // clear cache
       this._roots = null;
       this._rootsMap = null;
+      this._listingFailures.clear();
 
       this._onDidChangeFolder.fire(undefined);
       return;
     }
 
+    // Transfer completion can refresh a hidden, never-opened tree. A config
+    // save can also retire a selected item's service while a refresh is queued.
+    if (!this.findRoot(item.resource.uri)) {
+      await this.refresh();
+      return;
+    }
+    this._listingFailures.delete(item.resource.uri.query);
     if (item.isDirectory) {
       this._onDidChangeFolder.fire(item);
 
-      // refresh top level files as well
-      const children = await this.getChildren(item);
-      children
-        .filter(i => !i.isDirectory)
+      // The tree owns listing requests. Refresh known preview documents without
+      // issuing a second, detached listing alongside the editor's getChildren.
+      [...this._map.values()]
+        .filter(i => !i.isDirectory &&
+          i.resource.remoteId === item.resource.remoteId &&
+          upath.dirname(i.resource.fsPath) === item.resource.fsPath)
         .forEach(i => this._onDidChangeFile.fire(makePreivewUrl(i.resource.uri)));
     } else {
       const parent = await this.getParent(item);
       if (parent) {
+        this._listingFailures.delete(parent.resource.uri.query);
         this._onDidChangeFolder.fire(parent);
       }
       this._onDidChangeFile.fire(makePreivewUrl(item.resource.uri));
@@ -133,6 +147,7 @@ export default class RemoteTreeData
 
       if (isRemotePathAtOrUnder(target.fsPath, fsPath)) {
         this._map.delete(key);
+        this._listingFailures.delete(key);
       }
     }
   }
@@ -185,6 +200,7 @@ export default class RemoteTreeData
   }
 
   getTreeItem(item: ExplorerItem): vscode.TreeItem {
+    const failure = this._listingFailures.get(item.resource.uri.query);
     const isRoot = (item as ExplorerRoot).explorerContext !== undefined;
     let customLabel;
     if (isRoot) {
@@ -196,6 +212,11 @@ export default class RemoteTreeData
     return {
       label: customLabel,
       resourceUri: item.resource.uri,
+      ...(failure ? {
+        description: `Read failed: ${failure.title}`,
+        iconPath: new vscode.ThemeIcon('error'),
+        tooltip: `${actionableMessage(failure)} Refresh this folder to try reading it again.`,
+      } : {}),
       collapsibleState: item.isDirectory ? vscode.TreeItemCollapsibleState.Collapsed : undefined,
       contextValue: isRoot ? 'root' : item.isDirectory ? 'folder' : 'file',
       command: item.isDirectory
@@ -218,11 +239,36 @@ export default class RemoteTreeData
     } else {
       const root = this.findRoot(item.resource.uri);
       if (!root) {
-        throw new Error(`Can't find config for remote resource ${item.resource.uri}.`);
+        return [];
       }
+      // A failed folder remains explicitly marked until the user refreshes.
+      // The metadata-change event below must not cause another implicit read.
+      if (this._listingFailures.has(item.resource.uri.query)) return [];
       const config = root.explorerContext.config;
-      const remotefs = await root.explorerContext.fileService.getRemoteFileSystem(config);
-      const fileEntries = await remotefs.list(item.resource.fsPath);
+      let fileEntries: FileEntry[];
+      try {
+        const remotefs = await root.explorerContext.fileService.getRemoteFileSystem(config);
+        fileEntries = await remotefs.list(item.resource.fsPath);
+      } catch (error) {
+        if (this.findRoot(item.resource.uri) !== root) return [];
+        const context: ErrorContext = {
+          operation: 'read Remote Explorer folder',
+          pathKind: 'remote',
+          protocol: config.protocol === 'ftp' || config.protocol === 'sftp' ? config.protocol : undefined,
+          retrySafety: 'safe',
+          retry: () => this.refresh(item),
+          openConfig: true,
+        };
+        this._listingFailures.set(item.resource.uri.query, classifyError(error, context));
+        // Listing completion must not wait for the user to dismiss a toast.
+        // Observe action failures too; nothing escapes as a raw editor toast.
+        void reportActionableError(error, context).catch(actionError =>
+          logger.error(actionError, 'Remote Explorer recovery action')
+        );
+        this._onDidChangeFolder.fire(item);
+        return [];
+      }
+      if (this.findRoot(item.resource.uri) !== root) return [];
 
       const filesExcludeList: string[] =
         config.remoteExplorer && config.remoteExplorer.filesExclude
@@ -277,15 +323,15 @@ export default class RemoteTreeData
     );
   }
 
-  async getParent(item: ExplorerChild): Promise<ExplorerItem> {
+  async getParent(item: ExplorerChild): Promise<ExplorerItem | undefined> {
     const resourceUri = item.resource.uri;
     const root = this.findRoot(resourceUri);
     if (!root) {
-      throw new Error(`Can't find config for remote resource ${resourceUri}.`);
+      return undefined;
     }
 
     if (item.resource.fsPath === root.resource.fsPath) {
-      return root;
+      return undefined;
     }
 
     const fspath = upath.dirname(item.resource.fsPath);
@@ -301,18 +347,15 @@ export default class RemoteTreeData
         isDirectory: true,
       };
       this._map.set(newResource.uri.query, newMapItem);
-      await this.getChildren(newMapItem);
       return newMapItem;
     }
   }
 
   findRoot(uri: vscode.Uri): ExplorerRoot | null | undefined {
-    if (!this._rootsMap) {
-      return null;
-    }
+    this._getRoots();
 
     const rootId = UResource.makeResource(uri).remoteId;
-    return this._rootsMap.get(rootId);
+    return this._rootsMap!.get(rootId);
   }
 
   async provideTextDocumentContent(

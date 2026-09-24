@@ -1,5 +1,11 @@
 # Troubleshooting
 
+In **SFTP/FTP Explorer**, a folder whose read fails is marked **Read failed**
+with an error icon. This is not an empty-directory result. The notification
+gives the failure category, next step, and diagnostic/help actions. Correct the
+connection, path or access problem, then use **Retry** or select the folder and
+use **Refresh** to read it again. Failed reads do not modify remote files.
+
 This bundled guide applies equally to plain FTP and SFTP unless a section says
 otherwise. FTPS support is experimental: TLS negotiation and certificate
 behavior can vary by server.
