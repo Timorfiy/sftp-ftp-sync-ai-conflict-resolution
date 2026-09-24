@@ -1,0 +1,9 @@
+{
+  "name": "rc-qualification-probe",
+  "publisher": "kent-qa",
+  "displayName": "RC qualification probe (local test only)",
+  "version": "0.0.1",
+  "engines": { "vscode": "^1.104.0" },
+  "main": "./extension.js",
+  "activationEvents": ["onStartupFinished"]
+}

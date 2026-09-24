@@ -1,0 +1,952 @@
+{
+  "row": "cursor-ftp-clean",
+  "records": [
+    {
+      "id": "installed",
+      "status": "PASS",
+      "utc": "2026-09-24T14:32:33.554Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Canonical installed bytes, active product, English editor",
+      "observed": {
+        "editor": "Cursor",
+        "version": "1.128.0",
+        "language": "en",
+        "productVersion": "0.1.0",
+        "productActive": true,
+        "extensionPath": "<sandbox>\\extensions\\timorfiy.sftp-sync-ai-0.1.0",
+        "workspace": "<sandbox>\\workspace",
+        "commands": [
+          "sftpSyncAI.openTroubleshooting",
+          "sftpSyncAI.cancelAllTransfer",
+          "sftpSyncAI.clearConflictState",
+          "sftpSyncAI.config",
+          "sftpSyncAI.deleteSavedPassword",
+          "sftpSyncAI.listActiveFolder",
+          "sftpSyncAI.openConnectInTerminal",
+          "sftpSyncAI.remoteBackups.delete",
+          "sftpSyncAI.remoteBackups.open",
+          "sftpSyncAI.remoteBackups.refresh",
+          "sftpSyncAI.remoteBackups.restore",
+          "sftpSyncAI.remoteExplorer.clearFilter",
+          "sftpSyncAI.remoteExplorer.filter",
+          "sftpSyncAI.rename.remote",
+          "sftpSyncAI.selectNetworkInterface",
+          "sftpSyncAI.setProfile",
+          "sftpSyncAI.testConnection",
+          "sftpSyncAI.toggleOutput",
+          "sftpSyncAI.upload.changedFiles",
+          "sftpSyncAI.create.file",
+          "sftpSyncAI.create.folder",
+          "sftpSyncAI.delete.remote",
+          "sftpSyncAI.diff",
+          "sftpSyncAI.diff.activeFile",
+          "sftpSyncAI.download",
+          "sftpSyncAI.download.activeFile",
+          "sftpSyncAI.download.activeFolder",
+          "sftpSyncAI.download.file",
+          "sftpSyncAI.download.folder",
+          "sftpSyncAI.forceDownload",
+          "sftpSyncAI.download.project",
+          "sftpSyncAI.remoteExplorer.editInLocal",
+          "sftpSyncAI.list",
+          "sftpSyncAI.listAll",
+          "sftpSyncAI.revealInExplorer",
+          "sftpSyncAI.revealInRemoteExplorer",
+          "sftpSyncAI.sync.bothDirections",
+          "sftpSyncAI.sync.localToRemote",
+          "sftpSyncAI.sync.remoteToLocal",
+          "sftpSyncAI.upload",
+          "sftpSyncAI.upload.activeFile",
+          "sftpSyncAI.upload.activeFolder",
+          "sftpSyncAI.upload.file",
+          "sftpSyncAI.upload.folder",
+          "sftpSyncAI.forceUpload",
+          "sftpSyncAI.upload.project",
+          "sftpSyncAI.upload.activeFile.to.allProfiles",
+          "sftpSyncAI.upload.activeFolder.to.allProfiles",
+          "sftpSyncAI.upload.file.to.allProfiles",
+          "sftpSyncAI.upload.folder.to.allProfiles",
+          "sftpSyncAI.forceUpload.to.allProfiles",
+          "sftpSyncAI.upload.project.to.allProfiles",
+          "sftpSyncAI.upload.to.allProfiles",
+          "sftpSyncAI.remoteExplorer.refresh",
+          "sftpSyncAI.viewContent",
+          "sftpSyncAI.transferQueue.cancel",
+          "sftpSyncAI.transferQueue.clear"
+        ],
+        "editorBuild": "3.17.8\n2fdd31c9f33f7fbe501f2d57772dc5bf64b63620\nx64",
+        "protocol": "ftp",
+        "port": 63471,
+        "pid": 17080,
+        "debugPort": 63474,
+        "verifiedEntries": [
+          "changelog.md",
+          "FAQ.md",
+          "LICENSE.txt",
+          "readme.md",
+          "package.json",
+          "dist/extension.js",
+          "dist/mcp-server.js",
+          "docs/commands.md",
+          "docs/common_configuration.md",
+          "docs/configuration.md",
+          "docs/ftp_configuration.md",
+          "docs/home.md",
+          "docs/network-interface.md",
+          "docs/options.md",
+          "docs/setting.md",
+          "docs/sftp_configuration.md",
+          "docs/troubleshooting.md",
+          "resources/icon.png",
+          "resources/remote-explorer.svg",
+          "schema/config.schema.json",
+          "schema/definitions.json",
+          "schema/ftp.schema.json",
+          "schema/sftp.schema.json",
+          "schema/simple-config.schema.json",
+          "assets/faq/upload_changed_files_shortcut.png",
+          "assets/showcase/remote-explorer.png",
+          "resources/dark/refresh.svg",
+          "resources/dark/upload.svg",
+          "resources/light/refresh.svg",
+          "resources/light/upload.svg",
+          "resources/mcp/conflict-resolution-instructions.md"
+        ],
+        "candidate": {
+          "file": "sftp-sync-ai-0.1.0.vsix",
+          "bytes": 723857,
+          "sha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+          "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+          "run": "36008363622",
+          "artifact": "10812015294"
+        },
+        "os": {
+          "type": "Windows_NT",
+          "release": "10.0.26200",
+          "arch": "x64"
+        }
+      }
+    },
+    {
+      "id": "configuration",
+      "status": "PASS",
+      "utc": "2026-09-24T14:32:36.432Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Strict JSON safe defaults; existing config not rewritten",
+      "observed": {
+        "generated": {
+          "name": "My Server",
+          "host": "localhost",
+          "protocol": "sftp",
+          "port": 22,
+          "username": "username",
+          "remotePath": "/",
+          "uploadOnSave": false,
+          "conflictCheck": true,
+          "useTempFile": false,
+          "openSsh": false,
+          "concurrency": 4,
+          "watcher": {
+            "files": false,
+            "autoUpload": false,
+            "autoDelete": false,
+            "autoRename": false
+          },
+          "syncOption": {
+            "delete": false,
+            "skipCreate": false,
+            "ignoreExisting": false,
+            "update": false
+          },
+          "ignore": [
+            ".vscode",
+            ".git",
+            ".github",
+            ".DS_Store",
+            "Thumbs.db",
+            "src",
+            ".env",
+            ".env.*",
+            "AGENTS.md",
+            "CLAUDE.md",
+            ".claude",
+            ".cursor",
+            "*.log",
+            "*.tmp",
+            "*.bak"
+          ],
+          "backup": {
+            "enabled": true,
+            "location": "local",
+            "folder": ".vscode/sftp-backup",
+            "versions": 100,
+            "onDelete": false
+          }
+        },
+        "existingSha256": "bcbb8c0d0fdb5223527ca4c442e7ccf1f059cdcab347d1e070baac69d89d7168",
+        "noPlaintextCredential": true
+      }
+    },
+    {
+      "id": "ftp-warning-cancel",
+      "status": "PASS",
+      "utc": "2026-09-24T14:32:37.840Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Encryption warning Cancel causes zero protocol work",
+      "observed": {
+        "modal": [
+          {
+            "name": "Continue",
+            "id": 0,
+            "type": "Native.Button"
+          },
+          {
+            "name": "Cancel",
+            "id": 0,
+            "type": "Native.Button"
+          },
+          {
+            "name": "Plain FTP has no transport encryption: credentials and file contents can be read or changed in transit.",
+            "type": "ControlType.Text"
+          }
+        ],
+        "unchanged": true
+      }
+    },
+    {
+      "id": "connection",
+      "status": "PASS",
+      "utc": "2026-09-24T14:32:39.879Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Product prompt/save and read-only successful probe",
+      "observed": {
+        "message": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nWORKSPACE\n.vscode\nsftp.json\nOUTLINE\nTIMELINE\nNew Agent\nCtrl\n+\nShift\n+\nL\nShow Terminal\nCtrl\n+\nJ\nSearch Files\nCtrl\n+\nP\nOpen Browser\nCtrl\n+\nShift\n+\nB\nMaximize Chat\nCtrl\n+\nAlt\n+\nE\nAdd Folder\nCtrl\n+\nAlt\n+\nA\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\nworkspace\n 0 \n 0\nSFTP\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nCursor Tab\nInfo: Test Connection succeeded: Connected with FTP and read /. No remote data was changed.\nTest Connection succeeded: Connected with FTP and read /. No remote data was changed.",
+        "operations": [
+          {
+            "operation": "OPTS",
+            "target": "UTF8 ON"
+          },
+          {
+            "operation": "USER",
+            "target": "test"
+          },
+          {
+            "operation": "PASS",
+            "target": "[redacted]"
+          },
+          {
+            "operation": "FEAT",
+            "target": ""
+          },
+          {
+            "operation": "TYPE",
+            "target": "I"
+          },
+          {
+            "operation": "STRU",
+            "target": "F"
+          },
+          {
+            "operation": "OPTS",
+            "target": "UTF8 ON"
+          },
+          {
+            "operation": "EPSV",
+            "target": ""
+          },
+          {
+            "operation": "LIST",
+            "target": "-a /"
+          },
+          {
+            "operation": "QUIT",
+            "target": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "first-transfer",
+      "status": "PASS",
+      "utc": "2026-09-24T14:32:42.425Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Upload and download exact bytes; first hidden-tree refresh has no root failure",
+      "observed": {
+        "uploaded": true,
+        "downloaded": true,
+        "queue": [
+          {
+            "label": "remote ➞ local <sandbox>\\workspace\\first.txt (0.0s)",
+            "tooltip": "remote ➞ local <sandbox>\\workspace\\first.txt (0.0s)",
+            "icons": [
+              "custom-view-tree-node-item-icon codicon codicon-check"
+            ]
+          },
+          {
+            "label": "local ➞ remote <sandbox>\\workspace\\first.txt (0.0s)",
+            "tooltip": "local ➞ remote <sandbox>\\workspace\\first.txt (0.0s)",
+            "icons": [
+              "custom-view-tree-node-item-icon codicon codicon-check"
+            ]
+          }
+        ],
+        "ui": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nEXPLORER\nRC FTP\nTRANSFER QUEUE\nremote ➞ local <sandbox>\\workspace\\first.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\first.txt (0.0s)\nBACKUPS\n\nSelect a file in Remote Explorer to view its backups.\n\nNew Agent\nCtrl\n+\nShift\n+\nL\nShow Terminal\nCtrl\n+\nJ\nSearch Files\nCtrl\n+\nP\nOpen Browser\nCtrl\n+\nShift\n+\nB\nMaximize Chat\nCtrl\n+\nAlt\n+\nE\nAdd Folder\nCtrl\n+\nAlt\n+\nA\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP 1/1\nworkspace\n 0 \n 0\ndone first.txt\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nCursor Tab\nInfo: Test Connection succeeded: Connected with FTP and read /. No remote data was changed."
+      }
+    },
+    {
+      "id": "primary-sync",
+      "status": "PASS",
+      "utc": "2026-09-24T14:32:42.597Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Remote-to-Local replaces/creates and retains local-only content",
+      "observed": {
+        "bytesVerified": true,
+        "downloadRecoveryVersionPromised": false,
+        "ui": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nEXPLORER\nRC FTP\nTRANSFER QUEUE\nremote ➞ local <sandbox>\\workspace\\primary\\replace.txt\nremote ➞ local <sandbox>\\workspace\\primary\\new.txt\nremote ➞ local <sandbox>\\workspace\\first.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\first.txt (0.0s)\nBACKUPS\n\nSelect a file in Remote Explorer to view its backups.\n\nNew Agent\nCtrl\n+\nShift\n+\nL\nShow Terminal\nCtrl\n+\nJ\nSearch Files\nCtrl\n+\nP\nOpen Browser\nCtrl\n+\nShift\n+\nB\nMaximize Chat\nCtrl\n+\nAlt\n+\nE\nAdd Folder\nCtrl\n+\nAlt\n+\nA\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP 1/1\nworkspace\n 0 \n 0\ndone replace.txt\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nCursor Tab\nInfo: Test Connection succeeded: Connected with FTP and read /. No remote data was changed."
+      }
+    },
+    {
+      "id": "bulk-warning",
+      "status": "PASS",
+      "utc": "2026-09-24T14:32:47.717Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Modal names direction/profile/paths; cancel is inert; continue overwrites",
+      "observed": {
+        "modal": [
+          {
+            "name": "Sync Local → Remote",
+            "id": 0,
+            "type": "Native.Button"
+          },
+          {
+            "name": "Cancel",
+            "id": 0,
+            "type": "Native.Button"
+          },
+          {
+            "name": "Confirm Local → Remote (upload) sync",
+            "type": "ControlType.Text"
+          },
+          {
+            "name": "Connection/profile: Connection \"RC FTP\"\nLocal path: <sandbox>\\workspace\\bulk\nRemote path: /bulk\n\nLocal → Remote (upload) can create or overwrite remote files.\nRemote overwrite backups are enabled, but they cover text files only. A backup failure does not block the overwrite, so this is not a guaranteed undo.",
+            "type": "ControlType.Text"
+          }
+        ],
+        "cancelUnchanged": true,
+        "windowDismissUnchanged": true,
+        "cancelHookNotRun": true,
+        "approvedHookCount": 1,
+        "continueBytesVerified": true,
+        "queue": [
+          {
+            "label": "local ➞ remote <sandbox>\\workspace\\bulk\\replace.txt (0.0s)",
+            "tooltip": "local ➞ remote <sandbox>\\workspace\\bulk\\replace.txt (0.0s)",
+            "icons": [
+              "custom-view-tree-node-item-icon codicon codicon-check"
+            ]
+          },
+          {
+            "label": "remote ➞ local <sandbox>\\workspace\\bulk\\replace.txt (0.0s)",
+            "tooltip": "remote ➞ local <sandbox>\\workspace\\bulk\\replace.txt (0.0s)",
+            "icons": [
+              "custom-view-tree-node-item-icon codicon codicon-check"
+            ]
+          },
+          {
+            "label": "remote ➞ local <sandbox>\\workspace\\primary\\replace.txt (0.0s)",
+            "tooltip": "remote ➞ local <sandbox>\\workspace\\primary\\replace.txt (0.0s)",
+            "icons": [
+              "custom-view-tree-node-item-icon codicon codicon-check"
+            ]
+          }
+        ],
+        "ui": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nEXPLORER\nRC FTP\nTRANSFER QUEUE\nlocal ➞ remote <sandbox>\\workspace\\bulk\\replace.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\bulk\\replace.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\primary\\replace.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\primary\\new.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\first.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\first.txt (0.0s)\nBACKUPS\n\nSelect a file in Remote Explorer to view its backups.\n\nsftp.json\n.vscode\nsftp.json\n…\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n{\n  \"name\": \"RC FTP\",\n  \"host\": \"127.0.0.1\",\n  \"protocol\": \"ftp\",\n  \"port\": 63471,\n  \"username\": \"test\",\n  \"remotePath\": \"/\",\n  \"uploadOnSave\": false,\n  \"conflictCheck\": true,\n  \"useTempFile\": false,\n  \"openSsh\": false,\n  \"concurrency\": 1,\n  \"watcher\": {\n    \"files\": false,\n    \"autoUpload\": false,\n    \"autoDelete\": false,\n    \"autoRename\": false\n  },\n  \"syncOption\": {\n    \"delete\": false,\n    \"skipCreate\": false,\n    \"ignoreExisting\": false,\n    \"update\": false\n  },\n  \"ignore\": [\n    \".vscode\",\n    \".git\",\n    \".github\",\n    \".DS_Store\",\n    \"Thumbs.db\",\n    \"src\",\n    \".env\",\n    \".env.*\",\n    \"AGENTS.md\",\n    \"CLAUDE.md\",\n    \".claude\",\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP 1/1\nworkspace\n 0 \n 0\ndone replace.txt\n SFTP transfers in progress...\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nJSON\nLF\nUTF-8\nSpaces: 4\nLn 1, Col 1\nCursor Tab\nInfo: Test Connection succeeded: Connected with FTP and read /. No remote data was changed."
+      }
+    },
+    {
+      "id": "manual-conflict",
+      "status": "PASS",
+      "utc": "2026-09-24T14:32:51.538Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Open Diff, cancellation leaves remote unchanged, explicit overwrite succeeds",
+      "observed": {
+        "tabs": [
+          {
+            "label": "manual.txt (remote ↔ local)",
+            "type": "textDiff",
+            "dirty": false
+          }
+        ],
+        "cancelledUnchanged": true,
+        "overwrittenBytes": true,
+        "ui": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nEXPLORER\nRC FTP\nTRANSFER QUEUE\nlocal ➞ remote <sandbox>\\workspace\\manual.txt\nremote ➞ local <sandbox>\\workspace\\manual.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\bulk\\replace.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\bulk\\replace.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\primary\\replace.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\primary\\new.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\first.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\first.txt (0.0s)\nBACKUPS\n\nSelect a file in Remote Explorer to view its backups.\n\nmanual.txt (remote ↔ local)\nmanual.txt\n1\n2\nmanual remote edit\n1\n2\nmanual remote edit\nmanual local edit\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP 1/1\nworkspace\n 0 \n 0\ndone manual.txt\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nPlain Text\nLF\nUTF-8\nSpaces: 4\nLn 1, Col 1\nCursor Tab\nInfo: Test Connection succeeded: Connected with FTP and read /. No remote data was changed."
+      }
+    },
+    {
+      "id": "mcp-registration",
+      "status": "PASS",
+      "utc": "2026-09-24T14:32:52.463Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Actual editor starts packaged stdio MCP; eight tools are available",
+      "observed": {
+        "tools": [
+          "conflicts_list",
+          "conflicts_get",
+          "conflicts_read",
+          "conflicts_diff",
+          "conflicts_submit_local",
+          "conflicts_acknowledge_local",
+          "conflicts_resolve",
+          "conflicts_wait"
+        ],
+        "registration": "normal installed extension",
+        "transport": "official SDK / identical installed stdio / live editor bridge",
+        "editorLaunchedMcpPid": 29328
+      }
+    },
+    {
+      "id": "agent-stale-upload",
+      "status": "PASS",
+      "utc": "2026-09-24T14:32:53.954Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Scripted editor tools re-inspect stale state, submit, resolve, wait uploaded; no manual approval",
+      "observed": {
+        "context": {
+          "ok": true,
+          "conflictId": "2026-09-24T14-32-52-647Z-2272-3-agent.txt",
+          "workspace": "fe6bfabcd83b72cff24f02c0c5f34ed7e802f2aaa202aa4c27216333c3511c48",
+          "workspaceName": "workspace",
+          "path": "agent.txt",
+          "remotePath": "/agent.txt",
+          "status": "pending",
+          "revision": 1,
+          "reason": "remote-changed",
+          "detectedAt": "2026-09-24T14:32:52.647Z",
+          "updatedAt": "2026-09-24T14:32:52.871Z",
+          "local": {
+            "mtime": 1790260372640,
+            "size": 17,
+            "sha256": "d38f08c35a6d1c32a90c77b2ea337e9d8d86885e3b02d52dd5bab50f891dc26d"
+          },
+          "remote": {
+            "mtime": 1790240520000,
+            "size": 18,
+            "sha256": "8ed92cb8b67f6c9cc6200df0b05af5c837011afab187477f8c3afd57b2b06800"
+          },
+          "remoteSnapshot": {
+            "available": true
+          },
+          "localRecovery": {
+            "available": true
+          },
+          "candidate": null
+        },
+        "diff": {
+          "ok": true,
+          "conflictId": "2026-09-24T14-32-52-647Z-2272-3-agent.txt",
+          "workspace": "fe6bfabcd83b72cff24f02c0c5f34ed7e802f2aaa202aa4c27216333c3511c48",
+          "workspaceName": "workspace",
+          "path": "agent.txt",
+          "remotePath": "/agent.txt",
+          "status": "pending",
+          "revision": 1,
+          "reason": "remote-changed",
+          "detectedAt": "2026-09-24T14:32:52.647Z",
+          "updatedAt": "2026-09-24T14:32:52.871Z",
+          "local": {
+            "mtime": 1790260372640,
+            "size": 17,
+            "sha256": "d38f08c35a6d1c32a90c77b2ea337e9d8d86885e3b02d52dd5bab50f891dc26d"
+          },
+          "remote": {
+            "mtime": 1790240520000,
+            "size": 18,
+            "sha256": "8ed92cb8b67f6c9cc6200df0b05af5c837011afab187477f8c3afd57b2b06800"
+          },
+          "remoteSnapshot": {
+            "available": true
+          },
+          "localRecovery": {
+            "available": true
+          },
+          "candidate": null,
+          "diff": "--- remote\n+++ local\n-agent remote edit\n+agent local edit\n ",
+          "truncated": false
+        },
+        "stale": {
+          "ok": false,
+          "error": {
+            "code": "stale",
+            "message": "The live extension rejected the request.",
+            "revision": 3,
+            "status": "pending",
+            "stale": true
+          }
+        },
+        "prepared": {
+          "ok": true,
+          "version": 3,
+          "requestId": "9ba67d87-2f5d-4413-9017-55bb94c2e812",
+          "conflictId": "2026-09-24T14-32-52-647Z-2272-3-agent.txt",
+          "revision": 4,
+          "status": "pending",
+          "respondedAt": "2026-09-24T14:32:53.544Z",
+          "accepted": true,
+          "candidateSha256": "155807ead75c72a449a1bb28d36c0e3433510a5dca0d62fb71c738f93629fb96"
+        },
+        "terminal": {
+          "ok": true,
+          "terminal": true,
+          "stale": false,
+          "conflictId": "2026-09-24T14-32-52-647Z-2272-3-agent.txt",
+          "workspace": "fe6bfabcd83b72cff24f02c0c5f34ed7e802f2aaa202aa4c27216333c3511c48",
+          "workspaceName": "workspace",
+          "path": "agent.txt",
+          "remotePath": "/agent.txt",
+          "status": "uploaded",
+          "revision": 4,
+          "reason": "remote-changed",
+          "detectedAt": "2026-09-24T14:32:52.647Z",
+          "updatedAt": "2026-09-24T14:32:53.778Z",
+          "local": {
+            "mtime": 1790260373538.5767,
+            "size": 31,
+            "sha256": "155807ead75c72a449a1bb28d36c0e3433510a5dca0d62fb71c738f93629fb96"
+          },
+          "remote": {
+            "mtime": 1790240640000,
+            "size": 19,
+            "sha256": "4edcc1b932eef42a199336e8805a4611de026a4680bbd2f602670f2da644a2cc"
+          },
+          "remoteSnapshot": {
+            "available": true
+          },
+          "localRecovery": {
+            "available": true
+          },
+          "candidate": {
+            "source": "submitted",
+            "sha256": "155807ead75c72a449a1bb28d36c0e3433510a5dca0d62fb71c738f93629fb96",
+            "preparedAt": "2026-09-24T14:32:53.542Z"
+          },
+          "result": {
+            "uploadedAt": "2026-09-24T14:32:53.778Z"
+          }
+        },
+        "remoteSha256": "155807ead75c72a449a1bb28d36c0e3433510a5dca0d62fb71c738f93629fb96",
+        "manualApprovals": 0
+      }
+    },
+    {
+      "id": "agent-acknowledge-cancel",
+      "status": "PASS",
+      "utc": "2026-09-24T14:32:55.133Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Saved-edit acknowledgement and terminal cancellation do not mutate remote",
+      "observed": {
+        "acknowledged": {
+          "ok": true,
+          "version": 3,
+          "requestId": "cc860556-a7bd-4b0c-bb35-7c606f8b1ba9",
+          "conflictId": "2026-09-24T14-32-54-125Z-2272-4-agent-cancel.txt",
+          "revision": 2,
+          "status": "pending",
+          "respondedAt": "2026-09-24T14:32:54.784Z",
+          "accepted": true,
+          "candidateSha256": "83fc05654c2525a7a51be8d3cc56f6fa502f561e59dfdebfc72155c11ed49e40"
+        },
+        "cancelTerminal": {
+          "ok": true,
+          "terminal": true,
+          "stale": false,
+          "conflictId": "2026-09-24T14-32-54-125Z-2272-4-agent-cancel.txt",
+          "workspace": "fe6bfabcd83b72cff24f02c0c5f34ed7e802f2aaa202aa4c27216333c3511c48",
+          "workspaceName": "workspace",
+          "path": "agent-cancel.txt",
+          "remotePath": "/agent-cancel.txt",
+          "status": "cancelled",
+          "revision": 2,
+          "reason": "remote-changed",
+          "detectedAt": "2026-09-24T14:32:54.125Z",
+          "updatedAt": "2026-09-24T14:32:54.992Z",
+          "local": {
+            "mtime": 1790260374562.7527,
+            "size": 34,
+            "sha256": "83fc05654c2525a7a51be8d3cc56f6fa502f561e59dfdebfc72155c11ed49e40"
+          },
+          "remote": {
+            "mtime": 1790240520000,
+            "size": 25,
+            "sha256": "fd59af39ffe2b0868f17e6221620356d4d7d1e4628164e91a2926d2f2ee7dd38"
+          },
+          "remoteSnapshot": {
+            "available": true
+          },
+          "localRecovery": {
+            "available": true
+          },
+          "candidate": {
+            "source": "acknowledged",
+            "sha256": "83fc05654c2525a7a51be8d3cc56f6fa502f561e59dfdebfc72155c11ed49e40",
+            "preparedAt": "2026-09-24T14:32:54.782Z"
+          },
+          "result": {
+            "cancelledAt": "2026-09-24T14:32:54.992Z"
+          }
+        },
+        "remoteUnchanged": true
+      }
+    },
+    {
+      "id": "agent-upload-failure",
+      "status": "PASS",
+      "utc": "2026-09-24T14:32:56.593Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Induced write failure reports failed, not uploaded; no blind write retry",
+      "observed": {
+        "failedTerminal": {
+          "ok": true,
+          "terminal": true,
+          "stale": false,
+          "conflictId": "2026-09-24T14-32-55-476Z-2272-5-agent-failure.txt",
+          "workspace": "fe6bfabcd83b72cff24f02c0c5f34ed7e802f2aaa202aa4c27216333c3511c48",
+          "workspaceName": "workspace",
+          "path": "agent-failure.txt",
+          "remotePath": "/agent-failure.txt",
+          "status": "failed",
+          "revision": 2,
+          "reason": "remote-changed",
+          "detectedAt": "2026-09-24T14:32:55.476Z",
+          "updatedAt": "2026-09-24T14:32:56.189Z",
+          "local": {
+            "mtime": 1790260375945.0938,
+            "size": 44,
+            "sha256": "dd9a2e5e60bb8b28f2085e381e157873ce39df5b9fd9782cd0632830f66e92ff"
+          },
+          "remote": {
+            "mtime": 1790240520000,
+            "size": 26,
+            "sha256": "3c83a92ac9f133787e3d3af40558b0f27297bc5a841a12f803b31798708db078"
+          },
+          "remoteSnapshot": {
+            "available": true
+          },
+          "localRecovery": {
+            "available": true
+          },
+          "candidate": {
+            "source": "submitted",
+            "sha256": "dd9a2e5e60bb8b28f2085e381e157873ce39df5b9fd9782cd0632830f66e92ff",
+            "preparedAt": "2026-09-24T14:32:55.948Z"
+          },
+          "result": {
+            "failedAt": "2026-09-24T14:32:56.188Z",
+            "error": "426 Connection closed; transfer aborted"
+          }
+        },
+        "writes": [
+          {
+            "operation": "STOR",
+            "target": "/agent-failure.txt"
+          }
+        ],
+        "queue": [
+          {
+            "label": "local ➞ remote <sandbox>\\workspace\\agent-failure.txt (0.1s)",
+            "tooltip": "426 Connection closed; transfer aborted",
+            "icons": [
+              "custom-view-tree-node-item-icon codicon codicon-error"
+            ]
+          },
+          {
+            "label": "remote ➞ local <sandbox>\\workspace\\agent-failure.txt (0.0s)",
+            "tooltip": "remote ➞ local <sandbox>\\workspace\\agent-failure.txt (0.0s)",
+            "icons": [
+              "custom-view-tree-node-item-icon codicon codicon-check"
+            ]
+          }
+        ],
+        "ui": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nEXPLORER\nRC FTP\nTRANSFER QUEUE\nlocal ➞ remote <sandbox>\\workspace\\agent-failure.txt (0.1s)\nremote ➞ local <sandbox>\\workspace\\agent-failure.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\agent-cancel.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\agent.txt (0.1s)\nremote ➞ local <sandbox>\\workspace\\agent.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\manual.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\manual.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\bulk\\replace.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\bulk\\replace.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\primary\\replace.txt (0.0s)\nBACKUPS\n\nSelect a file in Remote Explorer to view its backups.\n\nNew Agent\nCtrl\n+\nShift\n+\nL\nShow Terminal\nCtrl\n+\nJ\nSearch Files\nCtrl\n+\nP\nOpen Browser\nCtrl\n+\nShift\n+\nB\nMaximize Chat\nCtrl\n+\nAlt\n+\nE\nAdd Folder\nCtrl\n+\nAlt\n+\nA\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP 0/1\nworkspace\n 0 \n 0\nfailed agent-failure.txt\n SFTP transfers in progress...\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nCursor Tab\nError: Server could not be reached: The connection was refused, interrupted, or timed out. Completed: 0; failed: 1; cancelled: 0; not started: 0; warnings: 0. Check the host, port, VPN, firewall, and server availability.\nSource: SFTP/FTP Sync + AI Conflict Resolution\nShow Output\nTroubleshoot\nCopy Diagnostics\nServer could not be reached: The connection was refused, interrupted, or timed out. Completed: 0; failed: 1; cancelled: 0; not started: 0; warnings: 0. Check the host, port, VPN, firewall, and server availability."
+      }
+    },
+    {
+      "id": "backup-restore",
+      "status": "PASS",
+      "utc": "2026-09-24T14:33:00.918Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Actual Local Backups view/open; cancel inert; restore exact bytes with pre-restore protection",
+      "observed": {
+        "opened": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nEXPLORER\nRC FTP\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nsample.txt\nTRANSFER QUEUE\nlocal ➞ remote <sandbox>\\workspace\\restore.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\restore.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\agent-failure.txt (0.1s)\nremote ➞ local <sandbox>\\workspace\\agent-failure.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\agent-cancel.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\agent.txt (0.1s)\nremote ➞ local <sandbox>\\workspace\\agent.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\manual.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\manual.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\bulk\\replace.txt (0.0s)\nLOCAL BACKUPS\n9/24/2026, 7:32:56 PM (28 B)\nrestore.txt.20260924143256772.bak\n1\n2\nrestore earlier remote text\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP 1/1\nworkspace\n 0 \n 0\ndone restore.txt\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nPlain Text\nSpaces: 4\nLn 1, Col 1\nCursor Tab\nError: Server could not be reached: The connection was refused, interrupted, or timed out. Completed: 0; failed: 1; cancelled: 0; not started: 0; warnings: 0. Check the host, port, VPN, firewall, and server availability.",
+        "modal": [
+          {
+            "name": "Restore",
+            "id": 0,
+            "type": "Native.Button"
+          },
+          {
+            "name": "Cancel",
+            "id": 0,
+            "type": "Native.Button"
+          },
+          {
+            "name": "Restore backup from 9/24/2026, 7:32:56 PM to /restore.txt?",
+            "type": "ControlType.Text"
+          }
+        ],
+        "cancelUnchanged": true,
+        "restored": true,
+        "preRestoreProtection": true,
+        "backupCount": 2,
+        "ui": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nEXPLORER\nRC FTP\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nsample.txt\nTRANSFER QUEUE\nlocal ➞ remote <sandbox>\\workspace\\restore.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\restore.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\agent-failure.txt (0.1s)\nremote ➞ local <sandbox>\\workspace\\agent-failure.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\agent-cancel.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\agent.txt (0.1s)\nremote ➞ local <sandbox>\\workspace\\agent.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\manual.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\manual.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\bulk\\replace.txt (0.0s)\nLOCAL BACKUPS\n9/24/2026, 7:32:56 PM (28 B)\nrestore.txt.20260924143256772.bak\n1\n2\nrestore earlier remote text\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP 1/1\nworkspace\n 0 \n 0\nSFTP\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nPlain Text\nSpaces: 4\nLn 1, Col 1\nCursor Tab\nInfo: Restored backup to /restore.txt\nRestored backup to /restore.txt",
+        "scope": "text only; no sync-delete or download undo guarantee"
+      }
+    },
+    {
+      "id": "error-configuration",
+      "status": "PASS",
+      "utc": "2026-09-24T14:33:05.798Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Configuration error before network; Open Config and save recover",
+      "observed": {
+        "message": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nWORKSPACE\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nOUTLINE\nTIMELINE\nsftp.json\n.vscode\nsftp.json\n…\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n{\n  \"name\": \"RC FTP\",\n  \"host\": \"127.0.0.1\",\n  \"protocol\": \"invalid\",\n  \"port\": 63471,\n  \"username\": \"test\",\n  \"remotePath\": \"/\",\n  \"uploadOnSave\": false,\n  \"conflictCheck\": true,\n  \"useTempFile\": false,\n  \"openSsh\": false,\n  \"concurrency\": 1,\n  \"watcher\": {\n    \"files\": false,\n    \"autoUpload\": false,\n    \"autoDelete\": false,\n    \"autoRename\": false\n  },\n  \"syncOption\": {\n    \"delete\": false,\n    \"skipCreate\": false,\n    \"ignoreExisting\": false,\n    \"update\": false\n  },\n  \"ignore\": [\n    \".vscode\",\n    \".git\",\n    \".github\",\n    \".DS_Store\",\n    \"Thumbs.db\",\n    \"src\",\n    \".env\",\n    \".env.*\",\n    \"AGENTS.md\",\n    \"CLAUDE.md\",\n    \".claude\",\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP 1/1\nworkspace\n 0 \n 1\nSFTP\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nJSON\nLF\nUTF-8\nSpaces: 4\nLn 1, Col 1\nCursor Tab\nError: Test Connection - Configuration (protocol): protocol: Invalid option: expected one of \"sftp\"|\"ftp\"|\"local\"\nNotifications\nSource: SFTP/FTP Sync + AI Conflict Resolution\nOpen Config\nTest Connection - Configuration (protocol): protocol: Invalid option: expected one of \"sftp\"|\"ftp\"|\"local\"\nSource: SFTP/FTP Sync + AI Conflict Resolution\nShow Output\nTroubleshoot\nCopy Diagnostics\nTransfer failed: The item could not be transferred. Inspect the completed and failed queue entries before choosing a recovery action.\nRestored backup to /restore.txt",
+        "unchanged": true,
+        "recovered": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nWORKSPACE\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nOUTLINE\nTIMELINE\nNew Agent\nCtrl\n+\nShift\n+\nL\nShow Terminal\nCtrl\n+\nJ\nSearch Files\nCtrl\n+\nP\nOpen Browser\nCtrl\n+\nShift\n+\nB\nMaximize Chat\nCtrl\n+\nAlt\n+\nE\nAdd Folder\nCtrl\n+\nAlt\n+\nA\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP\nworkspace\n 0 \n 0\nSFTP\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nCursor Tab\nInfo: Test Connection succeeded: Connected with FTP and read /. No remote data was changed.\nNotifications\nTest Connection succeeded: Connected with FTP and read /. No remote data was changed.\nTesting RC FTP..."
+      }
+    },
+    {
+      "id": "error-authentication",
+      "status": "PASS",
+      "utc": "2026-09-24T14:33:08.854Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Saved credential rejection is actionable and endpoint recovers",
+      "observed": {
+        "message": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nWORKSPACE\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nOUTLINE\nTIMELINE\nNew Agent\nCtrl\n+\nShift\n+\nL\nShow Terminal\nCtrl\n+\nJ\nSearch Files\nCtrl\n+\nP\nOpen Browser\nCtrl\n+\nShift\n+\nB\nMaximize Chat\nCtrl\n+\nAlt\n+\nE\nAdd Folder\nCtrl\n+\nAlt\n+\nA\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP\nworkspace\n 0 \n 0\nSFTP\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nCursor Tab\nError: Test Connection - Authentication: The server rejected the credentials. Check the username and authentication method, then update or re-enter the saved password/passphrase.\nNotifications\nSource: SFTP/FTP Sync + AI Conflict Resolution\nOpen Config\nTest Connection - Authentication: The server rejected the credentials. Check the username and authentication method, then update or re-enter the saved password/passphrase.\nTesting RC FTP...",
+        "recovered": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nWORKSPACE\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nOUTLINE\nTIMELINE\nNew Agent\nCtrl\n+\nShift\n+\nL\nShow Terminal\nCtrl\n+\nJ\nSearch Files\nCtrl\n+\nP\nOpen Browser\nCtrl\n+\nShift\n+\nB\nMaximize Chat\nCtrl\n+\nAlt\n+\nE\nAdd Folder\nCtrl\n+\nAlt\n+\nA\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP\nworkspace\n 0 \n 0\nSFTP\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nCursor Tab\nInfo: Test Connection succeeded: Connected with FTP and read /. No remote data was changed.\nNotifications\nTest Connection succeeded: Connected with FTP and read /. No remote data was changed.\nTesting RC FTP...",
+        "credentialReentry": false
+      }
+    },
+    {
+      "id": "error-network",
+      "status": "PASS",
+      "utc": "2026-09-24T14:33:11.943Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Unavailable loopback endpoint fails; same endpoint reconnects",
+      "observed": {
+        "message": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nWORKSPACE\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nOUTLINE\nTIMELINE\nNew Agent\nCtrl\n+\nShift\n+\nL\nShow Terminal\nCtrl\n+\nJ\nSearch Files\nCtrl\n+\nP\nOpen Browser\nCtrl\n+\nShift\n+\nB\nMaximize Chat\nCtrl\n+\nAlt\n+\nE\nAdd Folder\nCtrl\n+\nAlt\n+\nA\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP\nworkspace\n 0 \n 0\nSFTP\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nCursor Tab\nError: Test Connection - Network: The server could not be reached. Check the host, port, VPN/firewall, and selected FTP network interface, then try again.\nNotifications\nSource: SFTP/FTP Sync + AI Conflict Resolution\nOpen Config\nTest Connection - Network: The server could not be reached. Check the host, port, VPN/firewall, and selected FTP network interface, then try again.\nTesting RC FTP...",
+        "recovered": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nWORKSPACE\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nOUTLINE\nTIMELINE\nNew Agent\nCtrl\n+\nShift\n+\nL\nShow Terminal\nCtrl\n+\nJ\nSearch Files\nCtrl\n+\nP\nOpen Browser\nCtrl\n+\nShift\n+\nB\nMaximize Chat\nCtrl\n+\nAlt\n+\nE\nAdd Folder\nCtrl\n+\nAlt\n+\nA\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP\nworkspace\n 0 \n 0\nSFTP\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nCursor Tab\nInfo: Test Connection succeeded: Connected with FTP and read /. No remote data was changed.\nNotifications\nTest Connection succeeded: Connected with FTP and read /. No remote data was changed.\nTesting RC FTP..."
+      }
+    },
+    {
+      "id": "error-path",
+      "status": "PASS",
+      "utc": "2026-09-24T14:33:17.248Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Missing remotePath reports next action; corrected path succeeds",
+      "observed": {
+        "message": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nWORKSPACE\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nOUTLINE\nTIMELINE\nsftp.json\n.vscode\nsftp.json\n…\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n{\n  \"name\": \"RC FTP\",\n  \"host\": \"127.0.0.1\",\n  \"protocol\": \"ftp\",\n  \"port\": 63471,\n  \"username\": \"test\",\n  \"remotePath\": \"/does-not-exist\",\n  \"uploadOnSave\": false,\n  \"conflictCheck\": true,\n  \"useTempFile\": false,\n  \"openSsh\": false,\n  \"concurrency\": 1,\n  \"watcher\": {\n    \"files\": false,\n    \"autoUpload\": false,\n    \"autoDelete\": false,\n    \"autoRename\": false\n  },\n  \"syncOption\": {\n    \"delete\": false,\n    \"skipCreate\": false,\n    \"ignoreExisting\": false,\n    \"update\": false\n  },\n  \"ignore\": [\n    \".vscode\",\n    \".git\",\n    \".github\",\n    \".DS_Store\",\n    \"Thumbs.db\",\n    \"src\",\n    \".env\",\n    \".env.*\",\n    \"AGENTS.md\",\n    \"CLAUDE.md\",\n    \".claude\",\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP\nworkspace\n 0 \n 0\nSFTP\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nJSON\nLF\nUTF-8\nSpaces: 4\nLn 1, Col 1\nCursor Tab\nError: Test Connection - Remote path: The configured remotePath does not exist or is not accessible as a directory. Correct remotePath in .vscode/sftp.json and run Test Connection again.\nNotifications\nSource: SFTP/FTP Sync + AI Conflict Resolution\nOpen Config\nTest Connection - Remote path: The configured remotePath does not exist or is not accessible as a directory. Correct remotePath in .vscode/sftp.json and run Test Connection again.\nTesting RC FTP...",
+        "recovered": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nWORKSPACE\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nOUTLINE\nTIMELINE\nsftp.json\n.vscode\nsftp.json\n…\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n{\n  \"name\": \"RC FTP\",\n  \"host\": \"127.0.0.1\",\n  \"protocol\": \"ftp\",\n  \"port\": 63471,\n  \"username\": \"test\",\n  \"remotePath\": \"/\",\n  \"uploadOnSave\": false,\n  \"conflictCheck\": true,\n  \"useTempFile\": false,\n  \"openSsh\": false,\n  \"concurrency\": 1,\n  \"watcher\": {\n    \"files\": false,\n    \"autoUpload\": false,\n    \"autoDelete\": false,\n    \"autoRename\": false\n  },\n  \"syncOption\": {\n    \"delete\": false,\n    \"skipCreate\": false,\n    \"ignoreExisting\": false,\n    \"update\": false\n  },\n  \"ignore\": [\n    \".vscode\",\n    \".git\",\n    \".github\",\n    \".DS_Store\",\n    \"Thumbs.db\",\n    \"src\",\n    \".env\",\n    \".env.*\",\n    \"AGENTS.md\",\n    \"CLAUDE.md\",\n    \".claude\",\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP\nworkspace\n 0 \n 0\nSFTP\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nJSON\nLF\nUTF-8\nSpaces: 4\nLn 1, Col 1\nCursor Tab\nInfo: Test Connection succeeded: Connected with FTP and read /. No remote data was changed.\nNotifications\nTest Connection succeeded: Connected with FTP and read /. No remote data was changed.\nTesting RC FTP..."
+      }
+    },
+    {
+      "id": "error-permission",
+      "status": "PASS",
+      "utc": "2026-09-24T14:33:22.411Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Denied remote folder reports permission action; granting access recovers",
+      "observed": {
+        "message": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nWORKSPACE\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nOUTLINE\nTIMELINE\nsftp.json\n.vscode\nsftp.json\n…\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n{\n  \"name\": \"RC FTP\",\n  \"host\": \"127.0.0.1\",\n  \"protocol\": \"ftp\",\n  \"port\": 63471,\n  \"username\": \"test\",\n  \"remotePath\": \"/denied\",\n  \"uploadOnSave\": false,\n  \"conflictCheck\": true,\n  \"useTempFile\": false,\n  \"openSsh\": false,\n  \"concurrency\": 1,\n  \"watcher\": {\n    \"files\": false,\n    \"autoUpload\": false,\n    \"autoDelete\": false,\n    \"autoRename\": false\n  },\n  \"syncOption\": {\n    \"delete\": false,\n    \"skipCreate\": false,\n    \"ignoreExisting\": false,\n    \"update\": false\n  },\n  \"ignore\": [\n    \".vscode\",\n    \".git\",\n    \".github\",\n    \".DS_Store\",\n    \"Thumbs.db\",\n    \"src\",\n    \".env\",\n    \".env.*\",\n    \"AGENTS.md\",\n    \"CLAUDE.md\",\n    \".claude\",\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP\nworkspace\n 0 \n 0\nSFTP\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nJSON\nLF\nUTF-8\nSpaces: 4\nLn 1, Col 1\nCursor Tab\nError: Test Connection - Permission: The account cannot read and list the configured remotePath. Grant directory read/list permission or choose a remotePath this account can access.\nNotifications\nSource: SFTP/FTP Sync + AI Conflict Resolution\nOpen Config\nTest Connection - Permission: The account cannot read and list the configured remotePath. Grant directory read/list permission or choose a remotePath this account can access.\nTesting RC FTP...",
+        "recovered": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nWORKSPACE\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nOUTLINE\nTIMELINE\nsftp.json\n.vscode\nsftp.json\n…\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n{\n  \"name\": \"RC FTP\",\n  \"host\": \"127.0.0.1\",\n  \"protocol\": \"ftp\",\n  \"port\": 63471,\n  \"username\": \"test\",\n  \"remotePath\": \"/denied\",\n  \"uploadOnSave\": false,\n  \"conflictCheck\": true,\n  \"useTempFile\": false,\n  \"openSsh\": false,\n  \"concurrency\": 1,\n  \"watcher\": {\n    \"files\": false,\n    \"autoUpload\": false,\n    \"autoDelete\": false,\n    \"autoRename\": false\n  },\n  \"syncOption\": {\n    \"delete\": false,\n    \"skipCreate\": false,\n    \"ignoreExisting\": false,\n    \"update\": false\n  },\n  \"ignore\": [\n    \".vscode\",\n    \".git\",\n    \".github\",\n    \".DS_Store\",\n    \"Thumbs.db\",\n    \"src\",\n    \".env\",\n    \".env.*\",\n    \"AGENTS.md\",\n    \"CLAUDE.md\",\n    \".claude\",\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP\nworkspace\n 0 \n 0\nSFTP\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nJSON\nLF\nUTF-8\nSpaces: 4\nLn 1, Col 1\nCursor Tab\nInfo: Test Connection succeeded: Connected with FTP and read /denied. No remote data was changed.\nNotifications\nTest Connection succeeded: Connected with FTP and read /denied. No remote data was changed.\nTesting RC FTP..."
+      }
+    },
+    {
+      "id": "error-download",
+      "status": "PASS",
+      "utc": "2026-09-24T14:33:23.817Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Failed bounded safe-read attempts preserve old local target; explicit retry succeeds",
+      "observed": {
+        "reads": [
+          {
+            "operation": "RETR",
+            "target": "/safe-download.txt"
+          },
+          {
+            "operation": "RETR",
+            "target": "/safe-download.txt"
+          },
+          {
+            "operation": "RETR",
+            "target": "/safe-download.txt"
+          }
+        ],
+        "message": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nWORKSPACE\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nOUTLINE\nTIMELINE\nsftp.json\n.vscode\nsftp.json\n…\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n{\n  \"name\": \"RC FTP\",\n  \"host\": \"127.0.0.1\",\n  \"protocol\": \"ftp\",\n  \"port\": 63471,\n  \"username\": \"test\",\n  \"remotePath\": \"/\",\n  \"uploadOnSave\": false,\n  \"conflictCheck\": true,\n  \"useTempFile\": false,\n  \"openSsh\": false,\n  \"concurrency\": 1,\n  \"watcher\": {\n    \"files\": false,\n    \"autoUpload\": false,\n    \"autoDelete\": false,\n    \"autoRename\": false\n  },\n  \"syncOption\": {\n    \"delete\": false,\n    \"skipCreate\": false,\n    \"ignoreExisting\": false,\n    \"update\": false\n  },\n  \"ignore\": [\n    \".vscode\",\n    \".git\",\n    \".github\",\n    \".DS_Store\",\n    \"Thumbs.db\",\n    \"src\",\n    \".env\",\n    \".env.*\",\n    \"AGENTS.md\",\n    \"CLAUDE.md\",\n    \".claude\",\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP 0/1\nworkspace\n 0 \n 0\nfailed safe-download.txt\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nJSON\nLF\nUTF-8\nSpaces: 4\nLn 1, Col 1\nCursor Tab\nError: Server could not be reached: The connection was refused, interrupted, or timed out. Completed: 0; failed: 3; cancelled: 0; not started: 0; warnings: 0. Check the host, port, VPN, firewall, and server availability.\nSource: SFTP/FTP Sync + AI Conflict Resolution\nShow Output\nTroubleshoot\nCopy Diagnostics\nServer could not be reached: The connection was refused, interrupted, or timed out. Completed: 0; failed: 3; cancelled: 0; not started: 0; warnings: 0. Check the host, port, VPN, firewall, and server availability.",
+        "oldLocalPreserved": true,
+        "retryBytesVerified": true
+      }
+    },
+    {
+      "id": "error-backup",
+      "status": "PASS",
+      "utc": "2026-09-24T14:33:29.751Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Overwrite backup failure warns but uploads; promised delete backup failure blocks deletion; fixed folder recovers",
+      "observed": {
+        "warning": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nWORKSPACE\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nbackup-blocker\nbackup-failure.txt\nfirst.txt\nmanual.txt\nrestore.txt\nsafe-download.txt\nOUTLINE\nTIMELINE\nsftp.json\n.vscode\nsftp.json\n…\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n{\n  \"name\": \"RC FTP\",\n  \"host\": \"127.0.0.1\",\n  \"protocol\": \"ftp\",\n  \"port\": 63471,\n  \"username\": \"test\",\n  \"remotePath\": \"/\",\n  \"uploadOnSave\": false,\n  \"conflictCheck\": true,\n  \"useTempFile\": false,\n  \"openSsh\": false,\n  \"concurrency\": 1,\n  \"watcher\": {\n    \"files\": false,\n    \"autoUpload\": false,\n    \"autoDelete\": false,\n    \"autoRename\": false\n  },\n  \"syncOption\": {\n    \"delete\": false,\n    \"skipCreate\": false,\n    \"ignoreExisting\": false,\n    \"update\": false\n  },\n  \"ignore\": [\n    \".vscode\",\n    \".git\",\n    \".github\",\n    \".DS_Store\",\n    \"Thumbs.db\",\n    \"src\",\n    \".env\",\n    \".env.*\",\n    \"AGENTS.md\",\n    \"CLAUDE.md\",\n    \".claude\",\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP 1/1\nworkspace\n 0 \n 0\ndone backup-failure.txt\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nJSON\nLF\nUTF-8\nSpaces: 4\nLn 1, Col 1\nCursor Tab\nWarning: Upload completed without an overwrite backup: The configured backup could not be created, but the upload continued. Completed: 1; failed: 0; cancelled: 0; not started: 0; warnings: 1. Verify the uploaded file and fix backup access; the previous remote text may not be recoverable.\nSource: SFTP/FTP Sync + AI Conflict Resolution\nShow Output\nTroubleshoot\nCopy Diagnostics\nUpload completed without an overwrite backup: The configured backup could not be created, but the upload continued. Completed: 1; failed: 0; cancelled: 0; not started: 0; warnings: 1. Verify the uploaded file and fix backup access; the previous remote text may not be recoverable.",
+        "deleteModal": [
+          {
+            "name": "Delete",
+            "id": 0,
+            "type": "Native.Button"
+          },
+          {
+            "name": "Cancel",
+            "id": 0,
+            "type": "Native.Button"
+          },
+          {
+            "name": "Delete 'backup-failure.txt' on the remote server?",
+            "type": "ControlType.Text"
+          }
+        ],
+        "deleteFailure": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nWORKSPACE\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nbackup-blocker\nbackup-failure.txt\nfirst.txt\nmanual.txt\nrestore.txt\nsafe-download.txt\nOUTLINE\nTIMELINE\nsftp.json\n.vscode\nsftp.json\n…\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n{\n  \"name\": \"RC FTP\",\n  \"host\": \"127.0.0.1\",\n  \"protocol\": \"ftp\",\n  \"port\": 63471,\n  \"username\": \"test\",\n  \"remotePath\": \"/\",\n  \"uploadOnSave\": false,\n  \"conflictCheck\": true,\n  \"useTempFile\": false,\n  \"openSsh\": false,\n  \"concurrency\": 1,\n  \"watcher\": {\n    \"files\": false,\n    \"autoUpload\": false,\n    \"autoDelete\": false,\n    \"autoRename\": false\n  },\n  \"syncOption\": {\n    \"delete\": false,\n    \"skipCreate\": false,\n    \"ignoreExisting\": false,\n    \"update\": false\n  },\n  \"ignore\": [\n    \".vscode\",\n    \".git\",\n    \".github\",\n    \".DS_Store\",\n    \"Thumbs.db\",\n    \"src\",\n    \".env\",\n    \".env.*\",\n    \"AGENTS.md\",\n    \"CLAUDE.md\",\n    \".claude\",\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP 1/1\nworkspace\n 0 \n 0\nSFTP\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nJSON\nLF\nUTF-8\nSpaces: 4\nLn 1, Col 1\nCursor Tab\nError: Delete stopped because backup failed: At least one promised backup copy could not be created, so nothing was deleted. Backups created: 0/1; nothing deleted. Review the copies already created, fix backup access, and start the delete again.\nSource: SFTP/FTP Sync + AI Conflict Resolution\nShow Output\nTroubleshoot\nCopy Diagnostics\nDelete stopped because backup failed: At least one promised backup copy could not be created, so nothing was deleted. Backups created: 0/1; nothing deleted. Review the copies already created, fix backup access, and start the delete again.\nSource: SFTP/FTP Sync + AI Conflict Resolution\nShow Output\nTroubleshoot\nCopy Diagnostics\nUpload completed without an overwrite backup: The configured backup could not be created, but the upload continued. Completed: 1; failed: 0; cancelled: 0; not started: 0; warnings: 1. Verify the uploaded file and fix backup access; the previous remote text may not be recoverable.",
+        "deleteUnchanged": true,
+        "backupRecovered": true
+      }
+    },
+    {
+      "id": "ftp-timestamp-unavailable",
+      "status": "PASS",
+      "utc": "2026-09-24T14:33:33.476Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Unavailable exact timestamp blocks unsafe overwrite; restored timestamp capability recovers",
+      "observed": {
+        "message": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nWORKSPACE\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nbackup-blocker\nbackup-failure.txt\nfirst.txt\nmanual.txt\nrestore.txt\nsafe-download.txt\nOUTLINE\nTIMELINE\nsftp.json\n.vscode\nsftp.json\n…\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n{\n  \"name\": \"RC FTP\",\n  \"host\": \"127.0.0.1\",\n  \"protocol\": \"ftp\",\n  \"port\": 63471,\n  \"username\": \"test\",\n  \"remotePath\": \"/\",\n  \"uploadOnSave\": false,\n  \"conflictCheck\": true,\n  \"useTempFile\": false,\n  \"openSsh\": false,\n  \"concurrency\": 1,\n  \"watcher\": {\n    \"files\": false,\n    \"autoUpload\": false,\n    \"autoDelete\": false,\n    \"autoRename\": false\n  },\n  \"syncOption\": {\n    \"delete\": false,\n    \"skipCreate\": false,\n    \"ignoreExisting\": false,\n    \"update\": false\n  },\n  \"ignore\": [\n    \".vscode\",\n    \".git\",\n    \".github\",\n    \".DS_Store\",\n    \"Thumbs.db\",\n    \"src\",\n    \".env\",\n    \".env.*\",\n    \"AGENTS.md\",\n    \"CLAUDE.md\",\n    \".claude\",\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP 1/1\nworkspace\n 0 \n 0\n⠹ done timestamp.txt\n SFTP transfers in progress...\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nJSON\nLF\nUTF-8\nSpaces: 4\nLn 1, Col 1\nCursor Tab\nError: Delete stopped because backup failed: At least one promised backup copy could not be created, so nothing was deleted. Backups created: 0/1; nothing deleted. Review the copies already created, fix backup access, and start the delete again.\nSFTP/FTP Sync + AI Conflict Resolution blocked upload of timestamp.txt\n5 Results\nOpen DiffCompare the captured remote file with local content\nTroubleshootOpen the bundled recovery guide\nOverwriteUpload this file\nOverwrite AllUpload every remaining conflict in this batch\nCancel uploadKeep the remote file unchanged\nSource: SFTP/FTP Sync + AI Conflict Resolution\nShow Output\nTroubleshoot\nCopy Diagnostics\nDelete stopped because backup failed: At least one promised backup copy could not be created, so nothing was deleted. Backups created: 0/1; nothing deleted. Review the copies already created, fix backup access, and start the delete again.\nSource: SFTP/FTP Sync + AI Conflict Resolution\nShow Output\nTroubleshoot\nCopy Diagnostics\nUpload completed without an overwrite backup: The configured backup could not be created, but the upload continued. Completed: 1; failed: 0; cancelled: 0; not started: 0; warnings: 1. Verify the uploaded file and fix backup access; the previous remote text may not be recoverable.",
+        "cancelledUnchanged": true,
+        "recovered": true
+      }
+    },
+    {
+      "id": "state-isolation",
+      "status": "PASS",
+      "utc": "2026-09-24T14:33:33.486Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Remote listings exclude configuration, secrets, keys and internal conflict state",
+      "observed": {
+        "remotePaths": [
+          "/agent-cancel.txt",
+          "/agent-failure.txt",
+          "/agent.txt",
+          "/backup-failure.txt",
+          "/bulk",
+          "/bulk/remote-only.txt",
+          "/bulk/replace.txt",
+          "/denied",
+          "/denied/sample.txt",
+          "/first.txt",
+          "/manual.txt",
+          "/primary",
+          "/primary/new.txt",
+          "/primary/replace.txt",
+          "/restore.txt",
+          "/safe-download.txt",
+          "/sample.txt",
+          "/timestamp.txt"
+        ],
+        "privateState": "editor global storage outside workspace"
+      }
+    },
+    {
+      "id": "bulk-partial-result",
+      "status": "PASS",
+      "utc": "2026-09-24T14:33:35.101Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Mixed approved sync reports completed and failed items truthfully and recovers",
+      "observed": {
+        "message": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nWORKSPACE\n.vscode\nsftp-backup\nsftp.json\nbulk\npartial-sync\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nbackup-blocker\nbackup-failure.txt\nfirst.txt\nmanual.txt\nrestore.txt\nsafe-download.txt\ntimestamp.txt\nOUTLINE\nTIMELINE\nsftp.json\n.vscode\nsftp.json\n…\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n{\n  \"name\": \"RC FTP\",\n  \"host\": \"127.0.0.1\",\n  \"protocol\": \"ftp\",\n  \"port\": 63471,\n  \"username\": \"test\",\n  \"remotePath\": \"/\",\n  \"uploadOnSave\": false,\n  \"conflictCheck\": true,\n  \"useTempFile\": false,\n  \"openSsh\": false,\n  \"concurrency\": 1,\n  \"watcher\": {\n    \"files\": false,\n    \"autoUpload\": false,\n    \"autoDelete\": false,\n    \"autoRename\": false\n  },\n  \"syncOption\": {\n    \"delete\": false,\n    \"skipCreate\": false,\n    \"ignoreExisting\": false,\n    \"update\": false\n  },\n  \"ignore\": [\n    \".vscode\",\n    \".git\",\n    \".github\",\n    \".DS_Store\",\n    \"Thumbs.db\",\n    \"src\",\n    \".env\",\n    \".env.*\",\n    \"AGENTS.md\",\n    \"CLAUDE.md\",\n    \".claude\",\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP 1/1\nworkspace\n 0 \n 0\nfailed z-denied.txt\n SFTP transfers in progress...\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nJSON\nLF\nUTF-8\nSpaces: 4\nLn 1, Col 1\nCursor Tab\nError: Permission was denied: The account or local process is not allowed to perform this operation. Completed: 1; failed: 1; cancelled: 0; not started: 0; warnings: 0. Check server ownership/mode or Windows file access before trying again.\nSource: SFTP/FTP Sync + AI Conflict Resolution\nShow Output\nTroubleshoot\nCopy Diagnostics\nPermission was denied: The account or local process is not allowed to perform this operation. Completed: 1; failed: 1; cancelled: 0; not started: 0; warnings: 0. Check server ownership/mode or Windows file access before trying again.\nSource: SFTP/FTP Sync + AI Conflict Resolution\nShow Output\nTroubleshoot\nCopy Diagnostics\nDelete stopped because backup failed: At least one promised backup copy could not be created, so nothing was deleted. Backups created: 0/1; nothing deleted. Review the copies already created, fix backup access, and start the delete again.",
+        "queue": [
+          {
+            "label": "local ➞ remote <sandbox>\\workspace\\partial-sync\\z-denied.txt (0.0s)",
+            "tooltip": "550 Permission denied",
+            "icons": [
+              "custom-view-tree-node-item-icon codicon codicon-error"
+            ]
+          }
+        ],
+        "completedSha256": "e15dd4af43f3bfa91a030b0bd8f916d33b6925f4df53495c5990cc5423aae611",
+        "recovered": true
+      }
+    },
+    {
+      "id": "explorer-error-recovery",
+      "status": "PASS",
+      "utc": "2026-09-24T14:33:38.952Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Actual folder refresh gives categorized redacted actions and persistent failed-read marker; corrected read and hidden config reload recover without detached errors or mutations",
+      "observed": {
+        "denied": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nEXPLORER\nRC FTP\nbulk\ndenied\npartial-sync\nprimary\nqa-folder\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nbackup-failure.txt\nTRANSFER QUEUE\nlocal ➞ remote <sandbox>\\workspace\\partial-sync\\z-denied.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\partial-sync\\z-denied.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\partial-sync\\a-ok.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\timestamp.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\timestamp.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\timestamp.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\backup-failure.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\backup-failure.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\backup-failure.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\safe-download.txt (0.0s)\nBACKUPS\n\nSelect a file in Remote Explorer to view its backups.\n\nNew Agent\nCtrl\n+\nShift\n+\nL\nShow Terminal\nCtrl\n+\nJ\nSearch Files\nCtrl\n+\nP\nOpen Browser\nCtrl\n+\nShift\n+\nB\nMaximize Chat\nCtrl\n+\nAlt\n+\nE\nAdd Folder\nCtrl\n+\nAlt\n+\nA\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP 1/1\nworkspace\n 0 \n 0\ndone z-denied.txt\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nCursor Tab\nError: Permission was denied: The account or local process is not allowed to perform this operation. Check server ownership/mode or Windows file access before trying again.\nNotifications\nSource: SFTP/FTP Sync + AI Conflict Resolution\nShow Output\nTroubleshoot\nCopy Diagnostics\nOpen Config\nRetry\nPermission was denied: The account or local process is not allowed to perform this operation. Check server ownership/mode or Windows file access before trying again.",
+        "diagnostics": {
+          "failureId": "permission.denied",
+          "operation": "read Remote Explorer folder",
+          "protocol": "ftp",
+          "retrySafety": "safe",
+          "troubleshootingSection": "permissions",
+          "causeCode": "550",
+          "causeMessage": "550 Permission denied"
+        },
+        "remoteReadOnly": true,
+        "recovered": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nEXPLORER\nRC FTP\nbulk\ndenied\npartial-sync\nprimary\nqa-folder\nlisted.txt\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nTRANSFER QUEUE\nlocal ➞ remote <sandbox>\\workspace\\partial-sync\\z-denied.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\partial-sync\\z-denied.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\partial-sync\\a-ok.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\timestamp.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\timestamp.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\timestamp.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\backup-failure.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\backup-failure.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\backup-failure.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\safe-download.txt (0.0s)\nBACKUPS\n\nSelect a file in Remote Explorer to view its backups.\n\nNew Agent\nCtrl\n+\nShift\n+\nL\nShow Terminal\nCtrl\n+\nJ\nSearch Files\nCtrl\n+\nP\nOpen Browser\nCtrl\n+\nShift\n+\nB\nMaximize Chat\nCtrl\n+\nAlt\n+\nE\nAdd Folder\nCtrl\n+\nAlt\n+\nA\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP 1/1\nworkspace\n 0 \n 0\ndone z-denied.txt\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nCursor Tab\nError: Permission was denied: The account or local process is not allowed to perform this operation. Check server ownership/mode or Windows file access before trying again.",
+        "hiddenUploadRecovered": true,
+        "noLazyOrRetiredRootErrors": true,
+        "afterReload": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nEXPLORER\nRC FTP reloaded\nbulk\ndenied\npartial-sync\nprimary\nqa-folder\nlisted.txt\nafter-config-reload.txt\nagent-cancel.txt\nagent-failure.txt\nTRANSFER QUEUE\nlocal ➞ remote <sandbox>\\workspace\\after-config-reload.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\partial-sync\\z-denied.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\partial-sync\\z-denied.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\partial-sync\\a-ok.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\timestamp.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\timestamp.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\timestamp.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\backup-failure.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\backup-failure.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\backup-failure.txt (0.0s)\nBACKUPS\n\nSelect a file in Remote Explorer to view its backups.\n\nsftp.json\n.vscode\nsftp.json\n…\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n{\n  \"name\": \"RC FTP reloaded\",\n  \"host\": \"127.0.0.1\",\n  \"protocol\": \"ftp\",\n  \"port\": 63471,\n  \"username\": \"test\",\n  \"remotePath\": \"/\",\n  \"uploadOnSave\": false,\n  \"conflictCheck\": true,\n  \"useTempFile\": false,\n  \"openSsh\": false,\n  \"concurrency\": 1,\n  \"watcher\": {\n    \"files\": false,\n    \"autoUpload\": false,\n    \"autoDelete\": false,\n    \"autoRename\": false\n  },\n  \"syncOption\": {\n    \"delete\": false,\n    \"skipCreate\": false,\n    \"ignoreExisting\": false,\n    \"update\": false\n  },\n  \"ignore\": [\n    \".vscode\",\n    \".git\",\n    \".github\",\n    \".DS_Store\",\n    \"Thumbs.db\",\n    \"src\",\n    \".env\",\n    \".env.*\",\n    \"AGENTS.md\",\n    \"CLAUDE.md\",\n    \".claude\",\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP 1/1\nworkspace\n 0 \n 0\ndone after-config-reload.txt\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nJSON\nLF\nUTF-8\nSpaces: 4\nLn 1, Col 1\nCursor Tab\nError: Permission was denied: The account or local process is not allowed to perform this operation. Check server ownership/mode or Windows file access before trying again."
+      }
+    }
+  ]
+}

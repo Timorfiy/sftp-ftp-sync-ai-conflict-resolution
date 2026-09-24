@@ -1,0 +1,946 @@
+{
+  "row": "vscode-sftp-clean",
+  "records": [
+    {
+      "id": "installed",
+      "status": "PASS",
+      "utc": "2026-09-24T14:31:18.183Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Canonical installed bytes, active product, English editor",
+      "observed": {
+        "editor": "Visual Studio Code",
+        "version": "1.139.0",
+        "language": "en",
+        "productVersion": "0.1.0",
+        "productActive": true,
+        "extensionPath": "<sandbox>\\extensions\\timorfiy.sftp-sync-ai-0.1.0",
+        "workspace": "<sandbox>\\workspace",
+        "commands": [
+          "workbench.mcp.listServer",
+          "workbench.mcp.serverOptions",
+          "workbench.mcp.agentHostServerOptions",
+          "workbench.mcp.serverOptionsInConfirmation",
+          "workbench.mcp.resetTrust",
+          "workbench.mcp.resetCachedTools",
+          "workbench.mcp.addConfiguration",
+          "workbench.mcp.installFromManifest",
+          "workbench.mcp.removeStoredInput",
+          "workbench.mcp.editStoredInput",
+          "workbench.mcp.setOAuthClientSecret",
+          "workbench.mcp.startServer",
+          "workbench.mcp.stopServer",
+          "workbench.mcp.showOutput",
+          "workbench.mcp.restartServer",
+          "workbench.mcp.showConfiguration",
+          "workbench.mcp.browseServers",
+          "workbench.mcp.openUserMcpJson",
+          "workbench.mcp.openRemoteUserMcpJson",
+          "workbench.mcp.openWorkspaceMcpJson",
+          "workbench.mcp.openWorkspaceFolderMcpJson",
+          "workbench.mcp.showInstalledServers",
+          "workbench.mcp.browseResources",
+          "workbench.mcp.configureSamplingModels",
+          "workbench.mcp.startPromptForServer",
+          "workbench.mcp.skipAutostart",
+          "sftpSyncAI.openTroubleshooting",
+          "sftpSyncAI.cancelAllTransfer",
+          "sftpSyncAI.clearConflictState",
+          "sftpSyncAI.config",
+          "sftpSyncAI.deleteSavedPassword",
+          "sftpSyncAI.listActiveFolder",
+          "sftpSyncAI.openConnectInTerminal",
+          "sftpSyncAI.remoteBackups.delete",
+          "sftpSyncAI.remoteBackups.open",
+          "sftpSyncAI.remoteBackups.refresh",
+          "sftpSyncAI.remoteBackups.restore",
+          "sftpSyncAI.remoteExplorer.clearFilter",
+          "sftpSyncAI.remoteExplorer.filter",
+          "sftpSyncAI.rename.remote",
+          "sftpSyncAI.selectNetworkInterface",
+          "sftpSyncAI.setProfile",
+          "sftpSyncAI.testConnection",
+          "sftpSyncAI.toggleOutput",
+          "sftpSyncAI.upload.changedFiles",
+          "sftpSyncAI.create.file",
+          "sftpSyncAI.create.folder",
+          "sftpSyncAI.delete.remote",
+          "sftpSyncAI.diff",
+          "sftpSyncAI.diff.activeFile",
+          "sftpSyncAI.download",
+          "sftpSyncAI.download.activeFile",
+          "sftpSyncAI.download.activeFolder",
+          "sftpSyncAI.download.file",
+          "sftpSyncAI.download.folder",
+          "sftpSyncAI.forceDownload",
+          "sftpSyncAI.download.project",
+          "sftpSyncAI.remoteExplorer.editInLocal",
+          "sftpSyncAI.list",
+          "sftpSyncAI.listAll",
+          "sftpSyncAI.revealInExplorer",
+          "sftpSyncAI.revealInRemoteExplorer",
+          "sftpSyncAI.sync.bothDirections",
+          "sftpSyncAI.sync.localToRemote",
+          "sftpSyncAI.sync.remoteToLocal",
+          "sftpSyncAI.upload",
+          "sftpSyncAI.upload.activeFile",
+          "sftpSyncAI.upload.activeFolder",
+          "sftpSyncAI.upload.file",
+          "sftpSyncAI.upload.folder",
+          "sftpSyncAI.forceUpload",
+          "sftpSyncAI.upload.project",
+          "sftpSyncAI.upload.activeFile.to.allProfiles",
+          "sftpSyncAI.upload.activeFolder.to.allProfiles",
+          "sftpSyncAI.upload.file.to.allProfiles",
+          "sftpSyncAI.upload.folder.to.allProfiles",
+          "sftpSyncAI.forceUpload.to.allProfiles",
+          "sftpSyncAI.upload.project.to.allProfiles",
+          "sftpSyncAI.upload.to.allProfiles",
+          "sftpSyncAI.remoteExplorer.refresh",
+          "sftpSyncAI.viewContent",
+          "sftpSyncAI.transferQueue.cancel",
+          "sftpSyncAI.transferQueue.clear"
+        ],
+        "editorBuild": "1.139.0\n2242ebbb54efeeb0129e08e919e7e8d43033cd83\nx64",
+        "protocol": "sftp",
+        "port": 59442,
+        "fingerprint": "0a94f084f4b6cc10449970cdb56d801977fd354aa92adcb013a9168ed90b00b1",
+        "pid": 24220,
+        "debugPort": 59443,
+        "verifiedEntries": [
+          "changelog.md",
+          "FAQ.md",
+          "LICENSE.txt",
+          "readme.md",
+          "package.json",
+          "dist/extension.js",
+          "dist/mcp-server.js",
+          "docs/commands.md",
+          "docs/common_configuration.md",
+          "docs/configuration.md",
+          "docs/ftp_configuration.md",
+          "docs/home.md",
+          "docs/network-interface.md",
+          "docs/options.md",
+          "docs/setting.md",
+          "docs/sftp_configuration.md",
+          "docs/troubleshooting.md",
+          "resources/icon.png",
+          "resources/remote-explorer.svg",
+          "schema/config.schema.json",
+          "schema/definitions.json",
+          "schema/ftp.schema.json",
+          "schema/sftp.schema.json",
+          "schema/simple-config.schema.json",
+          "assets/faq/upload_changed_files_shortcut.png",
+          "assets/showcase/remote-explorer.png",
+          "resources/dark/refresh.svg",
+          "resources/dark/upload.svg",
+          "resources/light/refresh.svg",
+          "resources/light/upload.svg",
+          "resources/mcp/conflict-resolution-instructions.md"
+        ],
+        "candidate": {
+          "file": "sftp-sync-ai-0.1.0.vsix",
+          "bytes": 723857,
+          "sha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+          "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+          "run": "36008363622",
+          "artifact": "10812015294"
+        },
+        "os": {
+          "type": "Windows_NT",
+          "release": "10.0.26200",
+          "arch": "x64"
+        }
+      }
+    },
+    {
+      "id": "configuration",
+      "status": "PASS",
+      "utc": "2026-09-24T14:31:20.809Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Strict JSON safe defaults; existing config not rewritten",
+      "observed": {
+        "generated": {
+          "name": "My Server",
+          "host": "localhost",
+          "protocol": "sftp",
+          "port": 22,
+          "username": "username",
+          "remotePath": "/",
+          "uploadOnSave": false,
+          "conflictCheck": true,
+          "useTempFile": false,
+          "openSsh": false,
+          "concurrency": 4,
+          "watcher": {
+            "files": false,
+            "autoUpload": false,
+            "autoDelete": false,
+            "autoRename": false
+          },
+          "syncOption": {
+            "delete": false,
+            "skipCreate": false,
+            "ignoreExisting": false,
+            "update": false
+          },
+          "ignore": [
+            ".vscode",
+            ".git",
+            ".github",
+            ".DS_Store",
+            "Thumbs.db",
+            "src",
+            ".env",
+            ".env.*",
+            "AGENTS.md",
+            "CLAUDE.md",
+            ".claude",
+            ".cursor",
+            "*.log",
+            "*.tmp",
+            "*.bak"
+          ],
+          "backup": {
+            "enabled": true,
+            "location": "local",
+            "folder": ".vscode/sftp-backup",
+            "versions": 100,
+            "onDelete": false
+          }
+        },
+        "existingSha256": "4ae6270b1f85af8403768a4b675d82f3ece493db0c35499ecb72fc3ca99ac58f",
+        "noPlaintextCredential": true
+      }
+    },
+    {
+      "id": "sftp-first-key",
+      "status": "PASS",
+      "utc": "2026-09-24T14:31:22.112Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "First-key prompt matches independently generated fixture fingerprint",
+      "observed": {
+        "fingerprint": "0a94f084f4b6cc10449970cdb56d801977fd354aa92adcb013a9168ed90b00b1",
+        "prompt": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nExplorer\nworkspace\n.vscode\nsftp.json\nOutline\nTimeline\nOpen Chat\nCtrl\n+\nAlt\n+\nI\nShow All Commands\nCtrl\n+\nShift\n+\nP\nGo to File\nCtrl\n+\nP\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\nAgent\nModels\nLocal\nDefault permissions\n 0 \n 0\nSFTP\nInfo: The SSH host key for 127.0.0.1 is not recognized. Fingerprint (SHA-256): 0a94f084f4b6cc10449970cdb56d801977fd354aa92adcb013a9168ed90b00b1 Accept and connect?\nNotifications\nSource: SFTP/FTP Sync + AI Conflict Resolution\nAccept\nReject\nThe SSH host key for 127.0.0.1 is not recognized. Fingerprint (SHA-256): 0a94f084f4b6cc10449970cdb56d801977fd354aa92adcb013a9168ed90b00b1 Accept and connect?\nTesting RC SFTP..."
+      }
+    },
+    {
+      "id": "connection",
+      "status": "PASS",
+      "utc": "2026-09-24T14:31:22.750Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Product prompt/save and read-only successful probe",
+      "observed": {
+        "message": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nExplorer\nworkspace\n.vscode\nsftp.json\nOutline\nTimeline\nOpen Chat\nCtrl\n+\nAlt\n+\nI\nShow All Commands\nCtrl\n+\nShift\n+\nP\nGo to File\nCtrl\n+\nP\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\nAgent\nModels\nLocal\nDefault permissions\n 0 \n 0\nSFTP\nInfo: Test Connection succeeded: Connected with SFTP and read /. No remote data was changed.\nTest Connection succeeded: Connected with SFTP and read /. No remote data was changed.",
+        "operations": [
+          {
+            "operation": "AUTH",
+            "target": "none"
+          },
+          {
+            "operation": "AUTH",
+            "target": "password"
+          },
+          {
+            "operation": "LSTAT",
+            "target": "/"
+          },
+          {
+            "operation": "OPENDIR",
+            "target": "/"
+          },
+          {
+            "operation": "READDIR",
+            "target": ""
+          },
+          {
+            "operation": "READDIR",
+            "target": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "first-transfer",
+      "status": "PASS",
+      "utc": "2026-09-24T14:31:23.281Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Upload and download exact bytes; first hidden-tree refresh has no root failure",
+      "observed": {
+        "uploaded": true,
+        "downloaded": true,
+        "queue": [
+          {
+            "label": "remote ➞ local <sandbox>\\workspace\\first.txt (0.0s)",
+            "tooltip": "remote ➞ local <sandbox>\\workspace\\first.txt (0.0s)",
+            "icons": [
+              "custom-view-tree-node-item-icon codicon codicon-check codicon-colored"
+            ]
+          },
+          {
+            "label": "local ➞ remote <sandbox>\\workspace\\first.txt (0.0s)",
+            "tooltip": "local ➞ remote <sandbox>\\workspace\\first.txt (0.0s)",
+            "icons": [
+              "custom-view-tree-node-item-icon codicon codicon-check codicon-colored"
+            ]
+          }
+        ],
+        "ui": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nSFTP/FTP\nExplorer\nRC SFTP\nTransfer Queue\nremote ➞ local <sandbox>\\workspace\\first.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\first.txt (0.0s)\nBackups\n\nSelect a file in Remote Explorer to view its backups.\n\nOpen Chat\nCtrl\n+\nAlt\n+\nI\nShow All Commands\nCtrl\n+\nShift\n+\nP\nGo to File\nCtrl\n+\nP\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\nAgent\nModels\nLocal\nDefault permissions\n SFTP 1/1\n 0 \n 0\ndone first.txt\nInfo: Test Connection succeeded: Connected with SFTP and read /. No remote data was changed.\nConfigure Tools..."
+      }
+    },
+    {
+      "id": "primary-sync",
+      "status": "PASS",
+      "utc": "2026-09-24T14:31:23.452Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Remote-to-Local replaces/creates and retains local-only content",
+      "observed": {
+        "bytesVerified": true,
+        "downloadRecoveryVersionPromised": false,
+        "ui": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nSFTP/FTP\nExplorer\nRC SFTP\nTransfer Queue\nremote ➞ local <sandbox>\\workspace\\primary\\replace.txt\nremote ➞ local <sandbox>\\workspace\\primary\\new.txt\nremote ➞ local <sandbox>\\workspace\\first.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\first.txt (0.0s)\nBackups\n\nSelect a file in Remote Explorer to view its backups.\n\nOpen Chat\nCtrl\n+\nAlt\n+\nI\nShow All Commands\nCtrl\n+\nShift\n+\nP\nGo to File\nCtrl\n+\nP\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\nAgent\nModels\nLocal\nDefault permissions\n SFTP 1/1\n 0 \n 0\ndone replace.txt\nInfo: Test Connection succeeded: Connected with SFTP and read /. No remote data was changed.\nConfigure Tools..."
+      }
+    },
+    {
+      "id": "bulk-warning",
+      "status": "PASS",
+      "utc": "2026-09-24T14:31:28.512Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Modal names direction/profile/paths; cancel is inert; continue overwrites",
+      "observed": {
+        "modal": [
+          {
+            "name": "Sync Local → Remote",
+            "id": 0,
+            "type": "Native.Button"
+          },
+          {
+            "name": "Cancel",
+            "id": 0,
+            "type": "Native.Button"
+          },
+          {
+            "name": "Confirm Local → Remote (upload) sync",
+            "type": "ControlType.Text"
+          },
+          {
+            "name": "Connection/profile: Connection \"RC SFTP\"\nLocal path: <sandbox>\\workspace\\bulk\nRemote path: /bulk\n\nLocal → Remote (upload) can create or overwrite remote files.\nRemote overwrite backups are enabled, but they cover text files only. A backup failure does not block the overwrite, so this is not a guaranteed undo.",
+            "type": "ControlType.Text"
+          }
+        ],
+        "cancelUnchanged": true,
+        "windowDismissUnchanged": true,
+        "cancelHookNotRun": true,
+        "approvedHookCount": 1,
+        "continueBytesVerified": true,
+        "queue": [
+          {
+            "label": "local ➞ remote <sandbox>\\workspace\\bulk\\replace.txt (0.0s)",
+            "tooltip": "local ➞ remote <sandbox>\\workspace\\bulk\\replace.txt (0.0s)",
+            "icons": [
+              "custom-view-tree-node-item-icon codicon codicon-check codicon-colored"
+            ]
+          },
+          {
+            "label": "remote ➞ local <sandbox>\\workspace\\bulk\\replace.txt (0.0s)",
+            "tooltip": "remote ➞ local <sandbox>\\workspace\\bulk\\replace.txt (0.0s)",
+            "icons": [
+              "custom-view-tree-node-item-icon codicon codicon-check codicon-colored"
+            ]
+          },
+          {
+            "label": "remote ➞ local <sandbox>\\workspace\\primary\\replace.txt (0.0s)",
+            "tooltip": "remote ➞ local <sandbox>\\workspace\\primary\\replace.txt (0.0s)",
+            "icons": [
+              "custom-view-tree-node-item-icon codicon codicon-check codicon-colored"
+            ]
+          }
+        ],
+        "ui": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nSFTP/FTP\nExplorer\nRC SFTP\nTransfer Queue\nlocal ➞ remote <sandbox>\\workspace\\bulk\\replace.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\bulk\\replace.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\primary\\replace.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\primary\\new.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\first.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\first.txt (0.0s)\nBackups\n\nSelect a file in Remote Explorer to view its backups.\n\nsftp\n.json\n.vscode\nsftp.json\n…\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n37\n38\n39\n40\n41\n{\n  \"name\": \"RC SFTP\",\n  \"host\": \"127.0.0.1\",\n  \"protocol\": \"sftp\",\n  \"port\": 59442,\n  \"username\": \"test\",\n  \"remotePath\": \"/\",\n  \"uploadOnSave\": false,\n  \"conflictCheck\": true,\n  \"useTempFile\": false,\n  \"openSsh\": false,\n  \"concurrency\": 1,\n  \"watcher\": {\n    \"files\": false,\n    \"autoUpload\": false,\n    \"autoDelete\": false,\n    \"autoRename\": false\n  },\n  \"syncOption\": {\n    \"delete\": false,\n    \"skipCreate\": false,\n    \"ignoreExisting\": false,\n    \"update\": false\n  },\n  \"ignore\": [\n    \".vscode\",\n    \".git\",\n    \".github\",\n    \".DS_Store\",\n    \"Thumbs.db\",\n    \"src\",\n    \".env\",\n    \".env.*\",\n    \"AGENTS.md\",\n    \"CLAUDE.md\",\n    \".claude\",\n    \".cursor\",\n    \"*.log\",\n    \"*.tmp\",\n    \"*.bak\"\n  ],\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\nsftp.json\nAgent\nModels\nLocal\nDefault permissions\n SFTP 1/2\n 0 \n 0\ndone replace.txt\n SFTP transfers in progress...\nJSON\nLF\nUTF-8\nSpaces: 4\nLn 1, Col 1\nInfo: Test Connection succeeded: Connected with SFTP and read /. No remote data was changed."
+      }
+    },
+    {
+      "id": "manual-conflict",
+      "status": "PASS",
+      "utc": "2026-09-24T14:31:32.309Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Open Diff, cancellation leaves remote unchanged, explicit overwrite succeeds",
+      "observed": {
+        "tabs": [
+          {
+            "label": "manual.txt (remote ↔ local)",
+            "type": "textDiff",
+            "dirty": false
+          }
+        ],
+        "cancelledUnchanged": true,
+        "overwrittenBytes": true,
+        "ui": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nSFTP/FTP\nExplorer\nRC SFTP\nTransfer Queue\nlocal ➞ remote <sandbox>\\workspace\\manual.txt\nremote ➞ local <sandbox>\\workspace\\manual.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\bulk\\replace.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\bulk\\replace.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\primary\\replace.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\primary\\new.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\first.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\first.txt (0.0s)\nBackups\n\nSelect a file in Remote Explorer to view its backups.\n\nmanual.txt (remote ↔ local)\nmanual.txt\n1\n2\nmanual remote edit\n1\n2\nmanual remote edit\nmanual local edit\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\nmanual.txt\nAgent\nModels\nLocal\nDefault permissions\n SFTP 1/2\n 0 \n 0\ndone manual.txt\nPlain Text\nLF\nUTF-8\nSpaces: 4\nLn 1, Col 1\nInfo: Test Connection succeeded: Connected with SFTP and read /. No remote data was changed."
+      }
+    },
+    {
+      "id": "mcp-registration",
+      "status": "PASS",
+      "utc": "2026-09-24T14:31:33.334Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Actual editor starts packaged stdio MCP; eight tools are available",
+      "observed": {
+        "tools": [
+          "conflicts_list",
+          "conflicts_get",
+          "conflicts_read",
+          "conflicts_diff",
+          "conflicts_submit_local",
+          "conflicts_acknowledge_local",
+          "conflicts_resolve",
+          "conflicts_wait"
+        ],
+        "registration": "normal installed extension",
+        "transport": "official SDK / identical installed stdio / live editor bridge",
+        "editorLaunchedMcpPid": 24564
+      }
+    },
+    {
+      "id": "agent-stale-upload",
+      "status": "PASS",
+      "utc": "2026-09-24T14:31:34.822Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Scripted editor tools re-inspect stale state, submit, resolve, wait uploaded; no manual approval",
+      "observed": {
+        "context": {
+          "ok": true,
+          "conflictId": "2026-09-24T14-31-33-515Z-8280-3-agent.txt",
+          "workspace": "d023a2fc276adcdb8e65d77750b1a4e40ef25273b805737453c18c539a8da4db",
+          "workspaceName": "workspace",
+          "path": "agent.txt",
+          "remotePath": "/agent.txt",
+          "status": "pending",
+          "revision": 1,
+          "reason": "remote-changed",
+          "detectedAt": "2026-09-24T14:31:33.515Z",
+          "updatedAt": "2026-09-24T14:31:33.745Z",
+          "local": {
+            "mtime": 1790260293509,
+            "size": 17,
+            "sha256": "d38f08c35a6d1c32a90c77b2ea337e9d8d86885e3b02d52dd5bab50f891dc26d"
+          },
+          "remote": {
+            "mtime": 1790240520000,
+            "size": 18,
+            "sha256": "8ed92cb8b67f6c9cc6200df0b05af5c837011afab187477f8c3afd57b2b06800"
+          },
+          "remoteSnapshot": {
+            "available": true
+          },
+          "localRecovery": {
+            "available": true
+          },
+          "candidate": null
+        },
+        "diff": {
+          "ok": true,
+          "conflictId": "2026-09-24T14-31-33-515Z-8280-3-agent.txt",
+          "workspace": "d023a2fc276adcdb8e65d77750b1a4e40ef25273b805737453c18c539a8da4db",
+          "workspaceName": "workspace",
+          "path": "agent.txt",
+          "remotePath": "/agent.txt",
+          "status": "pending",
+          "revision": 1,
+          "reason": "remote-changed",
+          "detectedAt": "2026-09-24T14:31:33.515Z",
+          "updatedAt": "2026-09-24T14:31:33.745Z",
+          "local": {
+            "mtime": 1790260293509,
+            "size": 17,
+            "sha256": "d38f08c35a6d1c32a90c77b2ea337e9d8d86885e3b02d52dd5bab50f891dc26d"
+          },
+          "remote": {
+            "mtime": 1790240520000,
+            "size": 18,
+            "sha256": "8ed92cb8b67f6c9cc6200df0b05af5c837011afab187477f8c3afd57b2b06800"
+          },
+          "remoteSnapshot": {
+            "available": true
+          },
+          "localRecovery": {
+            "available": true
+          },
+          "candidate": null,
+          "diff": "--- remote\n+++ local\n-agent remote edit\n+agent local edit\n ",
+          "truncated": false
+        },
+        "stale": {
+          "ok": false,
+          "error": {
+            "code": "stale",
+            "message": "The live extension rejected the request.",
+            "revision": 3,
+            "status": "pending",
+            "stale": true
+          }
+        },
+        "prepared": {
+          "ok": true,
+          "version": 3,
+          "requestId": "a71b4db6-24a8-46d0-b6f9-2899735f5436",
+          "conflictId": "2026-09-24T14-31-33-515Z-8280-3-agent.txt",
+          "revision": 4,
+          "status": "pending",
+          "respondedAt": "2026-09-24T14:31:34.412Z",
+          "accepted": true,
+          "candidateSha256": "155807ead75c72a449a1bb28d36c0e3433510a5dca0d62fb71c738f93629fb96"
+        },
+        "terminal": {
+          "ok": true,
+          "terminal": true,
+          "stale": false,
+          "conflictId": "2026-09-24T14-31-33-515Z-8280-3-agent.txt",
+          "workspace": "d023a2fc276adcdb8e65d77750b1a4e40ef25273b805737453c18c539a8da4db",
+          "workspaceName": "workspace",
+          "path": "agent.txt",
+          "remotePath": "/agent.txt",
+          "status": "uploaded",
+          "revision": 4,
+          "reason": "remote-changed",
+          "detectedAt": "2026-09-24T14:31:33.515Z",
+          "updatedAt": "2026-09-24T14:31:34.642Z",
+          "local": {
+            "mtime": 1790260294408.146,
+            "size": 31,
+            "sha256": "155807ead75c72a449a1bb28d36c0e3433510a5dca0d62fb71c738f93629fb96"
+          },
+          "remote": {
+            "mtime": 1790240640000,
+            "size": 19,
+            "sha256": "4edcc1b932eef42a199336e8805a4611de026a4680bbd2f602670f2da644a2cc"
+          },
+          "remoteSnapshot": {
+            "available": true
+          },
+          "localRecovery": {
+            "available": true
+          },
+          "candidate": {
+            "source": "submitted",
+            "sha256": "155807ead75c72a449a1bb28d36c0e3433510a5dca0d62fb71c738f93629fb96",
+            "preparedAt": "2026-09-24T14:31:34.410Z"
+          },
+          "result": {
+            "uploadedAt": "2026-09-24T14:31:34.642Z"
+          }
+        },
+        "remoteSha256": "155807ead75c72a449a1bb28d36c0e3433510a5dca0d62fb71c738f93629fb96",
+        "manualApprovals": 0
+      }
+    },
+    {
+      "id": "agent-acknowledge-cancel",
+      "status": "PASS",
+      "utc": "2026-09-24T14:31:35.754Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Saved-edit acknowledgement and terminal cancellation do not mutate remote",
+      "observed": {
+        "acknowledged": {
+          "ok": true,
+          "version": 3,
+          "requestId": "746bff46-163e-4925-9086-2aa3436eb80b",
+          "conflictId": "2026-09-24T14-31-34-993Z-8280-4-agent-cancel.txt",
+          "revision": 2,
+          "status": "pending",
+          "respondedAt": "2026-09-24T14:31:35.454Z",
+          "accepted": true,
+          "candidateSha256": "83fc05654c2525a7a51be8d3cc56f6fa502f561e59dfdebfc72155c11ed49e40"
+        },
+        "cancelTerminal": {
+          "ok": true,
+          "terminal": true,
+          "stale": false,
+          "conflictId": "2026-09-24T14-31-34-993Z-8280-4-agent-cancel.txt",
+          "workspace": "d023a2fc276adcdb8e65d77750b1a4e40ef25273b805737453c18c539a8da4db",
+          "workspaceName": "workspace",
+          "path": "agent-cancel.txt",
+          "remotePath": "/agent-cancel.txt",
+          "status": "cancelled",
+          "revision": 2,
+          "reason": "remote-changed",
+          "detectedAt": "2026-09-24T14:31:34.993Z",
+          "updatedAt": "2026-09-24T14:31:35.664Z",
+          "local": {
+            "mtime": 1790260295396.7625,
+            "size": 34,
+            "sha256": "83fc05654c2525a7a51be8d3cc56f6fa502f561e59dfdebfc72155c11ed49e40"
+          },
+          "remote": {
+            "mtime": 1790240520000,
+            "size": 25,
+            "sha256": "fd59af39ffe2b0868f17e6221620356d4d7d1e4628164e91a2926d2f2ee7dd38"
+          },
+          "remoteSnapshot": {
+            "available": true
+          },
+          "localRecovery": {
+            "available": true
+          },
+          "candidate": {
+            "source": "acknowledged",
+            "sha256": "83fc05654c2525a7a51be8d3cc56f6fa502f561e59dfdebfc72155c11ed49e40",
+            "preparedAt": "2026-09-24T14:31:35.452Z"
+          },
+          "result": {
+            "cancelledAt": "2026-09-24T14:31:35.664Z"
+          }
+        },
+        "remoteUnchanged": true
+      }
+    },
+    {
+      "id": "agent-upload-failure",
+      "status": "PASS",
+      "utc": "2026-09-24T14:31:37.060Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Induced write failure reports failed, not uploaded; no blind write retry",
+      "observed": {
+        "failedTerminal": {
+          "ok": true,
+          "terminal": true,
+          "stale": false,
+          "conflictId": "2026-09-24T14-31-36-104Z-8280-5-agent-failure.txt",
+          "workspace": "d023a2fc276adcdb8e65d77750b1a4e40ef25273b805737453c18c539a8da4db",
+          "workspaceName": "workspace",
+          "path": "agent-failure.txt",
+          "remotePath": "/agent-failure.txt",
+          "status": "failed",
+          "revision": 2,
+          "reason": "remote-changed",
+          "detectedAt": "2026-09-24T14:31:36.104Z",
+          "updatedAt": "2026-09-24T14:31:36.793Z",
+          "local": {
+            "mtime": 1790260296560.8936,
+            "size": 44,
+            "sha256": "dd9a2e5e60bb8b28f2085e381e157873ce39df5b9fd9782cd0632830f66e92ff"
+          },
+          "remote": {
+            "mtime": 1790240520000,
+            "size": 26,
+            "sha256": "3c83a92ac9f133787e3d3af40558b0f27297bc5a841a12f803b31798708db078"
+          },
+          "remoteSnapshot": {
+            "available": true
+          },
+          "localRecovery": {
+            "available": true
+          },
+          "candidate": {
+            "source": "submitted",
+            "sha256": "dd9a2e5e60bb8b28f2085e381e157873ce39df5b9fd9782cd0632830f66e92ff",
+            "preparedAt": "2026-09-24T14:31:36.564Z"
+          },
+          "result": {
+            "failedAt": "2026-09-24T14:31:36.793Z",
+            "error": "No response from server"
+          }
+        },
+        "writes": [
+          {
+            "operation": "OPEN_WRITE",
+            "target": "/agent-failure.txt"
+          }
+        ],
+        "queue": [
+          {
+            "label": "local ➞ remote <sandbox>\\workspace\\agent-failure.txt (0.0s)",
+            "tooltip": "No response from server",
+            "icons": [
+              "custom-view-tree-node-item-icon codicon codicon-error codicon-colored"
+            ]
+          },
+          {
+            "label": "remote ➞ local <sandbox>\\workspace\\agent-failure.txt (0.0s)",
+            "tooltip": "remote ➞ local <sandbox>\\workspace\\agent-failure.txt (0.0s)",
+            "icons": [
+              "custom-view-tree-node-item-icon codicon codicon-check codicon-colored"
+            ]
+          }
+        ],
+        "ui": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nSFTP/FTP\nExplorer\nRC SFTP\nTransfer Queue\nlocal ➞ remote <sandbox>\\workspace\\agent-failure.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\agent-failure.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\agent-cancel.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\agent.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\agent.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\manual.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\manual.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\bulk\\replace.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\bulk\\replace.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\primary\\replace.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\primary\\new.txt (0.0s)\nBackups\n\nSelect a file in Remote Explorer to view its backups.\n\nOpen Chat\nCtrl\n+\nAlt\n+\nI\nShow All Commands\nCtrl\n+\nShift\n+\nP\nGo to File\nCtrl\n+\nP\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\nAgent\nModels\nLocal\nDefault permissions\n SFTP 0/2\n 0 \n 0\nfailed agent-failure.txt\nError: Transfer failed: The item could not be transferred. Completed: 0; failed: 1; cancelled: 0; not started: 0; warnings: 0. Inspect the completed and failed queue entries before choosing a recovery action.\nSource: SFTP/FTP Sync + AI Conflict Resolution\nCopy Diagnostics\nTroubleshoot\nShow Output\nTransfer failed: The item could not be transferred. Completed: 0; failed: 1; cancelled: 0; not started: 0; warnings: 0. Inspect the completed and failed queue entries before choosing a recovery action."
+      }
+    },
+    {
+      "id": "backup-restore",
+      "status": "PASS",
+      "utc": "2026-09-24T14:31:41.582Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Actual Local Backups view/open; cancel inert; restore exact bytes with pre-restore protection",
+      "observed": {
+        "opened": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nSFTP/FTP\nExplorer\nRC SFTP\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nsample.txt\nTransfer Queue\nlocal ➞ remote <sandbox>\\workspace\\restore.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\restore.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\agent-failure.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\agent-failure.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\agent-cancel.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\agent.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\agent.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\manual.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\manual.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\bulk\\replace.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\bulk\\replace.txt (0.0s)\nLocal Backups\n9/24/2026, 7:31:37 PM (28 B)\nrestore.txt.20260924143137404.bak\n1\n2\nrestore earlier remote text\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\n<sandbox>\\workspace\\.vscode\\sftp-backup\\restore.txt.20260924143137404.bak\nAgent\nModels\nLocal\nDefault permissions\n SFTP 1/2\n 0 \n 0\ndone restore.txt\nPlain Text\nSpaces: 4\nLn 1, Col 1\nError: Transfer failed: The item could not be transferred. Completed: 0; failed: 1; cancelled: 0; not started: 0; warnings: 0. Inspect the completed and failed queue entries before choosing a recovery action.",
+        "modal": [
+          {
+            "name": "Restore",
+            "id": 0,
+            "type": "Native.Button"
+          },
+          {
+            "name": "Cancel",
+            "id": 0,
+            "type": "Native.Button"
+          },
+          {
+            "name": "Restore backup from 9/24/2026, 7:31:37 PM to /restore.txt?",
+            "type": "ControlType.Text"
+          }
+        ],
+        "cancelUnchanged": true,
+        "restored": true,
+        "preRestoreProtection": true,
+        "backupCount": 2,
+        "ui": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nSFTP/FTP\nExplorer\nRC SFTP\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nsample.txt\nTransfer Queue\nlocal ➞ remote <sandbox>\\workspace\\restore.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\restore.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\agent-failure.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\agent-failure.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\agent-cancel.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\agent.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\agent.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\manual.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\manual.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\bulk\\replace.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\bulk\\replace.txt (0.0s)\nLocal Backups\n9/24/2026, 7:31:37 PM (28 B)\nrestore.txt.20260924143137404.bak\n1\n2\nrestore earlier remote text\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\n<sandbox>\\workspace\\.vscode\\sftp-backup\\restore.txt.20260924143137404.bak\nAgent\nModels\nLocal\nDefault permissions\n SFTP 1/2\n 0 \n 0\nSFTP\nPlain Text\nSpaces: 4\nLn 1, Col 1\nInfo: Restored backup to /restore.txt\nRestored backup to /restore.txt",
+        "scope": "text only; no sync-delete or download undo guarantee"
+      }
+    },
+    {
+      "id": "error-configuration",
+      "status": "PASS",
+      "utc": "2026-09-24T14:31:45.050Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Configuration error before network; Open Config and save recover",
+      "observed": {
+        "message": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nExplorer\nworkspace\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nOutline\nTimeline\nsftp\n.json\n.vscode\nsftp.json\n…\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n37\n38\n39\n40\n41\n{\n  \"name\": \"RC SFTP\",\n  \"host\": \"127.0.0.1\",\n  \"protocol\": \"invalid\",\n  \"port\": 59442,\n  \"username\": \"test\",\n  \"remotePath\": \"/\",\n  \"uploadOnSave\": false,\n  \"conflictCheck\": true,\n  \"useTempFile\": false,\n  \"openSsh\": false,\n  \"concurrency\": 1,\n  \"watcher\": {\n    \"files\": false,\n    \"autoUpload\": false,\n    \"autoDelete\": false,\n    \"autoRename\": false\n  },\n  \"syncOption\": {\n    \"delete\": false,\n    \"skipCreate\": false,\n    \"ignoreExisting\": false,\n    \"update\": false\n  },\n  \"ignore\": [\n    \".vscode\",\n    \".git\",\n    \".github\",\n    \".DS_Store\",\n    \"Thumbs.db\",\n    \"src\",\n    \".env\",\n    \".env.*\",\n    \"AGENTS.md\",\n    \"CLAUDE.md\",\n    \".claude\",\n    \".cursor\",\n    \"*.log\",\n    \"*.tmp\",\n    \"*.bak\"\n  ],\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\nsftp.json\nAgent\nModels\nLocal\nDefault permissions\n SFTP 1/2\n 0 \n 1\nSFTP\nJSON\nLF\nUTF-8\nSpaces: 4\nLn 1, Col 1\nError: Test Connection - Configuration (protocol): protocol: Invalid option: expected one of \"sftp\"|\"ftp\"|\"local\"\nNotifications\nSource: SFTP/FTP Sync + AI Conflict Resolution\nOpen Config\nTest Connection - Configuration (protocol): protocol: Invalid option: expected one of \"sftp\"|\"ftp\"|\"local\"\nSource: SFTP/FTP Sync + AI Conflict Resolution\nCopy Diagnostics\nTroubleshoot\nShow Output\nTransfer failed: The item could not be transferred. Inspect the completed and failed queue entries before choosing a recovery action.\nRestored backup to /restore.txt",
+        "unchanged": true,
+        "recovered": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nExplorer\nworkspace\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nOutline\nTimeline\nOpen Chat\nCtrl\n+\nAlt\n+\nI\nShow All Commands\nCtrl\n+\nShift\n+\nP\nGo to File\nCtrl\n+\nP\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\nAgent\nModels\nLocal\nDefault permissions\n SFTP 0/2\n 0 \n 0\nSFTP\nInfo: Test Connection succeeded: Connected with SFTP and read /. No remote data was changed.\nNotifications\nTest Connection succeeded: Connected with SFTP and read /. No remote data was changed.\nTesting RC SFTP..."
+      }
+    },
+    {
+      "id": "error-authentication",
+      "status": "PASS",
+      "utc": "2026-09-24T14:31:45.745Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Saved credential rejection is actionable and endpoint recovers",
+      "observed": {
+        "message": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nExplorer\nworkspace\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nOutline\nTimeline\nOpen Chat\nCtrl\n+\nAlt\n+\nI\nShow All Commands\nCtrl\n+\nShift\n+\nP\nGo to File\nCtrl\n+\nP\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\nAgent\nModels\nLocal\nDefault permissions\n SFTP 0/2\n 0 \n 0\nSFTP\nError: Test Connection - Authentication: The server rejected the credentials. Check the username and authentication method, then update or re-enter the saved password/passphrase.\nNotifications\nSource: SFTP/FTP Sync + AI Conflict Resolution\nOpen Config\nTest Connection - Authentication: The server rejected the credentials. Check the username and authentication method, then update or re-enter the saved password/passphrase.\nTesting RC SFTP...\nTesting RC SFTP...\nTest Connection succeeded: Connected with SFTP and read /. No remote data was changed.\nTesting RC SFTP...",
+        "recovered": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nExplorer\nworkspace\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nOutline\nTimeline\nOpen Chat\nCtrl\n+\nAlt\n+\nI\nShow All Commands\nCtrl\n+\nShift\n+\nP\nGo to File\nCtrl\n+\nP\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\nAgent\nModels\nLocal\nDefault permissions\n SFTP 0/2\n 0 \n 0\nSFTP\nInfo: Test Connection succeeded: Connected with SFTP and read /. No remote data was changed.\nNotifications\nTest Connection succeeded: Connected with SFTP and read /. No remote data was changed.\nTesting RC SFTP...\nTesting RC SFTP...\nTesting RC SFTP...",
+        "credentialReentry": false
+      }
+    },
+    {
+      "id": "error-network",
+      "status": "PASS",
+      "utc": "2026-09-24T14:31:46.426Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Unavailable loopback endpoint fails; same endpoint reconnects",
+      "observed": {
+        "message": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nExplorer\nworkspace\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nOutline\nTimeline\nOpen Chat\nCtrl\n+\nAlt\n+\nI\nShow All Commands\nCtrl\n+\nShift\n+\nP\nGo to File\nCtrl\n+\nP\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\nAgent\nModels\nLocal\nDefault permissions\n SFTP 0/2\n 0 \n 0\nSFTP\nError: Test Connection - Network: The server could not be reached. Check the host, port, VPN/firewall, and selected FTP network interface, then try again.\nNotifications\nSource: SFTP/FTP Sync + AI Conflict Resolution\nOpen Config\nTest Connection - Network: The server could not be reached. Check the host, port, VPN/firewall, and selected FTP network interface, then try again.\nTesting RC SFTP...\nTesting RC SFTP...",
+        "recovered": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nExplorer\nworkspace\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nOutline\nTimeline\nOpen Chat\nCtrl\n+\nAlt\n+\nI\nShow All Commands\nCtrl\n+\nShift\n+\nP\nGo to File\nCtrl\n+\nP\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\nAgent\nModels\nLocal\nDefault permissions\n SFTP 0/2\n 0 \n 0\nSFTP\nInfo: Test Connection succeeded: Connected with SFTP and read /. No remote data was changed.\nNotifications\nTest Connection succeeded: Connected with SFTP and read /. No remote data was changed.\nTesting RC SFTP...\nTesting RC SFTP..."
+      }
+    },
+    {
+      "id": "error-path",
+      "status": "PASS",
+      "utc": "2026-09-24T14:31:49.251Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Missing remotePath reports next action; corrected path succeeds",
+      "observed": {
+        "message": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nExplorer\nworkspace\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nOutline\nTimeline\nsftp\n.json\n.vscode\nsftp.json\n…\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n37\n38\n39\n40\n41\n{\n  \"name\": \"RC SFTP\",\n  \"host\": \"127.0.0.1\",\n  \"protocol\": \"sftp\",\n  \"port\": 59442,\n  \"username\": \"test\",\n  \"remotePath\": \"/does-not-exist\",\n  \"uploadOnSave\": false,\n  \"conflictCheck\": true,\n  \"useTempFile\": false,\n  \"openSsh\": false,\n  \"concurrency\": 1,\n  \"watcher\": {\n    \"files\": false,\n    \"autoUpload\": false,\n    \"autoDelete\": false,\n    \"autoRename\": false\n  },\n  \"syncOption\": {\n    \"delete\": false,\n    \"skipCreate\": false,\n    \"ignoreExisting\": false,\n    \"update\": false\n  },\n  \"ignore\": [\n    \".vscode\",\n    \".git\",\n    \".github\",\n    \".DS_Store\",\n    \"Thumbs.db\",\n    \"src\",\n    \".env\",\n    \".env.*\",\n    \"AGENTS.md\",\n    \"CLAUDE.md\",\n    \".claude\",\n    \".cursor\",\n    \"*.log\",\n    \"*.tmp\",\n    \"*.bak\"\n  ],\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\nsftp.json\nAgent\nModels\nLocal\nDefault permissions\n SFTP 0/2\n 0 \n 0\nSFTP\nJSON\nLF\nUTF-8\nSpaces: 4\nLn 1, Col 1\nError: Test Connection - Remote path: The configured remotePath does not exist or is not accessible as a directory. Correct remotePath in .vscode/sftp.json and run Test Connection again.\nNotifications\nSource: SFTP/FTP Sync + AI Conflict Resolution\nOpen Config\nTest Connection - Remote path: The configured remotePath does not exist or is not accessible as a directory. Correct remotePath in .vscode/sftp.json and run Test Connection again.\nTesting RC SFTP...",
+        "recovered": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nExplorer\nworkspace\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nOutline\nTimeline\nsftp\n.json\n.vscode\nsftp.json\n…\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n37\n38\n39\n40\n41\n{\n  \"name\": \"RC SFTP\",\n  \"host\": \"127.0.0.1\",\n  \"protocol\": \"sftp\",\n  \"port\": 59442,\n  \"username\": \"test\",\n  \"remotePath\": \"/\",\n  \"uploadOnSave\": false,\n  \"conflictCheck\": true,\n  \"useTempFile\": false,\n  \"openSsh\": false,\n  \"concurrency\": 1,\n  \"watcher\": {\n    \"files\": false,\n    \"autoUpload\": false,\n    \"autoDelete\": false,\n    \"autoRename\": false\n  },\n  \"syncOption\": {\n    \"delete\": false,\n    \"skipCreate\": false,\n    \"ignoreExisting\": false,\n    \"update\": false\n  },\n  \"ignore\": [\n    \".vscode\",\n    \".git\",\n    \".github\",\n    \".DS_Store\",\n    \"Thumbs.db\",\n    \"src\",\n    \".env\",\n    \".env.*\",\n    \"AGENTS.md\",\n    \"CLAUDE.md\",\n    \".claude\",\n    \".cursor\",\n    \"*.log\",\n    \"*.tmp\",\n    \"*.bak\"\n  ],\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\nsftp.json\nAgent\nModels\nLocal\nDefault permissions\n SFTP 0/2\n 0 \n 0\nSFTP\nJSON\nLF\nUTF-8\nSpaces: 4\nLn 1, Col 1\nInfo: Test Connection succeeded: Connected with SFTP and read /. No remote data was changed.\nNotifications\nTest Connection succeeded: Connected with SFTP and read /. No remote data was changed.\nTesting RC SFTP...\nSource: SFTP/FTP Sync + AI Conflict Resolution\nOpen Config\nTest Connection - Remote path: The configured remotePath does not exist or is not accessible as a directory. Correct remotePath in .vscode/sftp.json and run Test Connection again.\nTesting RC SFTP..."
+      }
+    },
+    {
+      "id": "error-permission",
+      "status": "PASS",
+      "utc": "2026-09-24T14:31:52.015Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Denied remote folder reports permission action; granting access recovers",
+      "observed": {
+        "message": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nExplorer\nworkspace\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nOutline\nTimeline\nsftp\n.json\n.vscode\nsftp.json\n…\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n37\n38\n39\n40\n41\n{\n  \"name\": \"RC SFTP\",\n  \"host\": \"127.0.0.1\",\n  \"protocol\": \"sftp\",\n  \"port\": 59442,\n  \"username\": \"test\",\n  \"remotePath\": \"/denied\",\n  \"uploadOnSave\": false,\n  \"conflictCheck\": true,\n  \"useTempFile\": false,\n  \"openSsh\": false,\n  \"concurrency\": 1,\n  \"watcher\": {\n    \"files\": false,\n    \"autoUpload\": false,\n    \"autoDelete\": false,\n    \"autoRename\": false\n  },\n  \"syncOption\": {\n    \"delete\": false,\n    \"skipCreate\": false,\n    \"ignoreExisting\": false,\n    \"update\": false\n  },\n  \"ignore\": [\n    \".vscode\",\n    \".git\",\n    \".github\",\n    \".DS_Store\",\n    \"Thumbs.db\",\n    \"src\",\n    \".env\",\n    \".env.*\",\n    \"AGENTS.md\",\n    \"CLAUDE.md\",\n    \".claude\",\n    \".cursor\",\n    \"*.log\",\n    \"*.tmp\",\n    \"*.bak\"\n  ],\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\nsftp.json\nAgent\nModels\nLocal\nDefault permissions\n SFTP 0/2\n 0 \n 0\nSFTP\nJSON\nLF\nUTF-8\nSpaces: 4\nLn 1, Col 1\nError: Test Connection - Permission: The account cannot read and list the configured remotePath. Grant directory read/list permission or choose a remotePath this account can access.\nNotifications\nSource: SFTP/FTP Sync + AI Conflict Resolution\nOpen Config\nTest Connection - Permission: The account cannot read and list the configured remotePath. Grant directory read/list permission or choose a remotePath this account can access.\nTesting RC SFTP...",
+        "recovered": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nExplorer\nworkspace\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nOutline\nTimeline\nsftp\n.json\n.vscode\nsftp.json\n…\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n37\n38\n39\n40\n41\n{\n  \"name\": \"RC SFTP\",\n  \"host\": \"127.0.0.1\",\n  \"protocol\": \"sftp\",\n  \"port\": 59442,\n  \"username\": \"test\",\n  \"remotePath\": \"/denied\",\n  \"uploadOnSave\": false,\n  \"conflictCheck\": true,\n  \"useTempFile\": false,\n  \"openSsh\": false,\n  \"concurrency\": 1,\n  \"watcher\": {\n    \"files\": false,\n    \"autoUpload\": false,\n    \"autoDelete\": false,\n    \"autoRename\": false\n  },\n  \"syncOption\": {\n    \"delete\": false,\n    \"skipCreate\": false,\n    \"ignoreExisting\": false,\n    \"update\": false\n  },\n  \"ignore\": [\n    \".vscode\",\n    \".git\",\n    \".github\",\n    \".DS_Store\",\n    \"Thumbs.db\",\n    \"src\",\n    \".env\",\n    \".env.*\",\n    \"AGENTS.md\",\n    \"CLAUDE.md\",\n    \".claude\",\n    \".cursor\",\n    \"*.log\",\n    \"*.tmp\",\n    \"*.bak\"\n  ],\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\nsftp.json\nAgent\nModels\nLocal\nDefault permissions\n SFTP 0/2\n 0 \n 0\nSFTP\nJSON\nLF\nUTF-8\nSpaces: 4\nLn 1, Col 1\nInfo: Test Connection succeeded: Connected with SFTP and read /denied. No remote data was changed.\nNotifications\nTest Connection succeeded: Connected with SFTP and read /denied. No remote data was changed.\nTesting RC SFTP...\nTesting RC SFTP...\nSource: SFTP/FTP Sync + AI Conflict Resolution\nOpen Config\nTest Connection - Permission: The account cannot read and list the configured remotePath. Grant directory read/list permission or choose a remotePath this account can access.\nTesting RC SFTP..."
+      }
+    },
+    {
+      "id": "sftp-changed-key",
+      "status": "PASS",
+      "utc": "2026-09-24T14:31:52.704Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Changed key is rejected without accept-new-key shortcut; original key reconnects",
+      "observed": {
+        "message": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nExplorer\nworkspace\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nOutline\nTimeline\nsftp\n.json\n.vscode\nsftp.json\n…\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n37\n38\n39\n40\n41\n{\n  \"name\": \"RC SFTP\",\n  \"host\": \"127.0.0.1\",\n  \"protocol\": \"sftp\",\n  \"port\": 59442,\n  \"username\": \"test\",\n  \"remotePath\": \"/\",\n  \"uploadOnSave\": false,\n  \"conflictCheck\": true,\n  \"useTempFile\": false,\n  \"openSsh\": false,\n  \"concurrency\": 1,\n  \"watcher\": {\n    \"files\": false,\n    \"autoUpload\": false,\n    \"autoDelete\": false,\n    \"autoRename\": false\n  },\n  \"syncOption\": {\n    \"delete\": false,\n    \"skipCreate\": false,\n    \"ignoreExisting\": false,\n    \"update\": false\n  },\n  \"ignore\": [\n    \".vscode\",\n    \".git\",\n    \".github\",\n    \".DS_Store\",\n    \"Thumbs.db\",\n    \"src\",\n    \".env\",\n    \".env.*\",\n    \"AGENTS.md\",\n    \"CLAUDE.md\",\n    \".claude\",\n    \".cursor\",\n    \"*.log\",\n    \"*.tmp\",\n    \"*.bak\"\n  ],\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\nsftp.json\nAgent\nModels\nLocal\nDefault permissions\n SFTP 0/2\n 0 \n 0\nSFTP\nJSON\nLF\nUTF-8\nSpaces: 4\nLn 1, Col 1\nError: Test Connection - Host key: The received SFTP host key does not match the saved key. Verify the fingerprint with the server owner, then update the known-host entry manually.\nNotifications\nSource: SFTP/FTP Sync + AI Conflict Resolution\nOpen Config\nTest Connection - Host key: The received SFTP host key does not match the saved key. Verify the fingerprint with the server owner, then update the known-host entry manually.\nTesting RC SFTP...",
+        "recovered": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nExplorer\nworkspace\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nOutline\nTimeline\nsftp\n.json\n.vscode\nsftp.json\n…\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n37\n38\n39\n40\n41\n{\n  \"name\": \"RC SFTP\",\n  \"host\": \"127.0.0.1\",\n  \"protocol\": \"sftp\",\n  \"port\": 59442,\n  \"username\": \"test\",\n  \"remotePath\": \"/\",\n  \"uploadOnSave\": false,\n  \"conflictCheck\": true,\n  \"useTempFile\": false,\n  \"openSsh\": false,\n  \"concurrency\": 1,\n  \"watcher\": {\n    \"files\": false,\n    \"autoUpload\": false,\n    \"autoDelete\": false,\n    \"autoRename\": false\n  },\n  \"syncOption\": {\n    \"delete\": false,\n    \"skipCreate\": false,\n    \"ignoreExisting\": false,\n    \"update\": false\n  },\n  \"ignore\": [\n    \".vscode\",\n    \".git\",\n    \".github\",\n    \".DS_Store\",\n    \"Thumbs.db\",\n    \"src\",\n    \".env\",\n    \".env.*\",\n    \"AGENTS.md\",\n    \"CLAUDE.md\",\n    \".claude\",\n    \".cursor\",\n    \"*.log\",\n    \"*.tmp\",\n    \"*.bak\"\n  ],\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\nsftp.json\nAgent\nModels\nLocal\nDefault permissions\n SFTP 0/2\n 0 \n 0\nSFTP\nJSON\nLF\nUTF-8\nSpaces: 4\nLn 1, Col 1\nInfo: Test Connection succeeded: Connected with SFTP and read /. No remote data was changed.\nNotifications\nTest Connection succeeded: Connected with SFTP and read /. No remote data was changed.\nTesting RC SFTP...\nTesting RC SFTP...\nSource: SFTP/FTP Sync + AI Conflict Resolution\nOpen Config\nTest Connection - Host key: The received SFTP host key does not match the saved key. Verify the fingerprint with the server owner, then update the known-host entry manually.\nTesting RC SFTP..."
+      }
+    },
+    {
+      "id": "error-download",
+      "status": "PASS",
+      "utc": "2026-09-24T14:31:54.076Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Failed bounded safe-read attempts preserve old local target; explicit retry succeeds",
+      "observed": {
+        "reads": [
+          {
+            "operation": "OPEN_READ",
+            "target": "/safe-download.txt"
+          },
+          {
+            "operation": "OPEN_READ",
+            "target": "/safe-download.txt"
+          },
+          {
+            "operation": "OPEN_READ",
+            "target": "/safe-download.txt"
+          }
+        ],
+        "message": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nExplorer\nworkspace\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nfirst.txt\nmanual.txt\nrestore.txt\nOutline\nTimeline\nsftp\n.json\n.vscode\nsftp.json\n…\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n37\n38\n39\n40\n41\n{\n  \"name\": \"RC SFTP\",\n  \"host\": \"127.0.0.1\",\n  \"protocol\": \"sftp\",\n  \"port\": 59442,\n  \"username\": \"test\",\n  \"remotePath\": \"/\",\n  \"uploadOnSave\": false,\n  \"conflictCheck\": true,\n  \"useTempFile\": false,\n  \"openSsh\": false,\n  \"concurrency\": 1,\n  \"watcher\": {\n    \"files\": false,\n    \"autoUpload\": false,\n    \"autoDelete\": false,\n    \"autoRename\": false\n  },\n  \"syncOption\": {\n    \"delete\": false,\n    \"skipCreate\": false,\n    \"ignoreExisting\": false,\n    \"update\": false\n  },\n  \"ignore\": [\n    \".vscode\",\n    \".git\",\n    \".github\",\n    \".DS_Store\",\n    \"Thumbs.db\",\n    \"src\",\n    \".env\",\n    \".env.*\",\n    \"AGENTS.md\",\n    \"CLAUDE.md\",\n    \".claude\",\n    \".cursor\",\n    \"*.log\",\n    \"*.tmp\",\n    \"*.bak\"\n  ],\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\nsftp.json\nAgent\nModels\nLocal\nDefault permissions\n SFTP 1/3\n 0 \n 0\nfailed safe-download.txt\nJSON\nLF\nUTF-8\nSpaces: 4\nLn 1, Col 1\nError: Server could not be reached: The connection was refused, interrupted, or timed out. Completed: 0; failed: 3; cancelled: 0; not started: 0; warnings: 0. Check the host, port, VPN, firewall, and server availability.\nSource: SFTP/FTP Sync + AI Conflict Resolution\nCopy Diagnostics\nTroubleshoot\nShow Output\nServer could not be reached: The connection was refused, interrupted, or timed out. Completed: 0; failed: 3; cancelled: 0; not started: 0; warnings: 0. Check the host, port, VPN, firewall, and server availability.",
+        "oldLocalPreserved": true,
+        "retryBytesVerified": true
+      }
+    },
+    {
+      "id": "error-backup",
+      "status": "PASS",
+      "utc": "2026-09-24T14:32:00.007Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Overwrite backup failure warns but uploads; promised delete backup failure blocks deletion; fixed folder recovers",
+      "observed": {
+        "warning": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nExplorer\nworkspace\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nbackup-blocker\nbackup-failure.txt\nfirst.txt\nmanual.txt\nrestore.txt\nsafe-download.txt\nOutline\nTimeline\nsftp\n.json\n.vscode\nsftp.json\n…\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n37\n38\n39\n40\n41\n{\n  \"name\": \"RC SFTP\",\n  \"host\": \"127.0.0.1\",\n  \"protocol\": \"sftp\",\n  \"port\": 59442,\n  \"username\": \"test\",\n  \"remotePath\": \"/\",\n  \"uploadOnSave\": false,\n  \"conflictCheck\": true,\n  \"useTempFile\": false,\n  \"openSsh\": false,\n  \"concurrency\": 1,\n  \"watcher\": {\n    \"files\": false,\n    \"autoUpload\": false,\n    \"autoDelete\": false,\n    \"autoRename\": false\n  },\n  \"syncOption\": {\n    \"delete\": false,\n    \"skipCreate\": false,\n    \"ignoreExisting\": false,\n    \"update\": false\n  },\n  \"ignore\": [\n    \".vscode\",\n    \".git\",\n    \".github\",\n    \".DS_Store\",\n    \"Thumbs.db\",\n    \"src\",\n    \".env\",\n    \".env.*\",\n    \"AGENTS.md\",\n    \"CLAUDE.md\",\n    \".claude\",\n    \".cursor\",\n    \"*.log\",\n    \"*.tmp\",\n    \"*.bak\"\n  ],\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\nsftp.json\nAgent\nModels\nLocal\nDefault permissions\n SFTP 1/4\n 0 \n 0\ndone backup-failure.txt\nJSON\nLF\nUTF-8\nSpaces: 4\nLn 1, Col 1\nWarning: Upload completed without an overwrite backup: The configured backup could not be created, but the upload continued. Completed: 1; failed: 0; cancelled: 0; not started: 0; warnings: 1. Verify the uploaded file and fix backup access; the previous remote text may not be recoverable.\nSource: SFTP/FTP Sync + AI Conflict Resolution\nCopy Diagnostics\nTroubleshoot\nShow Output\nUpload completed without an overwrite backup: The configured backup could not be created, but the upload continued. Completed: 1; failed: 0; cancelled: 0; not started: 0; warnings: 1. Verify the uploaded file and fix backup access; the previous remote text may not be recoverable.",
+        "deleteModal": [
+          {
+            "name": "Delete",
+            "id": 0,
+            "type": "Native.Button"
+          },
+          {
+            "name": "Cancel",
+            "id": 0,
+            "type": "Native.Button"
+          },
+          {
+            "name": "Delete 'backup-failure.txt' on the remote server?",
+            "type": "ControlType.Text"
+          }
+        ],
+        "deleteFailure": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nExplorer\nworkspace\n.vscode\nsftp-backup\nsftp.json\nbulk\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nbackup-blocker\nbackup-failure.txt\nfirst.txt\nmanual.txt\nrestore.txt\nsafe-download.txt\nOutline\nTimeline\nsftp\n.json\n.vscode\nsftp.json\n…\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n37\n38\n39\n40\n41\n{\n  \"name\": \"RC SFTP\",\n  \"host\": \"127.0.0.1\",\n  \"protocol\": \"sftp\",\n  \"port\": 59442,\n  \"username\": \"test\",\n  \"remotePath\": \"/\",\n  \"uploadOnSave\": false,\n  \"conflictCheck\": true,\n  \"useTempFile\": false,\n  \"openSsh\": false,\n  \"concurrency\": 1,\n  \"watcher\": {\n    \"files\": false,\n    \"autoUpload\": false,\n    \"autoDelete\": false,\n    \"autoRename\": false\n  },\n  \"syncOption\": {\n    \"delete\": false,\n    \"skipCreate\": false,\n    \"ignoreExisting\": false,\n    \"update\": false\n  },\n  \"ignore\": [\n    \".vscode\",\n    \".git\",\n    \".github\",\n    \".DS_Store\",\n    \"Thumbs.db\",\n    \"src\",\n    \".env\",\n    \".env.*\",\n    \"AGENTS.md\",\n    \"CLAUDE.md\",\n    \".claude\",\n    \".cursor\",\n    \"*.log\",\n    \"*.tmp\",\n    \"*.bak\"\n  ],\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\nsftp.json\nAgent\nModels\nLocal\nDefault permissions\n SFTP 1/5\n 0 \n 0\nSFTP\nJSON\nLF\nUTF-8\nSpaces: 4\nLn 1, Col 1\nError: Delete stopped because backup failed: At least one promised backup copy could not be created, so nothing was deleted. Backups created: 0/1; nothing deleted. Review the copies already created, fix backup access, and start the delete again.\nSource: SFTP/FTP Sync + AI Conflict Resolution\nCopy Diagnostics\nTroubleshoot\nShow Output\nDelete stopped because backup failed: At least one promised backup copy could not be created, so nothing was deleted. Backups created: 0/1; nothing deleted. Review the copies already created, fix backup access, and start the delete again.\nSource: SFTP/FTP Sync + AI Conflict Resolution\nCopy Diagnostics\nTroubleshoot\nShow Output\nUpload completed without an overwrite backup: The configured backup could not be created, but the upload continued. Completed: 1; failed: 0; cancelled: 0; not started: 0; warnings: 1. Verify the uploaded file and fix backup access; the previous remote text may not be recoverable.",
+        "deleteUnchanged": true,
+        "backupRecovered": true
+      }
+    },
+    {
+      "id": "state-isolation",
+      "status": "PASS",
+      "utc": "2026-09-24T14:32:00.177Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Remote listings exclude configuration, secrets, keys and internal conflict state",
+      "observed": {
+        "remotePaths": [
+          "/agent-cancel.txt",
+          "/agent-failure.txt",
+          "/agent.txt",
+          "/backup-failure.txt",
+          "/bulk",
+          "/bulk/remote-only.txt",
+          "/bulk/replace.txt",
+          "/denied",
+          "/denied/sample.txt",
+          "/first.txt",
+          "/manual.txt",
+          "/primary",
+          "/primary/new.txt",
+          "/primary/replace.txt",
+          "/restore.txt",
+          "/safe-download.txt",
+          "/sample.txt"
+        ],
+        "privateState": "editor global storage outside workspace"
+      }
+    },
+    {
+      "id": "bulk-partial-result",
+      "status": "PASS",
+      "utc": "2026-09-24T14:32:01.773Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Mixed approved sync reports completed and failed items truthfully and recovers",
+      "observed": {
+        "message": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nExplorer\nworkspace\n.vscode\nsftp-backup\nsftp.json\nbulk\npartial-sync\nprimary\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nbackup-blocker\nbackup-failure.txt\nfirst.txt\nmanual.txt\nrestore.txt\nsafe-download.txt\nOutline\nTimeline\nOpen Chat\nCtrl\n+\nAlt\n+\nI\nShow All Commands\nCtrl\n+\nShift\n+\nP\nGo to File\nCtrl\n+\nP\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\nAgent\nModels\nLocal\nDefault permissions\n SFTP 1/5\n 0 \n 0\nfailed z-denied.txt\n SFTP transfers in progress...\nError: Permission was denied: The account or local process is not allowed to perform this operation. Completed: 1; failed: 1; cancelled: 0; not started: 0; warnings: 0. Check server ownership/mode or Windows file access before trying again.\nSource: SFTP/FTP Sync + AI Conflict Resolution\nCopy Diagnostics\nTroubleshoot\nShow Output\nPermission was denied: The account or local process is not allowed to perform this operation. Completed: 1; failed: 1; cancelled: 0; not started: 0; warnings: 0. Check server ownership/mode or Windows file access before trying again.\nSource: SFTP/FTP Sync + AI Conflict Resolution\nCopy Diagnostics\nTroubleshoot\nShow Output\nDelete stopped because backup failed: At least one promised backup copy could not be created, so nothing was deleted. Backups created: 0/1; nothing deleted. Review the copies already created, fix backup access, and start the delete again.\nSource: SFTP/FTP Sync + AI Conflict Resolution\nCopy Diagnostics\nTroubleshoot\nShow Output\nUpload completed without an overwrite backup: The configured backup could not be created, but the upload continued. Completed: 1; failed: 0; cancelled: 0; not started: 0; warnings: 1. Verify the uploaded file and fix backup access; the previous remote text may not be recoverable.",
+        "queue": [
+          {
+            "label": "local ➞ remote <sandbox>\\workspace\\partial-sync\\z-denied.txt (0.0s)",
+            "tooltip": "Write permission denied: /partial-sync/z-denied.txt",
+            "icons": [
+              "custom-view-tree-node-item-icon codicon codicon-error codicon-colored"
+            ]
+          }
+        ],
+        "completedSha256": "e15dd4af43f3bfa91a030b0bd8f916d33b6925f4df53495c5990cc5423aae611",
+        "recovered": true
+      }
+    },
+    {
+      "id": "explorer-error-recovery",
+      "status": "PASS",
+      "utc": "2026-09-24T14:32:05.449Z",
+      "candidateSha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+      "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Actual folder refresh gives categorized redacted actions and persistent failed-read marker; corrected read and hidden config reload recover without detached errors or mutations",
+      "observed": {
+        "denied": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nSFTP/FTP\nExplorer\nRC SFTP\nbulk\ndenied\npartial-sync\nprimary\nqa-folder\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nbackup-failure.txt\nfirst.txt\nTransfer Queue\nlocal ➞ remote <sandbox>\\workspace\\partial-sync\\z-denied.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\partial-sync\\z-denied.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\partial-sync\\a-ok.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\backup-failure.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\backup-failure.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\backup-failure.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\safe-download.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\safe-download.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\safe-download.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\safe-download.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\restore.txt (0.0s)\nBackups\n\nSelect a file in Remote Explorer to view its backups.\n\nOpen Chat\nCtrl\n+\nAlt\n+\nI\nShow All Commands\nCtrl\n+\nShift\n+\nP\nGo to File\nCtrl\n+\nP\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\nAgent\nModels\nLocal\nDefault permissions\n SFTP 1/5\n 0 \n 0\ndone z-denied.txt\nError: Permission was denied: The account or local process is not allowed to perform this operation. Check server ownership/mode or Windows file access before trying again.\nNotifications\nSource: SFTP/FTP Sync + AI Conflict Resolution\nRetry\nOpen Config\nCopy Diagnostics\nTroubleshoot\nShow Output\nPermission was denied: The account or local process is not allowed to perform this operation. Check server ownership/mode or Windows file access before trying again.",
+        "diagnostics": {
+          "failureId": "permission.denied",
+          "operation": "read Remote Explorer folder",
+          "protocol": "sftp",
+          "retrySafety": "safe",
+          "troubleshootingSection": "permissions",
+          "causeCode": "3",
+          "causeMessage": "Permission denied: /qa-folder"
+        },
+        "remoteReadOnly": true,
+        "recovered": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nSFTP/FTP\nExplorer\nRC SFTP\nbulk\ndenied\npartial-sync\nprimary\nqa-folder\nlisted.txt\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nbackup-failure.txt\nTransfer Queue\nlocal ➞ remote <sandbox>\\workspace\\partial-sync\\z-denied.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\partial-sync\\z-denied.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\partial-sync\\a-ok.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\backup-failure.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\backup-failure.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\backup-failure.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\safe-download.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\safe-download.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\safe-download.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\safe-download.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\restore.txt (0.0s)\nBackups\n\nSelect a file in Remote Explorer to view its backups.\n\nOpen Chat\nCtrl\n+\nAlt\n+\nI\nShow All Commands\nCtrl\n+\nShift\n+\nP\nGo to File\nCtrl\n+\nP\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\nAgent\nModels\nLocal\nDefault permissions\n SFTP 1/5\n 0 \n 0\ndone z-denied.txt\nError: Permission was denied: The account or local process is not allowed to perform this operation. Check server ownership/mode or Windows file access before trying again.",
+        "hiddenUploadRecovered": true,
+        "noLazyOrRetiredRootErrors": true,
+        "afterReload": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nOpen in Agents\nSign In\nSFTP/FTP\nExplorer\nRC SFTP reloaded\nbulk\ndenied\npartial-sync\nprimary\nqa-folder\nlisted.txt\nafter-config-reload.txt\nagent-cancel.txt\nagent-failure.txt\nagent.txt\nTransfer Queue\nlocal ➞ remote <sandbox>\\workspace\\after-config-reload.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\partial-sync\\z-denied.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\partial-sync\\z-denied.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\partial-sync\\a-ok.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\backup-failure.txt (0.0s)\nlocal ➞ remote <sandbox>\\workspace\\backup-failure.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\backup-failure.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\safe-download.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\safe-download.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\safe-download.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\safe-download.txt (0.0s)\nBackups\n\nSelect a file in Remote Explorer to view its backups.\n\nsftp\n.json\n.vscode\nsftp.json\n…\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n37\n38\n39\n40\n41\n{\n  \"name\": \"RC SFTP reloaded\",\n  \"host\": \"127.0.0.1\",\n  \"protocol\": \"sftp\",\n  \"port\": 59442,\n  \"username\": \"test\",\n  \"remotePath\": \"/\",\n  \"uploadOnSave\": false,\n  \"conflictCheck\": true,\n  \"useTempFile\": false,\n  \"openSsh\": false,\n  \"concurrency\": 1,\n  \"watcher\": {\n    \"files\": false,\n    \"autoUpload\": false,\n    \"autoDelete\": false,\n    \"autoRename\": false\n  },\n  \"syncOption\": {\n    \"delete\": false,\n    \"skipCreate\": false,\n    \"ignoreExisting\": false,\n    \"update\": false\n  },\n  \"ignore\": [\n    \".vscode\",\n    \".git\",\n    \".github\",\n    \".DS_Store\",\n    \"Thumbs.db\",\n    \"src\",\n    \".env\",\n    \".env.*\",\n    \"AGENTS.md\",\n    \"CLAUDE.md\",\n    \".claude\",\n    \".cursor\",\n    \"*.log\",\n    \"*.tmp\",\n    \"*.bak\"\n  ],\nChat\nBuild with Agent\n\nAI responses may be inaccurate\n\nGenerate Agent Instructions to onboard AI onto your codebase.\n\nsftp.json\nAgent\nModels\nLocal\nDefault permissions\n SFTP 1/5\n 0 \n 0\ndone after-config-reload.txt\nJSON\nLF\nUTF-8\nSpaces: 4\nLn 1, Col 1\nError: Permission was denied: The account or local process is not allowed to perform this operation. Check server ownership/mode or Windows file access before trying again."
+      }
+    }
+  ]
+}

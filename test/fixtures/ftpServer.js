@@ -23,6 +23,7 @@ module.exports = async function startFTPServer({
   secure = false,
   pasvOnly = false,
   mdtm = true,
+  port: requestedPort = 0,
   sandbox: providedSandbox,
 } = {}) {
   const sandbox = providedSandbox || await createProtocolSandbox();
@@ -45,11 +46,11 @@ module.exports = async function startFTPServer({
     peers.push({ kind, address: socket.remoteAddress });
   }
 
-  async function listen(server) {
+  async function listen(server, port = 0) {
     servers.add(server);
     await new Promise((resolve, reject) => {
       server.once('error', reject);
-      server.listen(0, '127.0.0.1', resolve);
+      server.listen(port, '127.0.0.1', resolve);
     });
     return server.address().port;
   }
@@ -113,7 +114,7 @@ module.exports = async function startFTPServer({
       try {
         if (operation === 'upload') {
           const chunks = [];
-          const localPath = sandbox.assertAllowed(remotePath);
+          const localPath = sandbox.assertWritable(remotePath);
           await fs.promises.mkdir(path.dirname(localPath), { recursive: true });
           const interruptUpload = sandbox.consumeDisconnect('upload');
           for await (const chunk of data) {
@@ -263,7 +264,7 @@ module.exports = async function startFTPServer({
   const server = secure === 'implicit'
     ? tls.createServer(credentials, onControl)
     : net.createServer(onControl);
-  const port = await listen(server);
+  const port = await listen(server, requestedPort);
 
   return {
     port,
