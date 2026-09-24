@@ -1,0 +1,22 @@
+name: Release
+
+# Registration only: the reviewed release implementation is tested on its branch.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Strict version tag matching package.json (for example v0.1.0)
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  registration-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Reject bootstrap execution
+        run: |
+          echo "::error::Registration only. Dispatch the reviewed release implementation branch."
+          exit 1
