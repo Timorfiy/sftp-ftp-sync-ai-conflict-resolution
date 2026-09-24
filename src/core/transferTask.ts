@@ -2,6 +2,7 @@ import { Readable } from 'stream';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
 import { FileSystem, FileType } from './fs';
+import { ERROR_MSG_STREAM_INTERRUPT } from './fs/fileSystem';
 import { Task } from './scheduler';
 import logger from '../logger';
 import { BackupConfig } from './fileService';
@@ -10,6 +11,7 @@ import { createBackup, BackupPriority, BackupStorage } from './backup';
 import { isConflictStatePath } from '../fileHandlers/transfer/conflictStateIsolation';
 import { BackupResult } from './backup';
 import { withPathFailure } from '../errors/actionable';
+import { commitDownload, createDownloadSymlink } from '../modules/watcherSuppression';
 
 let hasWarnedModifedTimePermission = false;
 
@@ -143,7 +145,11 @@ export default class TransferTask implements Task {
         case FileType.SymbolicLink: {
           const linkTarget = await this._source(() => srcFs.readlink(src));
           try {
-            await this._target(() => targetFs.symlink(linkTarget, target));
+            await this._target(() =>
+              this._transferDirection === TransferDirection.REMOTE_TO_LOCAL
+                ? createDownloadSymlink(target, linkTarget, () => targetFs.symlink(linkTarget, target))
+                : targetFs.symlink(linkTarget, target)
+            );
           } catch (error) {
             const code =
               error && typeof error === 'object' && 'code' in error
@@ -392,7 +398,12 @@ export default class TransferTask implements Task {
       }
 
       if (stageDownload) {
-        await this._target(() => targetFs.renameAtomic(uploadTarget, target));
+        await this._target(() => commitDownload(target, uploadTarget, async () => {
+          if (this._cancelled) {
+            throw Object.assign(new Error('Transfer Aborted'), { code: ERROR_MSG_STREAM_INTERRUPT });
+          }
+          await targetFs.renameAtomic(uploadTarget, target);
+        }));
         committed = true;
       } else if (useTempFile) {
         logger.info("moving from: " + target + ".new" + " to: " + target);

@@ -1,13 +1,21 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 import debounce from 'lodash.debounce';
 import logger from '../logger';
 import { isValidFile, fileDepth } from '../helper';
 import { upload, removeRemote } from '../fileHandlers';
-import { WatcherService, TransferDirection } from '../core';
+import { WatcherService } from '../core';
 import app from '../app';
 import StatusBarItem from '../ui/statusBarItem';
-import { getRunningTransformTasks } from './serviceManager';
-import { isWatcherSuppressed } from './watcherSuppression';
+import {
+  isWatcherSuppressed,
+  isDownloadTemporaryPath,
+  isDownloadWatcherSuppressed,
+  registerDownloadWatcher,
+  releaseDownloadWatcher,
+} from './watcherSuppression';
+import { isLocalPathAtOrUnder } from '../helper/paths';
 import { isConflictPathActive } from '../fileHandlers/transfer/conflictBridge';
 
 const watchers: {
@@ -16,54 +24,110 @@ const watchers: {
 
 // Keyed by fsPath, not by Uri: every watcher event carries a fresh Uri object,
 // so a Set would compare by reference and queue the same file more than once.
-const uploadQueue = new Map<string, vscode.Uri>();
+const uploadQueue = new Map<string, { uri: vscode.Uri; ignore?: (fsPath: string) => boolean }>();
 const deleteQueue = new Map<string, vscode.Uri>();
 
 // less than 550 will not work
 const ACTION_INTEVAL = 550;
 
+function isWatched(fsPath: string) {
+  return Object.keys(watchers).some(root => isLocalPathAtOrUnder(root, fsPath));
+}
+
+let uploadDrain: Promise<void> | undefined;
+let deleteDrain: Promise<void> | undefined;
+
 function doUpload() {
+  if (!uploadDrain) {
+    uploadDrain = drainUploads().finally(() => {
+      uploadDrain = undefined;
+      if (uploadQueue.size) {
+        debouncedUpload();
+      }
+    });
+  }
+  return uploadDrain;
+}
+
+function reportWatcherError(error: Error, action: string, fsPath: string) {
+  logger.error(error, `${action} ${fsPath}`);
+  app.sftpBarItem.updateStatus(StatusBarItem.Status.error);
+}
+
+async function drainUploads() {
   const files = Array.from(uploadQueue.values()).sort(
-    (a, b) => fileDepth(b.fsPath) - fileDepth(a.fsPath)
+    (a, b) => fileDepth(b.uri.fsPath) - fileDepth(a.uri.fsPath)
   );
   uploadQueue.clear();
 
-  const currentDownloadTasks = getRunningTransformTasks().filter(
-    task => task.transferType === TransferDirection.REMOTE_TO_LOCAL
-  );
-
-  files.forEach(async uri => {
-    // current target is still in downloading, so don't upload it.
-    if (currentDownloadTasks.find(task => task.localFsPath === uri.fsPath)) {
-      return;
-    }
-
+  for (const { uri, ignore } of files) {
     const fspath = uri.fsPath;
-    logger.info(`[watcher/updated] ${fspath}`);
     try {
-      await upload(uri);
+      if (!isWatched(fspath) || isWatcherSuppressed(fspath) || isConflictPathActive(fspath)) {
+        continue;
+      }
+      const stat = await fs.promises.lstat(fspath);
+      if (stat.isDirectory()) {
+        // OS watchers may report only the parent, or report both parent and
+        // children. Never recursively upload a directory without checking each
+        // descendant: that bypasses all per-file download/conflict claims.
+        const children = await fs.promises.readdir(fspath);
+        if (children.length) {
+          for (const name of children) {
+            uploadHandler(vscode.Uri.file(path.join(fspath, name)), ignore);
+          }
+          continue;
+        }
+      }
+      // Recheck at dispatch: a queued event may outlive its transfer, or an
+      // editor save/conflict claim may have appeared during the debounce.
+      if (await isDownloadWatcherSuppressed(fspath) ||
+          !isWatched(fspath) || isWatcherSuppressed(fspath) || isConflictPathActive(fspath)) {
+        continue;
+      }
+      logger.info(`[watcher/updated] ${fspath}`);
+      // Transfers have their own scheduler. A conflict waiting for a user in
+      // one project must not stop watcher dispatch in every other project.
+      void upload(uri).catch(error => reportWatcherError(error, 'upload', fspath));
     } catch (error) {
-      logger.error(error, `upload ${fspath}`);
-      app.sftpBarItem.updateStatus(StatusBarItem.Status.error);
+      if (error.code === 'ENOENT') {
+        continue;
+      }
+      reportWatcherError(error, 'upload', fspath);
     }
-  });
+  }
 }
 
 function doDelete() {
+  if (!deleteDrain) {
+    deleteDrain = drainDeletes().finally(() => {
+      deleteDrain = undefined;
+      if (deleteQueue.size) {
+        debouncedDelete();
+      }
+    });
+  }
+  return deleteDrain;
+}
+
+async function drainDeletes() {
   const files = Array.from(deleteQueue.values()).sort(
     (a, b) => fileDepth(b.fsPath) - fileDepth(a.fsPath)
   );
   deleteQueue.clear();
-  files.forEach(async uri => {
+  for (const uri of files) {
     const fspath = uri.fsPath;
-    logger.info(`[watcher/removed] ${fspath}`);
     try {
-      await removeRemote(uri);
+      if (await isDownloadWatcherSuppressed(fspath) ||
+          !isWatched(fspath) || isWatcherSuppressed(fspath)) {
+        continue;
+      }
+      logger.info(`[watcher/removed] ${fspath}`);
+      void removeRemote(uri).catch(error => reportWatcherError(error, 'remove', fspath));
     } catch (error) {
-      logger.error(error, `remove ${fspath}`);
-      app.sftpBarItem.updateStatus(StatusBarItem.Status.error);
+      reportWatcherError(error, 'remove', fspath);
     }
-  });
+  }
 }
 
 const debouncedUpload = debounce(doUpload, ACTION_INTEVAL, { leading: true, trailing: true });
@@ -71,6 +135,9 @@ const debouncedDelete = debounce(doDelete, ACTION_INTEVAL, { leading: true, trai
 
 function uploadHandler(uri: vscode.Uri, ignore?: (fsPath: string) => boolean) {
   if (!isValidFile(uri)) {
+    return;
+  }
+  if (isDownloadTemporaryPath(uri.fsPath)) {
     return;
   }
 
@@ -89,7 +156,7 @@ function uploadHandler(uri: vscode.Uri, ignore?: (fsPath: string) => boolean) {
     return;
   }
 
-  uploadQueue.set(uri.fsPath, uri);
+  uploadQueue.set(uri.fsPath, { uri, ignore });
   debouncedUpload();
 }
 
@@ -128,6 +195,7 @@ function createWatcher(
     false
   );
   addWatcher(watcherBase, watcher);
+  registerDownloadWatcher(watcherBase);
 
   if (watcherConfig.autoUpload) {
     watcher.onDidCreate(uri => uploadHandler(uri, ignore));
@@ -137,6 +205,9 @@ function createWatcher(
   if (watcherConfig.autoDelete) {
     watcher.onDidDelete(uri => {
       if (!isValidFile(uri)) {
+        return;
+      }
+      if (isDownloadTemporaryPath(uri.fsPath)) {
         return;
       }
 
@@ -163,6 +234,14 @@ function removeWatcher(watcherBase: string) {
   if (watcher) {
     watcher.dispose();
     delete watchers[watcherBase];
+    releaseDownloadWatcher(watcherBase);
+    for (const queue of [uploadQueue, deleteQueue]) {
+      for (const fsPath of queue.keys()) {
+        if (isLocalPathAtOrUnder(watcherBase, fsPath)) {
+          queue.delete(fsPath);
+        }
+      }
+    }
   }
 }
 
@@ -172,3 +251,12 @@ const watcherService: WatcherService = {
 };
 
 export default watcherService;
+
+// Testing seam: drain the real debounce queues without sleeping per file.
+export async function _flushWatcherQueues() {
+  do {
+    debouncedUpload.cancel();
+    debouncedDelete.cancel();
+    await Promise.all([doUpload(), doDelete()]);
+  } while (uploadQueue.size || deleteQueue.size || uploadDrain || deleteDrain);
+}

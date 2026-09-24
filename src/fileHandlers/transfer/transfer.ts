@@ -17,6 +17,7 @@ import {
   isConflictStatePathOrAncestor,
 } from './conflictStateIsolation';
 import { withPathFailure } from '../../errors/actionable';
+import { createDownloadDirectory } from '../../modules/watcherSuppression';
 
 export interface FileTransferContext {
   srcFsPath: string;
@@ -124,6 +125,14 @@ function targetOperation<T>(
   return withPathFailure(targetPathKind(direction), operation);
 }
 
+function ensureTargetDirectory(config: BaseTransferHandleConfig, dir: string) {
+  return targetOperation(config.transferDirection, () =>
+    config.transferDirection === TransferDirection.REMOTE_TO_LOCAL
+      ? createDownloadDirectory(dir, () => config.targetFs.ensureDir(dir))
+      : config.targetFs.ensureDir(dir)
+  );
+}
+
 function localPathForTransfer(
   direction: TransferDirection,
   srcFsPath: string,
@@ -176,9 +185,7 @@ async function transferFolder(
   }
 
   // Need this to make sure file can correct transfer
-  await targetOperation(config.transferDirection, () =>
-    targetFs.ensureDir(targetFsPath)
-  );
+  await ensureTargetDirectory(config, targetFsPath);
 
   // If dirPerm is configured, we chmod the remote directory after creation.
   if(config.transferOption.dirPerm) {
@@ -299,9 +306,7 @@ async function transferWithType(
     case FileType.SymbolicLink:
       if (config.ensureDirExist) {
         const { targetFs, targetFsPath } = config;
-        await targetOperation(config.transferDirection, () =>
-          targetFs.ensureDir(targetFs.pathResolver.dirname(targetFsPath))
-        );
+        await ensureTargetDirectory(config, targetFs.pathResolver.dirname(targetFsPath));
         // If dirPerm is configured, we chmod the remote directory after creation.
         if(config.transferOption.dirPerm) {
           logger.info("Running chmod on remote directory with perm: ", config.transferOption.dirPerm)
@@ -633,9 +638,7 @@ async function _sync(
   };
 
   // create dir here so we don't have to ensure it for children files.
-  await targetOperation(transferDirection, () =>
-    targetFs.ensureDir(targetFsPath)
-  );
+  await ensureTargetDirectory(config, targetFsPath);
 
   const files = await Promise.all([
     sourceOperation(transferDirection, () => srcFs.list(srcFsPath)),
