@@ -1,17 +1,14 @@
-# Setting
+# Editor settings
 
-There are a handful of settings available for SFTP, and they can be changed:
+Open **File → Preferences → Settings** on Windows and search for `SFTP`.
 
-- On Windows/Linux: File --> Preferences --> Settings
-- On macOS: Code --> Preferences --> Settings
+| Setting | Default | Meaning |
+| --- | --- | --- |
+| `sftp.printDebugLog` | `false` | Write protocol debug output to the SFTP output channel after reload. |
+| `sftp.debug` | `false` | Compatibility alias for debug output; requires reload. |
+| `sftp.downloadWhenOpenInRemoteExplorer` | `false` | Download for local editing instead of opening read-only remote content. |
+| `sftp.suppressPlaintextPasswordWarning` | `false` | Hide the local plaintext-config warning. It does not make plaintext credentials safe. |
 
-## debug
-*boolean*: Adds debugging output to the SFTP output panel.
-You can view the login in `View --> Output --> SFTP`.  Changing this requires VSCode to be reloaded.
-
-**default**: false
-
-## downloadWhenOpenInRemoteExplorer
-*boolean*: Change the default behavior from `View Content` to `Edit in Local` when opening files in the Remote Explorer.
-
-**default**: false
+Prefer Secret Storage over a plaintext `password` or `passphrase` in
+`.vscode/sftp.json`. Plain FTP remains unencrypted in transit regardless of
+this setting.

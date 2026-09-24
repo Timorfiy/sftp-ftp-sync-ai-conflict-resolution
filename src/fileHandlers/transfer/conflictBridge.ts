@@ -444,8 +444,8 @@ export async function captureConflict(
   await writeConflictRecord(root, record);
   await captureLocalRecovery(session, context.srcFsPath);
   notifyWindows(
-    'SFTP/FTP Sync + AI Conflict Resolution — конфликт',
-    `Загрузка ${path.basename(context.srcFsPath)} остановлена: серверный файл изменён.`
+    'SFTP/FTP Sync + AI Conflict Resolution — conflict',
+    `Upload of ${path.basename(context.srcFsPath)} was paused because the remote file changed.`
   );
 
   const admission = await store.reserveSnapshot(remote.size);

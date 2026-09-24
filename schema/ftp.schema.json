@@ -1,49 +1,30 @@
 {
   "allOf": [
-    {
-      "$ref": "definitions.json#/rootOption"
-    },
-    {
-      "$ref": "definitions.json#/option"
-    },
-    {
-      "$ref": "definitions.json#/host"
-    },
-    {
-      "$ref": "definitions.json#/sftp"
-    },
-    {
-      "$ref": "definitions.json#/ftp"
-    },
+    { "$ref": "definitions.json#/rootOption" },
+    { "$ref": "definitions.json#/option" },
+    { "$ref": "definitions.json#/host" },
+    { "$ref": "definitions.json#/ftp" },
     {
       "type": "object",
+      "required": ["host", "username", "protocol"],
       "properties": {
         "protocol": {
-          "enum": ["ftp"],
-          "description": "ftp connection protocol."
+          "enum": ["ftp"]
         },
-
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "default": 21
+        },
         "profiles": {
-          "patternProperties": {
-            "^.*$": {
-              "allOf": [
-                {
-                  "$ref": "definitions.json#/option"
-                },
-                {
-                  "$ref": "definitions.json#/host"
-                },
-                {
-                  "$ref": "definitions.json#/sftp"
-                },
-                {
-                  "$ref": "definitions.json#/ftp"
-                }
-              ]
-            }
-          },
-          "default": {
-            "profileName": {}
+          "type": "object",
+          "additionalProperties": {
+            "allOf": [
+              { "$ref": "definitions.json#/option" },
+              { "$ref": "definitions.json#/host" },
+              { "$ref": "definitions.json#/ftp" }
+            ]
           }
         }
       }

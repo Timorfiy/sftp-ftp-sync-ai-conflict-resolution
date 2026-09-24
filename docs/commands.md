@@ -1,168 +1,92 @@
-# Common commands
+# Commands
 
-## Remote Explorer Filter
+Command IDs use the private `sftpSyncAI` namespace. Commands currently appear
+under the **SFTP** Command Palette category for compatibility, but operate on
+either protocol unless explicitly SFTP-only.
 
-The **Remote Explorer Filter** lets you quickly narrow down the files and folders shown in the Remote Explorer sidebar.
+## Setup and connection
 
-### How it works
+- **Config** — Create the safe `.vscode/sftp.json` template, or open an
+  existing file without changing it.
+- **Test Connection** — Read-only validation of configuration, credentials,
+  connection, `remotePath`, and list/read permission. Plain FTP requires a
+  transport warning confirmation.
+- **Set Profile** — Select a configured profile.
+- **Delete Saved Password** — Remove an endpoint-scoped password/passphrase or
+  a selectable legacy value.
+- **Select Network Interface** — Select a named IPv4 adapter for FTP only.
+- **Open SSH in Terminal** — SFTP-only interactive SSH terminal command.
 
-1. Click the **filter** icon (funnel) in the Remote Explorer title bar, or run **SFTP: Filter Remote Explorer** from the Command Palette.
-2. Start typing in the filter box. The Remote Explorer updates live as you type.
-3. Only files and folders whose names include the typed text remain visible.
-4. Parent folders stay visible if they contain a matching file or folder, so a deep match (for example `src/components/Button.tsx`) keeps the whole path visible.
-5. Click the **X** icon in the title bar, run **SFTP: Clear Remote Explorer Filter**, or clear the filter text and press `Enter` to show all items again.
+## Transfer
 
-### Important: client-side, visible items only
+- **Upload File/Folder/Active File/Active Folder/Project** — Copy local content
+  to the remote side. Existing files may invoke conflict handling and backups.
+- **Download File/Folder/Active File/Active Folder/Project** — Copy remote
+  content to the local side. A successful replacement has no extension
+  recovery version.
+- **Upload Changed Files** — Upload Git working-tree/index changes. The default
+  shortcut is `Ctrl+Alt+U`.
+- **Force Upload / Force Download** — Ignore user ignore rules. Internal
+  configuration and conflict-state exclusions still apply.
+- **Cancel All Transfers** — Cancel queued/active work. Completed transfers are
+  not rolled back.
 
-The filter is **purely client-side**. It filters only the files and folders that are **already displayed in the Remote Explorer** (i.e., already fetched and visible/expanded). It does **not** search the remote server, request additional directory listings, or reveal files that have not been loaded yet.
+## Sync
 
-### Examples
+### Sync Remote → Local
 
-| You type | What you see |
-|----------|--------------|
-| `index` | Any file or folder whose name contains `index` |
-| `button` | `Button.tsx`, `Button.test.tsx`, and the folders that contain them |
-| *(empty)* | The full, unfiltered tree |
-
-## SFTP: Filter Remote Explorer
-Open the live filter input for the Remote Explorer. Type to filter the files and folders currently shown in the sidebar.
-
-## SFTP: Clear Remote Explorer Filter
-Remove the active Remote Explorer filter and restore the full tree.
-
-## SFTP: Config
-Create a new configuration file for a project.
-
-## SFTP: Set Profile
-Set the current profile.
-
-### KeyBindings Args
-func(profileName: string)
-
-## SFTP: Upload Active File
-Upload the current file.
-
-## SFTP: Upload Changed Files
-Upload all files changed or created since the last commit to your Git.
-Can be called by default keyboard shortcut `Ctrl+Alt+U`.
-
-## SFTP: Upload Active Folder
-Upload the entire folder the current file is located in.
-
-## SFTP: Download Active File
-Download the remote version of the current file and overwrite the local copy.
-
-## SFTP: Download Active Folder
-Download the entire folder the current file is located in.
-
-## SFTP: Sync Local → Remote
-1. Any files that exist on both local and remote that have a different timestamp between local and remote are copied over.
-2. Any files that only exist on the local are copied over.
-
-Before any hook, connection, listing, or file change, a modal identifies the
-active connection/profile, local source path, and remote destination path.
-Canceling it leaves both sides unchanged. If `syncOption.delete` is enabled,
-the modal also states that destination-only remote files and folders will be
-deleted remotely.
-
-Remote overwrite backups, when enabled, cover text files only and a backup
-failure does not block the overwrite. `syncOption.delete` is outside
-`backup.onDelete`, so the confirmation does not promise a universal undo.
-
-You can change the default behavior by [syncOption](https://github.com/philipdaoud/sftp-neo/wiki/Configuration#syncoption).
-
-## SFTP: Sync Remote → Local
-Same as `Sync Local → Remote`, but in the opposite direction.
-
-This direction remains unconfirmed unless `syncOption.delete` is enabled. In
-that case, the modal states that destination-only local files and folders will
-be deleted locally. Successful replacements do not retain an extension
+The primary bulk path. It can overwrite local content. If
+`syncOption.delete` is enabled, a modal warns that destination-only local
+content will be deleted. Successful local replacements have no extension
 recovery version.
 
-## SFTP: Sync Both Directions
-Compare file modification times, and will always perform the action that causes the newest file to be present in both locations.
+### Sync Local → Remote
 
-A modal identifies both paths and warns that this operation writes both sides
-and can overwrite remote files. This mode does not apply `syncOption.delete`.
+Always requires modal confirmation before hooks, connection, listing, or
+mutation. The dialog names the connection/profile, local source, remote
+destination, overwrite risk, text-only/fail-open backup boundary, and any
+remote deletion enabled by `syncOption.delete`. Cancel changes nothing.
 
-*Only [skipCreate](https://github.com/philipdaoud/sftp-neo/wiki/Configuration#syncoptionskipcreate) and [ignoreExisting](https://github.com/philipdaoud/sftp-neo/wiki/Configuration#syncoptionignoreexisting) are valid for this command.*
+### Sync Both Directions
 
-## SFTP: List Active Folder
-List the folder the current file is located in.
+Writes both sides according to modification times. It can overwrite local and
+remote content, is not a merge, and does not apply `syncOption.delete`.
 
-## SFTP: Rename Remote
-Rename a file or folder **on the server**, without re-uploading it. Right-click
-an item in the Remote Explorer and choose **Rename Remote**.
+See [sync options](options.md#sync-options).
 
-The rename happens server-side, so it costs one request no matter how large the
-file or folder is.
+## Compare and browse
 
-- Type a plain name to rename in place.
-- Include `/` to move the item, e.g. entering `archive/old-notes.txt` while
-  renaming `notes.txt` moves it into the `archive` folder. The destination must
-  stay inside the configured `remotePath`.
-- The command refuses to overwrite: if something already exists at the
-  destination, it reports that instead of clobbering it.
+- **Diff with Remote / Diff Active File with Remote** — Compare local and
+  remote content.
+- **List / List Active Folder / List All** — List remote paths.
+- **Filter Remote Explorer** — Filter only items already loaded in the tree.
+- **Clear Remote Explorer Filter** — Restore the loaded tree.
+- **Reveal in Explorer / Reveal in Remote Explorer** — Locate the matching
+  local or remote item.
+- **View Content / Edit in Local** — Open remote content read-only or download
+  it for local editing.
 
-This only touches the remote copy — your local file keeps its current name.
+## Remote mutation
 
-You can also move items by **dragging them inside the Remote Explorer**, once
-[remoteExplorer.enableDragAndDrop](https://github.com/philipdaoud/sftp-neo/wiki/Configuration#remoteexplorerenabledraganddrop)
-is turned on for that configuration. It uses the same server-side rename.
+- **Rename Remote** — Server-side rename/move. It refuses overwrite.
+- **Delete Remote** — Recursive remote delete after confirmation. With enabled
+  `backup.onDelete`, promised text-file copies are fail-closed before deletion.
+- **Create File / Create Folder** — Create remote content.
 
-## SFTP: Delete Remote
-Delete a file or folder **on the server**. Available by right-clicking in the
-Remote Explorer, right-clicking in the local file explorer, and from the Command
-Palette (where it acts on the active editor's file).
+## Backups
 
-Folder deletes are recursive. You are asked to confirm first.
+- **Refresh Backups**, **Open Backup**, **Restore Backup**, **Delete Backup** —
+  Manage configured text/source backups. Restore itself can overwrite remote
+  content; inspect the current version first.
 
-By default there is no undo. Set
-[backup.onDelete](https://github.com/philipdaoud/sftp-neo/wiki/Configuration#backupondelete)
-to `true` to save a copy of everything a delete removes into the backup folder
-first — the delete is aborted if any copy fails, and you can restore from the
-**Backups** panel.
+## Conflict state
 
-To have local deletions propagate to the server automatically instead, see
-[watcher.autoDelete](https://github.com/philipdaoud/sftp-neo/wiki/Configuration#watcherautodelete).
+**Clear Conflict State** removes completed, cancelled, failed, and
+restart-orphaned records after modal confirmation. Active decisions are
+preserved. Inactive state is bounded to 90 days, 250 records per workspace,
+500 MiB total, and 100 MiB per snapshot.
 
-## sftp.upload
-Upload file or folders.
+## Troubleshooting
 
-### KeyBindings Args
-func(fspaths: string[])
-
-## sftp.download
-Download file or folders.
-
-### KeyBindings Args
-func(fspaths: string[])
-
-## SFTP: Cancel All Transfers
-Stop the current transfers (upload and download).
-
-## SFTP: Open SSH in Terminal
-Open a terminal in VSCode and auto login to a specific server.
-
-## sftpSyncAI.clearConflictState
-
-Safely clears completed, cancelled, failed, and restart-orphaned conflict
-records for every open workspace. A modal confirmation is required, and active
-conflict decisions in this or another editor window are preserved.
-
-Conflict state is created lazily in the editor's private extension storage,
-not in the project. It is excluded from transfer and sync. Inactive state is
-retained for up to 90 days, with at most 250 inactive records per workspace, a
-500 MiB extension-wide budget, and a 100 MiB limit per remote snapshot. This
-storage is private by location; it is not encrypted.
-
-***
-
-# Alt commands
-An alternative command can be found when pressing `Alt` while opening a menu.
-
-## Force Download
-Download file but disregard ignore rules.
-
-## Force Upload
-Upload file but disregard ignore rules.
+**Open Troubleshooting** opens the bundled [recovery guide](troubleshooting.md)
+at the relevant section.

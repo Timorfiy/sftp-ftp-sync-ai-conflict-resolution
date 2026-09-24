@@ -1,643 +1,308 @@
-<div align="center">
+# SFTP/FTP Sync + AI Conflict Resolution
 
-# 🚀 SFTP/FTP Sync + AI Conflict Resolution
+Standalone Windows file transfer and synchronization for VS Code and Cursor,
+with manual and editor-agent conflict resolution.
 
-**Sync your code over SFTP/FTP with AI-assisted conflict resolution.**
+- **Extension ID:** `Timorfiy.sftp-sync-ai`
+- **Version:** `0.1.0`
+- **Supported:** Windows 10/11, VS Code Desktop 1.104.0+, Cursor Desktop 3.17.8+
+- **Protocols:** SFTP and plain FTP; FTPS is experimental
 
-🔒 **More Secure** · 📦 **Updated Libraries** · ⭐ **More Features**
+This is a new Timorfiy extension. It is not an update or migration path for
+`PhilipDaoud.sftp-neo`, although it continues to read `.vscode/sftp.json`.
 
-[![GitHub Repo](https://img.shields.io/badge/Releases-GitHub-181717?style=flat-square&logo=github)](https://github.com/Timorfiy/sftp-ftp-sync-ai-conflict-resolution/releases)
-[![License](https://img.shields.io/github/license/Timorfiy/sftp-ftp-sync-ai-conflict-resolution?style=flat-square&color=green)](./LICENSE)
+## Install or update
 
-</div>
+Version 0.1.0 is documented for VSIX installation before first publication.
+Do not assume that a Marketplace or Open VSX listing exists.
 
-## FTP network interface selection
+1. Obtain `sftp-sync-ai-0.1.0.vsix` from the matching product GitHub Release or
+   from your release/test coordinator.
+2. In VS Code or Cursor, open **Extensions**.
+3. Select **… → Install from VSIX…** and choose that file.
+4. Open a workspace folder and reload the editor if requested.
 
-Version 3.6.0 adds
-`"networkInterface": "Ethernet"` for binding a connection's FTP traffic to a named adapter.
-Run **SFTP: Select Network Interface** to choose an adapter or restore system routing.
-The option covers both control and passive file-transfer connections and does not silently
-fall back when the selected adapter is unavailable. [Usage and limitations](docs/network-interface.md).
+To update before registry publication, repeat these steps with the newer VSIX.
+The editor replaces the installed extension while leaving your workspace
+configuration and Secret Storage values in place. After a registry listing is
+actually published, normal editor install/update controls may be used for that
+same extension ID.
 
----
+## Quick start
 
+### 1. Create `.vscode/sftp.json`
 
+Run **SFTP: Config** from the Command Palette. New generated configurations
+explicitly enable conflict checking and local text backups, while leaving
+watcher deletion, sync deletion, upload-on-save, and other automation off.
 
-## 📑 Quick Links
+Use one of these strict-JSON examples. They intentionally contain no password,
+passphrase, private key, or other secret. The extension prompts when a
+credential is needed and can save it through the editor's Secret Storage.
 
-<div align="center">
-
-### ✨ [Features](#-features) &emsp;·&emsp; ⚡ [Quick Start](#-quick-start) &emsp;·&emsp; 🔧 [Config Examples](#-config-examples) &emsp;·&emsp; 📖 [Configuration](./docs/configuration.md)
-### 🔐 [Security](#-security) &emsp;·&emsp; 🔑 [SSH Authentication](#-ssh-authentication) &emsp;·&emsp; 🐛 [Debug](#-debug) &emsp;·&emsp; ❓ [FAQ](./FAQ.md)
-
-</div>
-
-
-
----
-
-## 🎉 What's New in v3.5.0 — Secure by Default
-
-`.vscode` — the folder that commonly holds `sftp.json` with your host, username, and sometimes a plaintext password — is now **always excluded from transfers**, regardless of your `ignore` option, and this can't be turned off from `sftp.json`. Bots actively scan the web for `/.vscode/sftp.json`.
-
-`SFTP: Config` now pre-populates a sensible `ignore` list on newly generated configs — `.vscode`, `.git`, `.github`, `.DS_Store`, `Thumbs.db`, `src`, `.env`, `.env.*`, `AGENTS.md`, `CLAUDE.md`, `.claude`, `.cursor`, `*.log`, `*.tmp`, `*.bak` — fully editable, and existing `sftp.json` files are untouched.
-
----
-
-## 🎉 v3.4.0 — Rename, Move & Safer Deletes
-
-Manage remote files without switching to FileZilla or an SSH terminal.
-
-### ✏️ Rename & Move on the Server
-`SFTP: Rename Remote` renames or moves a file or folder **on the server** — a single request, no re-upload, however large the folder. Include a `/` in the new name to move it somewhere else.
-
-### 🖱️ Drag to Move
-Set `"remoteExplorer": { "enableDragAndDrop": true }` and drag items around the Remote Explorer to reorganize the server. Also a server-side rename, so nothing is transferred.
-
-### 🔁 Local Renames Follow Along
-`"watcher": { "autoRename": true }` turns a rename inside VS Code into a server-side rename instead of the old delete-and-re-upload, which used to leave the old folder orphaned.
-
-### 🗑️ Deletes You Can Undo
-`"backup": { "onDelete": true }` saves a copy of everything a delete removes, restorable from the **Backups** panel. Deleting a folder backs up its contents first, and the delete is aborted if any copy fails.
-
-`SFTP: Delete Remote` also moved out of hiding — it's now in the local file explorer context menu and the Command Palette, retitled so it can't be mistaken for a local delete.
-
-### 🔧 Fixes
-- `uploadOnSave` and `watcher.autoUpload` no longer upload the same file twice on a Ctrl+S — safe to run both.
-- Profiles can now override `watcher`, so auto-upload can be on for dev and off for prod. Switching profiles rebuilds the watcher immediately.
-- `SFTP: Upload Changed Files` now actually applies Git renames (it silently failed before), and reports failures instead of swallowing them.
-
-> All new options default to **off** — nothing changes until you opt in. See the [full option reference](#-every-option-with-defaults).
-
----
-
-## 🎉 Previous Releases
-
-| Version | Highlights |
-|---------|------------|
-| **v3.3.0** | `keepalive` for idle connections, automatic reconnect on dropped sessions, watcher respects `ignore` rules |
-| **v3.2.0** | [Remote Explorer Filter](./docs/commands.md#remote-explorer-filter) — live client-side filtering of the sidebar |
-| **v3.1.0** | Backups can be stored locally or on the server via `backup.location` |
-| **v3.0.5** | "Don't show again" on the plaintext-password warning, workspace-scoped SSH host keys |
-| **v3.0** | Automatic versioned backups before every upload, with a panel to browse and restore |
-
-### Hotfix in v3.4.2
-
-- FTP keepalive is opt-in again; an omitted interval no longer sends `NOOP` every 30 seconds.
-- Full FTP transfer retries are opt-in through `ftpReconnectAttempts`, preventing repeated connections and duplicate upload attempts while a host is unhealthy.
-
-### Additions in v3.4.1
-
-- **Conflict-safe uploads:** optional `conflictCheck` compares the current remote `mtime` and byte size with the last observed baseline before overwriting an existing file.
-- **Explicit conflict choices:** overwrite one, overwrite all for the current operation, open a diff, or cancel without touching the remote file.
-- **Smart text backups:** source and configuration files are backed up; known binary media and archives are skipped.
-- **Long-history retention:** the recommended `backup.versions` value is `100`, preserving the oldest anchor, recent versions, confirmed conflict-overwrite backups, and evenly distributed history.
-
-> 📖 Full history in the [CHANGELOG](./CHANGELOG.md).
-
----
-
-
-## ✨ Features
-
-| Feature | Description |
-|---------|-------------|
-| 🌐 **Remote Explorer** | Browse & manage remote files like a local filesystem |
-| 🔍 **Remote Explorer Filter** | Live client-side filter for files and folders already shown in the sidebar |
-| ⬆️⬇️ **Upload / Download** | Single files, folders, or entire projects |
-| 🔄 **Sync** | Bi-directional or one-way directory sync |
-| ✏️ **Rename / Move / Delete** | Manage remote files in place — renames and moves are server-side, so nothing is re-uploaded |
-| 🖱️ **Drag to Move** | Reorganize the server by dragging inside the Remote Explorer (opt-in) |
-| 💾 **Upload on Save** | Auto-push changes as you code |
-| 👁️ **File Watcher** | Auto-upload on external file changes — safe to combine with Upload on Save |
-| 🎭 **Profiles** | Switch between dev / staging / prod in one click |
-| 🔒 **Secure Storage** | Passwords saved in your OS keychain — never in `sftp.json` |
-| 📂 **Multi-Context** | Sync different local folders to different servers |
-| 🔗 **SSH Hopping** | Jump through bastion hosts to reach internal servers |
-| 🖥️ **SSH Terminal** | Open an SSH connection straight from the sidebar |
-| 🛡️ **File Backups** | Automatic text-file backups with local or remote storage and smart retention |
-| 🔕 **Password Warning Toggle** | "Don't show again" on the plaintext-password security warning |
-| 🖥️ **Per-Workspace Host Keys** | Independent SSH known-host entries per workspace for shared dev servers |
-
----
-
-## ⚡ Quick Start
-
-### 1. Install
-
-Install a `.vsix` built from this repository using **Extensions: Install from VSIX...** in VS Code or Cursor.
-
-### 2. Configure
-
-Open the SFTP sidebar from the activity bar. If no config exists yet, click **"Create SFTP Config"** in the welcome view. You can also open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and run:
-
-```
-SFTP: Config
-```
-
-A `sftp.json` file is created under `.vscode`. Fill in your server details:
+#### SFTP
 
 ```json
 {
-  "name": "My Server",
-  "host": "example.com",
+  "name": "Production SFTP",
+  "host": "sftp.example.com",
   "protocol": "sftp",
   "port": 22,
-  "username": "root",
-  "remotePath": "/var/www/html",
-  "uploadOnSave": true,
-  "backup": {
-    "enabled": false,
-    "location": "remote",
-    "folder": ".vscode/sftp-backup",
-    "versions": 100
-  }
-}
-```
-
-> 💡 **No password?** Leave `"password"` out (or set it to `null`) — you'll be prompted once and can save it securely to your OS keychain. See [🔐 Security](#-security).  
-> 🛡️ **Backups** are disabled by default. Set `"backup.enabled": true` to keep timestamped versions of remote text files before upload/sync. See [🛡️ File Backups](#-file-backups).
-
-### 3. Go!
-
-| Action | Command Palette |
-|--------|-----------------|
-| Download project | `SFTP: Download Project` |
-| Upload current file | `SFTP: Upload Active File` |
-| Sync local → remote | `SFTP: Sync Local -> Remote` |
-| Browse remote | `View: Show SFTP` (sidebar) |
-| Manage backups | Select a file in Remote Explorer → **Backups** panel |
-
-Right-click any file or folder in the **Explorer** for quick upload / download / diff options.
-
----
-
-## 🔧 Config Examples
-
-### 🎭 Profiles
-Switch between environments on the fly:
-
-```json
-{
   "username": "deploy",
-  "remotePath": "/app",
-  "profiles": {
-    "dev": { "host": "dev.example.com", "uploadOnSave": true },
-    "prod": { "host": "prod.example.com", "uploadOnSave": false }
-  },
-  "defaultProfile": "dev"
-}
-```
-
-Use `SFTP: Set Profile` to switch.
-
-A profile can override any top-level option, including `watcher` — useful when
-something outside VS Code edits your files (an AI coding tool, a build step) and
-you want those changes uploaded automatically on dev but never on prod:
-
-```json
-{
-  "username": "deploy",
-  "remotePath": "/app",
-  "watcher": { "files": "**/*", "autoUpload": false },
-  "profiles": {
-    "dev":  { "host": "dev.example.com",  "watcher": { "files": "**/*", "autoUpload": true } },
-    "prod": { "host": "prod.example.com", "watcher": { "files": "**/*", "autoUpload": false } }
-  },
-  "defaultProfile": "dev"
-}
-```
-
-Object options are replaced wholesale rather than merged key-by-key, so repeat
-`files` in each profile. Switching profiles rebuilds the watcher immediately —
-no reload needed.
-
-### 📂 Multiple Contexts
-Sync different parts of your project to different places:
-
-```json
-[
-  {
-    "name": "Frontend",
-    "context": "client/dist",
-    "host": "cdn.example.com",
-    "remotePath": "/static"
-  },
-  {
-    "name": "Backend",
-    "context": "server",
-    "host": "api.example.com",
-    "remotePath": "/var/api"
-  }
-]
-```
-
-### 🔗 Connection Hopping
-Reach a server through a bastion host:
-
-```json
-{
-  "name": "Target",
-  "host": "bastion.example.com",
-  "username": "jumpuser",
-  "privateKeyPath": "~/.ssh/id_rsa",
-  "hop": {
-    "host": "target.internal",
-    "username": "appuser",
-    "privateKeyPath": "~/.ssh/id_rsa"
-  }
-}
-```
-
-### 📋 Every Option, With Defaults
-
-> For a complete, detailed list of all configuration options, see [options.md](/docs/options.md).
-
-
-
-You only need the handful of options your setup actually uses — the block below
-is a **reference**, not a starting point. Copy the lines you want, not the whole
-thing.
-
-
-
-<details>
-<summary>Show the full <code>sftp.json</code> reference</summary>
-
-```json
-{
-  "name": "My Server",
-  "context": ".",
-  "protocol": "sftp",
-
-  "host": "example.com",
-  "port": 22,
-  "username": "user",
-  "password": null,
-  "remotePath": "/var/www/html",
-  "connectTimeout": 10000,
-  "keepalive": 30000,
-  "concurrency": 4,
-
-  "privateKeyPath": "~/.ssh/id_rsa",
-  "passphrase": null,
-  "agent": null,
-  "interactiveAuth": false,
-  "sshConfigPath": "~/.ssh/config",
-
+  "remotePath": "/var/www/site",
   "uploadOnSave": false,
-  "conflictCheck": false,
-  "downloadOnOpen": false,
+  "conflictCheck": true,
   "useTempFile": false,
   "openSsh": false,
-
-  "ignore": [".vscode", ".git", ".github", ".DS_Store", "Thumbs.db", "src", ".env", ".env.*", "AGENTS.md", "CLAUDE.md", ".claude", ".cursor", "*.log", "*.tmp", "*.bak"],
-  "ignoreFile": ".gitignore",
-
+  "concurrency": 4,
   "watcher": {
-    "files": "**/*",
+    "files": false,
     "autoUpload": false,
     "autoDelete": false,
     "autoRename": false
   },
-
   "syncOption": {
     "delete": false,
     "skipCreate": false,
     "ignoreExisting": false,
     "update": false
   },
-
+  "ignore": [
+    ".vscode",
+    ".git",
+    ".github",
+    ".env",
+    ".env.*",
+    "*.log",
+    "*.tmp",
+    "*.bak"
+  ],
   "backup": {
-    "enabled": false,
-    "location": "remote",
+    "enabled": true,
+    "location": "local",
     "folder": ".vscode/sftp-backup",
     "versions": 100,
     "onDelete": false
-  },
-
-  "remoteExplorer": {
-    "filesExclude": [],
-    "order": 0,
-    "enableDragAndDrop": false
-  },
-
-  "hooks": {
-    "preUpload": "",
-    "postUpload": "",
-    "preDownload": "",
-    "postDownload": "",
-    "preSync": "",
-    "postSync": ""
-  },
-
-  "filePerm": 644,
-  "dirPerm": 755,
-  "remoteTimeOffsetInHours": 0,
-  "limitOpenFilesOnRemote": false,
-
-  "profiles": {
-    "dev": { "host": "dev.example.com" },
-    "prod": { "host": "prod.example.com" }
-  },
-  "defaultProfile": "dev"
-}
-```
-
-FTP-only options: `secure`, `secureOptions`, `passive`, plus the legacy
-overrides `ftpKeepAliveInterval` and `ftpReconnectAttempts`. SFTP-only extras:
-`algorithms`, `sshCustomParams`, and `hop` (bastion hosts — see above).
-
-FTP keepalive and full-transfer reconnect attempts are opt-in. Set `keepalive`
-or `ftpKeepAliveInterval` to a positive interval, and `ftpReconnectAttempts` to
-a positive retry count, only when the FTP server requires them.
-
-`sftp.json` is strict JSON — **comments are not supported**, so don't paste `//`
-notes into it.
-
-Drop `privateKeyPath` / `passphrase` / `agent` if you authenticate with a
-password, and drop `password` if you don't (you'll be prompted once and can save
-it to your OS keychain).
-
-The four options worth understanding before switching on:
-
-| Option | Default | Why it's off |
-|---|---|---|
-| `watcher.autoUpload` | `false` | Uploads on any change the watcher sees, including from tools outside VS Code. Pair with `uploadOnSave` freely — a Ctrl+S will not upload twice. |
-| `watcher.autoDelete` | `false` | **Destructive.** Deletes on the server when a local file disappears. A branch switch or a too-broad `ignore` can remove remote content. Folder deletes are recursive. |
-| `watcher.autoRename` | `false` | Turns a rename into a server-side rename instead of a re-upload. Only covers renames made **through VS Code** — `mv` in a terminal still looks like delete + create. |
-| `backup.onDelete` | `false` | Makes deletes recoverable, but copies file contents, so deleting a large folder moves a lot of data. |
-
-> 📖 **Every option explained** — types, defaults, and behaviour — in
-> [docs/options.md](./docs/options.md).
-
-</details>
-
----
-
-## 🔐 Security
-
-The extension stores passwords and passphrases in your **OS credential store** (macOS Keychain, Windows Credential Manager, Linux libsecret) via VS Code's Secret Storage API — so your `sftp.json` stays clean and commit-safe. Saved values are isolated by protocol, normalized host, effective port, username, and credential type. Keyboard-interactive answers are never saved.
-
-**How to use it:**
-
-1. Set `"password": null` (or omit it) in `sftp.json`:
-   ```json
-   {
-     "host": "example.com",
-     "username": "root",
-     "password": null,
-     "remotePath": "/var/www"
-   }
-   ```
-2. Connect — you'll be prompted for the password.
-3. Click **"Save password to Secret Storage"**.
-4. Future connections are automatic & encrypted.
-
-The same works for private key `passphrase`.
-
-> 🧹 Manage endpoint-specific saved credentials anytime with `SFTP: Delete Saved Password`. The picker shows protocol, host, effective port, username, and credential type.
-
-> 🚫 **`.vscode` is always excluded from transfers**, regardless of your `ignore` option and even if `sftp.json` tries to override it. It commonly holds `sftp.json` itself, which bots actively probe for on the open web.
-
----
-
-## 🔑 SSH Authentication
-
-The extension supports three ways to authenticate SFTP connections. For both security and convenience, **SSH keys** or **ssh-agent** are recommended over plaintext passwords.
-
-| Method | Best for | Stored in `sftp.json` | Works with **Open SSH in Terminal** |
-|--------|----------|----------------------|-------------------------------------|
-| `privateKeyPath` | Single key file, no agent running | Path only (never the key contents) | ✅ Yes, with `-i /path/to/key` |
-| `agent` | Shared workstation, multiple keys, or fully password-less login | No secrets | ✅ Yes — the most seamless option |
-| `password` / `passphrase` | Servers that require it | `null` + Secret Storage (recommended) | ❌ No auto-fill in terminal |
-
-### SSH private key (`privateKeyPath`)
-
-1. **Generate a key pair** (skip if you already have one):
-   ```bash
-   ssh-keygen -t ed25519 -C "you@example.com"
-   ```
-   Press Enter to accept the default location (`~/.ssh/id_ed25519`). You can set a passphrase for extra security.
-
-2. **Copy the public key to your server**:
-   ```bash
-   ssh-copy-id -i ~/.ssh/id_ed25519.pub user@example.com
-   ```
-
-3. **Configure the extension**:
-   ```json
-   {
-     "name": "My Server",
-     "host": "example.com",
-     "protocol": "sftp",
-     "port": 22,
-     "username": "user",
-     "privateKeyPath": "~/.ssh/id_ed25519",
-     "remotePath": "/var/www/html",
-     "uploadOnSave": true
-   }
-   ```
-
-> 💡 **Encrypted key?** Set `"passphrase": true` and the extension will prompt once, then offer to save it to Secret Storage. Or load the key into ssh-agent (see below) and omit `passphrase`.
-
-### SSH agent (`agent`)
-
-Using an ssh-agent is the most convenient option: your key is unlocked once per session, and both SFTP transfers and **Open SSH in Terminal** work without typing a password.
-
-#### macOS / Linux
-
-1. **Start the agent and add your key**:
-   ```bash
-   eval "$(ssh-agent -s)"
-   ssh-add ~/.ssh/id_ed25519
-   ```
-
-2. **Get the agent socket**:
-   ```bash
-   echo $SSH_AUTH_SOCK
-   # Example: /tmp/ssh-XXXXXX/agent.12345
-   ```
-
-3. **Configure the extension**:
-   ```json
-   {
-     "host": "example.com",
-     "username": "user",
-     "agent": "/tmp/ssh-XXXXXX/agent.12345",
-     "remotePath": "/var/www/html"
-   }
-   ```
-
-> 🍎 On macOS, if your key is stored in Keychain, use `ssh-add --apple-use-keychain ~/.ssh/id_ed25519` so you are not prompted after every reboot.
-
-#### Windows
-
-- **Pageant** (PuTTY agent): set `"agent": "pageant"`.
-- **Windows OpenSSH agent**: make sure the `OpenSSH Authentication Agent` service is running, then set `"agent": "\\\\.\\pipe\\openssh-ssh-agent"` (the pipe name may differ on older Windows builds).
-
-### Platform-specific tips
-
-| Platform | Tip |
-|----------|-----|
-| **macOS** | `ssh-add --apple-use-keychain ~/.ssh/id_ed25519` persists the unlocked key across reboots. |
-| **Linux** | `ssh-agent` exits when the shell closes. Use your distro’s user service or add the `eval`/`ssh-add` commands to your shell profile to keep it available. |
-| **Windows** | For WSL, use the Linux instructions inside WSL. For native Windows, the OpenSSH agent pipe or Pageant are the usual choices. |
-
-### A note on **Open SSH in Terminal**
-
-The sidebar command builds a plain terminal command:
-
-```bash
-ssh -t user@host -p 22 -i "/path/to/key"
-```
-
-It can automatically use:
-
-- your `privateKeyPath` (`-i ...`)
-- your ssh-agent (no extra flags)
-
-It **cannot** auto-type a password or passphrase into the terminal. If you want a fully password-less terminal experience, use an ssh-agent.
-
----
-
-## 🖥️ Remote Explorer
-
-Browse your remote server directly in the VS Code sidebar.
-
-![Remote Explorer Preview](./assets/showcase/remote-explorer.png)
-
-Open it via:
-- Command Palette → `View: Show SFTP`
-- Or click the **SFTP** icon in the Activity Bar
-
-Select multiple files with `Ctrl`/`Shift` to download or upload in batches.
-
----
-
-## 🛡️ File Backups
-
-<div align="center">
-
-**Protect text source files without filling backup storage with binaries.**
-
-</div>
-
-Before a remote text file is overwritten by an upload or sync-to-remote operation, the extension automatically creates a timestamped backup copy. SVG is treated as text; known binary images, video, audio, fonts, PDFs, archives, and executables are skipped. Unknown extensions are sampled for binary content. Choose to keep backups on the remote server or in your local workspace.
-
-### 🚀 How It Works
-
-#### Remote backups (`"location": "remote"`, default)
-
-```
-Before Upload                    After Upload
-─────────────────                ─────────────────
-remote/index.php                 remote/index.php  ← new content
-                                 remote/.vsftp-backup/
-                                   └─ index.php.20260612194215007.bak  ← old content
-```
-
-#### Local backups (`"location": "local"`)
-
-```
-Before Upload                    After Upload
-─────────────────                ─────────────────
-remote/index.php                 remote/index.php  ← new content
-                                 workspace/.vsftp-backup/
-                                   └─ index.php.20260612194215007.bak  ← old content
-```
-
-The remote directory layout is preserved inside the backup folder so you can mirror the server structure locally.
-
-### ⚙️ Configuration
-
-Add the `backup` object to your `.vscode/sftp.json`:
-
-```json
-{
-  "name": "Production",
-  "host": "example.com",
-  "protocol": "sftp",
-  "port": 22,
-  "username": "root",
-  "remotePath": "/var/www/html",
-  "uploadOnSave": true,
-  "backup": {
-    "enabled": true,
-    "location": "remote",
-    "folder": ".vsftp-backup",
-    "versions": 100
   }
 }
 ```
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `backup.enabled` | `boolean` | `false` | Master switch. Set to `true` to enable backups. |
-| `backup.location` | `string` | `"remote"` | Where backups are stored. `"remote"` keeps them on the server under `remotePath`; `"local"` keeps them in your workspace root. |
-| `backup.folder` | `string` | `".vscode/sftp-backup"` | Folder where backups are stored. Resolved relative to `remotePath` when `location` is `"remote"`, or relative to the workspace root when `location` is `"local"`. |
-| `backup.versions` | `number` | `100` | Hard per-file limit. Keeps the oldest anchor, latest 50, up to 5 newest conflict-overwrite backups, and evenly distributed middle history. Set to `0` to disable. |
+#### Plain FTP
 
-> 💡 **Tip:** The backup folder is automatically excluded from sync operations and the Remote Explorer — you never have to worry about backups being uploaded or cluttering your file tree.
+```json
+{
+  "name": "Production FTP",
+  "host": "ftp.example.com",
+  "protocol": "ftp",
+  "port": 21,
+  "username": "deploy",
+  "remotePath": "/public_html",
+  "secure": false,
+  "uploadOnSave": false,
+  "conflictCheck": true,
+  "useTempFile": false,
+  "openSsh": false,
+  "concurrency": 1,
+  "watcher": {
+    "files": false,
+    "autoUpload": false,
+    "autoDelete": false,
+    "autoRename": false
+  },
+  "syncOption": {
+    "delete": false,
+    "skipCreate": false,
+    "ignoreExisting": false,
+    "update": false
+  },
+  "ignore": [
+    ".vscode",
+    ".git",
+    ".github",
+    ".env",
+    ".env.*",
+    "*.log",
+    "*.tmp",
+    "*.bak"
+  ],
+  "backup": {
+    "enabled": true,
+    "location": "local",
+    "folder": ".vscode/sftp-backup",
+    "versions": 100,
+    "onDelete": false
+  }
+}
+```
 
-### 📂 Using the Backups Panel
+Plain FTP sends credentials and content without transport encryption. Use it
+only on a network and server you trust. `secure: true`, `"control"`, and
+`"implicit"` select FTPS modes, but FTPS is experimental in this release.
 
-1. **Enable backups** in your `sftp.json` (see configuration above).
-2. **Upload or sync** a file — a backup is created automatically before the overwrite.
-3. **Click any file** in the **Remote Explorer** panel.
-4. The **Backups** panel (titled **Remote Backups** or **Local Backups** based on your setting) updates to show all backup versions for that file, sorted newest → oldest.
+Existing configuration files are **not migrated**. Omitting a property retains
+legacy runtime behavior: notably `conflictCheck` is `false`, backups are
+disabled with remote storage selected, `downloadOnOpen` is `false`, and the
+user `ignore` list is empty. The safe values above are explicit generated
+template values, not changed omission defaults. See [Options](docs/options.md).
 
-| Action | How |
-|--------|-----|
-| 🔄 **Restore** | Right-click a backup version → `Restore Backup`. The current live file is backed up first, then replaced. |
-| 🗑️ **Delete** | Right-click a backup version → `Delete Backup`. |
-| 👁️ **Preview** | Click any backup version to open it in a read-only preview without downloading. |
+### 2. Test the connection
 
-### 🔒 Safety Guarantees
+Run **SFTP: Test Connection**. Despite the command category, it supports both
+FTP and SFTP.
 
-- **Upload never blocked:** If a backup fails for any reason, the upload still proceeds. Your code always goes live.
-- **Auto-pruning:** Old backups beyond your `versions` limit are cleaned up automatically after each upload.
-- **No sync loops:** The backup folder is invisible to sync, so local backups are never auto-uploaded and remote backups are never downloaded.
-- **Context-aware:** The panel only shows backups for the file you have selected in Remote Explorer.
+The probe validates the configuration, credentials, connection, `remotePath`,
+and list/read access. It does not upload, overwrite, rename, or delete remote
+content. Fix the reported category before continuing. For SFTP, verify the
+first host-key fingerprint through a trusted channel; a later host-key change
+is rejected rather than silently accepted.
 
----
+### 3. Make the first transfer
 
-## 🐛 Debug
+Use a disposable file first.
 
-Need to troubleshoot?
+1. Create and save a local text file in the configured workspace.
+2. Right-click it and choose **SFTP: Upload File**.
+3. In **Remote Explorer**, find the uploaded file.
+4. Change the remote test file, then choose **SFTP: Download File** only when
+   you intend to replace the local copy.
+5. Keep the **Transfer Queue** visible until the operation reaches a terminal
+   result. Cancellation does not roll back files already completed.
 
-1. Open **Settings** (`Ctrl+,` / `Cmd+,`).
-2. Search for `sftp.debug` and set it to `true`.
-3. Reload VS Code.
-4. View logs in **Output → SFTP**.
+### 4. Run the primary sync
 
----
+Use **SFTP: Sync Remote → Local** for the primary first-release bulk-sync path.
+It can overwrite local files. A successful replacement does not create an
+extension recovery version, so commit or copy important local work first.
 
-## 📖 Configuration Reference
+**SFTP: Sync Local → Remote** always shows a modal before hooks, connection,
+listing, or mutation. It names the profile and both paths. **Cancel** changes
+nothing; **Continue** may overwrite many remote files. If
+`syncOption.delete` is enabled, the modal also names the side whose
+destination-only files will be recursively deleted.
 
-See [docs/options.md](./docs/options.md) for every `sftp.json` option — types,
-defaults, and behaviour.
+**SFTP: Sync Both Directions** writes both sides according to modification
+times and can overwrite local and remote files. It is not a merge operation
+and does not apply `syncOption.delete`.
 
----
+Keep `syncOption.delete: false` unless you have independently verified both
+trees. `backup.onDelete` does not protect sync deletions, so no recovery copy
+is promised for `syncOption.delete`.
 
-## ❓ FAQ
+## Resolve upload conflicts
 
-See [FAQ.md](./FAQ.md) for common questions and solutions.
+With `conflictCheck: true`, an upload is blocked when the remote file changed,
+the previous baseline is missing, or an FTP server cannot provide a safe exact
+timestamp.
 
----
+### Manual path
 
-## Credits
+The conflict picker offers:
 
-Built on [SFTP Neo](https://github.com/philipdaoud/sftp-neo) by Philip Daoud,
-which builds on [Natizyskunk/vscode-sftp](https://github.com/Natizyskunk/vscode-sftp)
-and the original [liximomo/vscode-sftp](https://github.com/liximomo/vscode-sftp).
+- **Open Diff** to compare the captured remote version with the local file;
+- **Overwrite** for this file;
+- **Overwrite All** for remaining conflicts in this transfer batch;
+- **Cancel upload** to leave the remote file unchanged; and
+- **Troubleshoot** for the bundled recovery guide.
 
-The original authors' copyright notices and MIT license are preserved in [LICENSE](./LICENSE).
+Review the diff before overwriting. Every decision is revision checked; if
+either side changes during review, use the refreshed conflict instead of
+forcing an old decision.
 
----
+### Editor-agent path
 
-<div align="center">
+The extension automatically registers its conflict MCP/tools in supported
+VS Code and Cursor versions. It does not embed a model, manage an AI provider,
+or require an extension-owned API key. Start or reuse an editor agent that is
+already available in your editor, then ask it to resolve a conflict reported
+by this extension.
 
-Maintained by [Timorfiy](https://github.com/Timorfiy).
+The agent should:
 
-</div>
+1. list conflicts and fetch the selected conflict context;
+2. wait for capture to reach `pending` or `reviewing`;
+3. read the local and captured remote text and inspect the diff;
+4. prepare merged local content, or save a merge and acknowledge that file;
+5. resolve using the newest revision;
+6. wait for `uploaded`, `failed`, `cancelled`, or `stale`; and
+7. on `stale`, fetch the refreshed revision and review again.
+
+`failed` is not success. If a snapshot is unavailable, a file is binary, the
+editor buffer is dirty, storage limits prevent a recovery snapshot, or the
+agent flow otherwise cannot proceed, return to the manual path. The bundled
+[agent instructions](resources/mcp/conflict-resolution-instructions.md)
+describe the exact tool sequence.
+
+## Recovery
+
+- **Remote overwrite backups:** New configurations keep up to 100 versions per
+  file in `.vscode/sftp-backup`. Only recognized or sampled text/source
+  content is covered. Binary content is skipped.
+- **Overwrite failure:** Backup creation is fail-open. An upload can succeed
+  with a warning even if its recovery copy failed.
+- **Explicit Delete Remote:** With `backup.enabled`, `backup.onDelete`, and a
+  positive version count, backup preflight is fail-closed. If any promised
+  copy fails, nothing is deleted.
+- **Sync deletion:** `syncOption.delete` has no backup promise.
+- **Remote → Local replacement:** No extension recovery version is retained
+  after a successful replacement.
+- **Conflict recovery state:** Stored privately outside the project and never
+  synchronized. Inactive state is retained for up to 90 days, up to 250
+  inactive/terminal or restart-orphaned records per workspace, 500 MiB total,
+  and 100 MiB per snapshot. Active decisions are preserved. If a snapshot
+  cannot fit, it is explicitly unavailable.
+- **Clear state:** Run **SFTP/FTP Sync + AI Conflict Resolution: Clear Conflict State**. The command requires
+  confirmation and preserves active decisions.
+
+See [Troubleshooting](docs/troubleshooting.md) for configuration,
+authentication, network, path, permission, host-key, timestamp, backup, and
+partial-result recovery.
+
+## Security and privacy
+
+### Secure password storage
+
+- Keep credentials out of `.vscode/sftp.json`. Passwords and passphrases can be
+  stored with the editor's Secret Storage, backed by Windows credential
+  protection.
+- Saved credentials are scoped by workspace, protocol, normalized host,
+  effective port, username, and credential type. Use **SFTP: Delete Saved
+  Password** to remove one.
+- Plain FTP is not transport-encrypted. Secret Storage protects local storage,
+  not network traffic.
+- SFTP host-key changes are rejected. Verify a changed fingerprint with the
+  server owner before removing the saved key.
+- The extension sends no telemetry. Diagnostics are local, redacted, and
+  intentionally exclude secrets and file contents.
+- Hooks are shell commands from your workspace configuration. Review them
+  before running a configuration you did not author.
+
+## Limitations
+
+- Only Windows 10/11 and the editor versions listed above are qualified for
+  0.1.0. macOS, Linux, browser editors, remote-only editor variants, and older
+  editor versions are outside the release promise.
+- SFTP and plain FTP are supported. FTPS is experimental.
+- Bulk sync has no preview/dry-run mode in 0.1.0.
+- Conflict-agent mutation is text-only and requires an already-running editor
+  agent. Manual resolution remains available.
+- Backups are not a universal undo system; observe the exact boundaries in
+  [Recovery](#recovery).
+
+## Reference and support
+
+- [Configuration options](docs/options.md)
+- [Commands](docs/commands.md)
+- [Troubleshooting](docs/troubleshooting.md)
+- [FAQ](FAQ.md)
+- [Product issues](https://github.com/Timorfiy/sftp-ftp-sync-ai-conflict-resolution/issues)
+- [Product releases](https://github.com/Timorfiy/sftp-ftp-sync-ai-conflict-resolution/releases)
+
+When opening an issue, include extension/editor/Windows versions, protocol,
+operation, redacted diagnostics, and reproduction steps. Never include
+passwords, passphrases, private keys, tokens, or confidential file content.
+
+## Attribution
+
+This standalone product contains work descended from SFTP Neo and earlier
+vscode-sftp projects. Their historical links remain in the inherited changelog
+for attribution; current documentation and support belong to this product.

@@ -1,143 +1,136 @@
 {
   "rootOption": {
+    "type": "object",
     "properties": {
       "name": {
         "type": "string",
-        "description": "A string to identify your config."
+        "description": "Optional display name for this connection."
       },
       "context": {
         "type": "string",
-        "description": "Relative path relative to the workspace root folder."
+        "description": "Local path relative to the workspace root. Omission uses the workspace root."
       },
       "watcher": {
         "type": "object",
-        "description": "Watch external modification.",
-        "properties": {
-          "files": {
-            "oneOf": [
-              { "type": "string" },
-              { "enum": [false] }
-            ],
-            "description": "A glob pattern, or false to disable the watcher.",
-            "default": false
-          },
-          "autoUpload": {
-            "type": "boolean",
-            "description": "Upload when the file changes. Safe to combine with uploadOnSave: a save inside VS Code uploads once, not twice.",
-            "default": false
-          },
-          "autoDelete": {
-            "type": "boolean",
-            "description": "Delete the remote file/folder when the local one is deleted. Destructive and cannot be undone.",
-            "default": false
-          },
-          "autoRename": {
-            "type": "boolean",
-            "description": "Rename/move on the server when a file or folder is renamed or moved inside VS Code, instead of re-uploading it. Only covers renames made through VS Code, not 'mv' in a terminal.",
-            "default": false
-          }
-        },
+        "description": "Optional local filesystem watcher. Omission disables watcher automation.",
         "default": {
           "files": false,
           "autoUpload": false,
           "autoDelete": false,
           "autoRename": false
+        },
+        "properties": {
+          "files": {
+            "oneOf": [
+              { "type": "string" },
+              { "enum": [false, null] }
+            ],
+            "description": "A glob string, false, or null. A glob is required for watcher automation."
+          },
+          "autoUpload": {
+            "type": "boolean",
+            "default": false
+          },
+          "autoDelete": {
+            "type": "boolean",
+            "default": false,
+            "description": "Delete matching remote paths after local deletion. Destructive."
+          },
+          "autoRename": {
+            "type": "boolean",
+            "default": false,
+            "description": "Use server-side rename for renames performed through the editor."
+          }
         }
       },
       "defaultProfile": {
         "type": "string",
-        "description": "Profile name you want to set as default."
+        "description": "Profile selected at startup."
       }
-    },
-    "required": ["name"]
+    }
   },
   "option": {
     "type": "object",
     "properties": {
       "remote": {
         "type": "string",
-        "description": "Name of remote which configs with `remoteFs.remote` in User Setting. Configuration will get merged to this remote."
+        "description": "Name of a remotefs.remote editor setting used to fill omitted connection fields."
       },
       "uploadOnSave": {
         "type": "boolean",
-        "description": "True to upload on every save operation of VS Code.",
         "default": false
       },
       "conflictCheck": {
         "type": "boolean",
-        "description": "Before uploading an existing remote file, compare its exact modification time and byte size with the last observed remote baseline. Block and prompt when the remote file changed or no safe baseline exists.",
-        "default": false
+        "default": false,
+        "description": "Block an unsafe overwrite when the remote baseline changed or is unavailable. New generated configurations explicitly set true."
       },
       "useTempFile": {
         "type": "boolean",
-        "description": "True to upload temp file on every save operation of VS Code to avoid breaking a webpage when a user acceses it while the file is still being uploaded (is incomplete).",
         "default": false
       },
       "openSsh": {
         "type": "boolean",
-        "description": "True to enable atomic file uploads (only supported by openSSH servers). if true, `useTempFile` must also be set to true.",
-        "default": false
+        "default": false,
+        "description": "Use OpenSSH atomic rename with useTempFile."
       },
       "downloadOnOpen": {
-        "enum": ["confirm", true, false],
-        "description": "True to download when a file opens.",
-        "default": "confirm"
+        "enum": [false, true, "confirm"],
+        "default": false
+      },
+      "concurrency": {
+        "type": "integer",
+        "minimum": 1,
+        "default": 4,
+        "description": "Parallel SFTP transfers. FTP is forced to one."
       },
       "syncOption": {
         "type": "object",
-        "description": "Configuration the behavior of `Sync` command.",
         "properties": {
           "delete": {
             "type": "boolean",
-            "description": "Delete extraneous files from dest dirs.",
-            "default": false
+            "default": false,
+            "description": "Delete destination-only paths. backup.onDelete does not cover sync deletion."
           },
           "skipCreate": {
             "type": "boolean",
-            "description": "Skip creating new files on dest.",
             "default": false
           },
           "ignoreExisting": {
             "type": "boolean",
-            "description": "Skip updating files that exist on dest.",
             "default": false
           },
           "update": {
             "type": "boolean",
-            "description": "Update the dest only if a newer version is on the src filesystem.",
             "default": false
           }
         }
       },
       "backup": {
         "type": "object",
-        "description": "File backup settings. Before a remote file is overwritten by an upload or sync-to-remote operation, a copy is stored in the configured folder. The copy can be kept on the remote server or in the local workspace.",
+        "description": "Text/source backups. Overwrite backup failure is fail-open; explicit delete backup is fail-closed when enabled.",
         "properties": {
           "enabled": {
             "type": "boolean",
-            "description": "Whether to keep backups of overwritten remote files.",
             "default": false
           },
           "location": {
             "enum": ["remote", "local"],
-            "description": "Where to store backup copies. 'remote' keeps them on the server under remotePath; 'local' keeps them in the workspace root.",
             "default": "remote"
           },
           "folder": {
             "type": "string",
-            "description": "Folder where backups are stored. Resolved relative to remotePath when location is 'remote', or relative to the workspace root when location is 'local'. This folder is automatically excluded from sync and the Remote Explorer.",
             "default": ".vscode/sftp-backup"
           },
           "versions": {
-            "type": "number",
-            "description": "Maximum number of text-file backup versions to keep per source file. Retention preserves the oldest anchor, the latest 50 versions, up to 5 newest confirmed conflict-overwrite backups, and evenly distributed middle-history versions. Set to 0 to disable backups even when enabled is true.",
-            "default": 100,
-            "minimum": 0
+            "type": "integer",
+            "minimum": 0,
+            "default": 100
           },
           "onDelete": {
             "type": "boolean",
-            "description": "Also back up files before they are deleted from the server, not just before they are overwritten. Deleting a folder backs up every file inside it first, and the delete is aborted if any backup fails. This makes deletes considerably slower.",
-            "default": false
+            "default": false,
+            "description": "Back up explicit/watcher/Git deletion before deleting. Does not cover syncOption.delete."
           }
         },
         "default": {
@@ -150,105 +143,101 @@
       },
       "ignore": {
         "type": "array",
-        "description": "Files to ignore. Same behavior as gitignore. .vscode is always excluded at runtime regardless of this list.",
         "items": {
-          "type": "string",
-          "description": "Ignore pattern."
+          "type": "string"
         },
-        "default": [
-          ".vscode",
-          ".git",
-          ".github",
-          ".DS_Store",
-          "Thumbs.db",
-          "src",
-          ".env",
-          ".env.*",
-          "AGENTS.md",
-          "CLAUDE.md",
-          ".claude",
-          ".cursor",
-          "*.log",
-          "*.tmp",
-          "*.bak"
-        ]
+        "default": [],
+        "description": "User ignore patterns. The generated safety list is explicit template data, not the omission default."
       },
       "ignoreFile": {
-        "type": "string",
-        "description": "Absolute path to the ignore file or Relative path relative to the workspace root folder.",
-        "default": ".gitignore"
+        "type": "string"
       },
       "remoteExplorer": {
         "type": "object",
-        "description": "Remote Explorer Setting.",
         "properties": {
           "filesExclude": {
             "type": "array",
-            "description": "Configure patterns for excluding files and folders. The Remote Explorer decides which files and folders to show or hide based on this setting.",
             "items": {
-              "type": "string",
-              "description": "Exclude pattern."
+              "type": "string"
             },
             "default": []
           },
           "order": {
             "type": "number",
-            "description": "Remote Explorer will ascending sorting by this value. If the values are the same, sort by name.",
             "default": 0
           },
           "enableDragAndDrop": {
             "type": "boolean",
-            "description": "Allow dragging files and folders inside the Remote Explorer to move them on the server. Moves are server-side renames, so no data is transferred. Dragging between different configurations is not supported.",
             "default": false
           }
         }
       },
       "remoteTimeOffsetInHours": {
         "type": "number",
-        "description": "The number of hours difference between the local machine and remote/server. (remote minus local)"
+        "default": 0
       },
       "keepalive": {
-        "type": "number",
-        "description": "How often (in milliseconds) to send a keepalive packet/NOOP to keep the connection alive. Defaults to 30000 (30 seconds). Set to 0 to disable.",
-        "default": 30000
+        "type": "integer",
+        "minimum": 0,
+        "description": "Milliseconds. SFTP omission uses 30000; FTP omission disables keepalive."
       },
       "limitOpenFilesOnRemote": {
-        "enum": ["number", true],
-        "description": "Limit the open file descriptors to the specific number in a remote server. Set to true for using default limit(222). Do not set this unless you have to.",
-        "default": true
+        "oneOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "number"
+          }
+        ],
+        "description": "SFTP only. Omit/false to disable, true for 222, or a number clamped to at least 127."
+      },
+      "filePerm": {
+        "type": "number"
+      },
+      "dirPerm": {
+        "type": "number"
+      },
+      "hooks": {
+        "type": "object",
+        "properties": {
+          "preUpload": { "type": "string" },
+          "postUpload": { "type": "string" },
+          "preDownload": { "type": "string" },
+          "postDownload": { "type": "string" },
+          "preSync": { "type": "string" },
+          "postSync": { "type": "string" }
+        },
+        "description": "Shell commands run from the workspace. Review untrusted hooks before use."
       }
     }
   },
-
   "host": {
+    "type": "object",
     "properties": {
       "host": {
         "type": "string",
-        "description": "Hostname or IP address of the server.",
-        "default": "localhost"
+        "minLength": 1
       },
       "port": {
-        "type": "number",
-        "description": "Port number of the server.",
-        "default": 22
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 65535
       },
       "username": {
-        "type": "string",
-        "description": "Username for authentication."
+        "type": "string"
       },
       "password": {
-        "type": "string",
-        "description": "Password for password-based user authentication.",
-        "default": ""
+        "type": ["string", "null"],
+        "description": "Prefer null or omission so Secret Storage/prompting is used."
       },
       "remotePath": {
         "type": "string",
-        "description": "The absolute path on remote.",
-        "default": "/"
+        "default": "./"
       },
       "connectTimeout": {
-        "type": "number",
-        "description": "How long (in milliseconds) to wait for the connect to complete.",
+        "type": "integer",
+        "minimum": 0,
         "default": 10000
       }
     }
@@ -257,260 +246,71 @@
     "type": "object",
     "properties": {
       "agent": {
-        "type": "string",
-        "description": "Path to ssh-agent's UNIX socket for ssh-agent-based user authentication.  Windows users: set to 'pageant' for authenticating with Pageant or (actual) path to a cygwin \"UNIX socket\"."
+        "type": ["string", "null"]
       },
       "privateKeyPath": {
-        "type": "string",
-        "description": "Absolute path to user private key."
+        "type": ["string", "null"]
       },
       "passphrase": {
         "oneOf": [
-          {
-            "type": "string"
-          },
-          {
-            "enum": [true]
-          }
-        ],
-        "description": "For an encrypted private key, this is the passphrase string used to decrypt it. Set to true for enable passphrase dialog. This will prevent from using cleartext passphrase in this config."
+          { "type": "string" },
+          { "enum": [true] },
+          { "type": "null" }
+        ]
       },
       "interactiveAuth": {
         "oneOf": [
-          {
-            "type": "boolean",
-            "description": "True to enable verifyCode dialog.",
-            "default": false
-          },
+          { "type": "boolean" },
           {
             "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "Array of predefined phrases to automatically pass them without user prompting."
+            "items": { "type": "string" }
           }
         ],
-        "description": "Keyboard interaction authentication mechanism. For example using Google Authentication."
+        "default": false
       },
       "algorithms": {
-        "type": "object",
-        "description": "Explicit overrides for the default transport layer algorithms used for the connection.",
-        "properties": {
-          "kex": {
-            "type": "array",
-            "items": {
-              "enum": [
-                "ecdh-sha2-nistp256",
-                "ecdh-sha2-nistp384",
-                "ecdh-sha2-nistp521",
-                "diffie-hellman-group-exchange-sha256",
-                "diffie-hellman-group14-sha1"
-              ]
-            },
-            "description": "Key exchange algorithms."
-          },
-          "cipher": {
-            "type": "array",
-            "items": {
-              "enum": [
-                "aes128-gcm",
-                "aes128-gcm@openssh.com",
-                "aes256-gcm",
-                "aes256-gcm@openssh.com",
-                "aes128-cbc",
-                "aes192-cbc",
-                "aes256-cbc",
-                "aes128-ctr",
-                "aes192-ctr",
-                "aes256-ctr",
-                "blowfish-cbc",
-                "cast128-cbc"
-              ]
-            },
-            "description": "Ciphers."
-          },
-          "serverHostKey": {
-            "type": "array",
-            "items": {
-              "enum": [
-                "ssh-rsa",
-                "ssh-dss",
-                "ssh-ed25519",
-                "ecdsa-sha2-nistp256",
-                "ecdsa-sha2-nistp384",
-                "ecdsa-sha2-nistp521",
-                "rsa-sha2-256",
-                "rsa-sha2-512"
-              ]
-            },
-            "description": "Server host key formats. In server mode, this list must agree with the host private keys set in the hostKeys configuration setting."
-          },
-          "hmac": {
-            "type": "array",
-            "items": {
-              "enum": [
-                "hmac-sha2-256",
-                "hmac-sha2-512",
-                "hmac-sha1",
-                "hmac-sha2-256-96",
-                "hmac-sha2-512-96",
-                "hmac-ripemd160",
-                "hmac-sha1-96"
-              ]
-            },
-            "description": "(H)MAC algorithms."
-          }
-        }
+        "type": "object"
       },
       "sshConfigPath": {
-        "type": "string",
-        "description": "Absolute path to your SSH configuration file (eg. ~/.ssh/config)"
-      },
-      "concurrency": {
-        "type": "number",
-        "description": "Maximum number of files transferred simultaneously. Concurrent transfers share the same SSH session. Suggested values: 4 (shared/restricted servers), 8 (modern dedicated OpenSSH servers), 16 (high-performance dedicated servers). Increase gradually.",
-        "default": 4
+        "type": "string"
       },
       "sshCustomParams": {
-        "type": "string",
-        "description": "Extra parameters append to SSH command using by \"Open SSH in Terminal\"",
-        "default": "\"cd \"${remotePath}\"; exec \\$SHELL -l\""
+        "type": "string"
       }
     }
   },
   "ftp": {
     "type": "object",
     "properties": {
-      "ftpKeepAliveInterval": {
-        "type": "number",
-        "description": "Legacy fork-specific override for the common keepalive interval in milliseconds. Omit it to use keepalive; set to 0 to disable FTP keepalive.",
-        "minimum": 0
-      },
-      "ftpReconnectAttempts": {
-        "type": "number",
-        "description": "Legacy fork-specific override for FTP transfer retry count. Omit it to use the upstream retry default; set to 0 to disable retry.",
-        "minimum": 0
-      },
       "secure": {
-        "type": ["string", "boolean"],
-        "description": "Set to true for both control and data connection encryption, 'control' for control connection encryption only, or 'implicit' for\nimplicitly encrypted control connection (this mode is deprecated in modern times, but usually uses port 990).",
-        "default": false
+        "oneOf": [
+          { "type": "boolean" },
+          { "enum": ["control", "implicit"] }
+        ],
+        "default": false,
+        "description": "FTPS modes are experimental in version 0.1.0."
       },
       "secureOptions": {
-        "type": "object",
-        "description": "Options to be passed to tls.connect(). Default: (none)",
-        "properties": {
-          "host": {
-            "type": "string",
-            "description": "Host the client should connect to, defaults to 'localhost'."
-          },
-          "port": {
-            "type": "number",
-            "description": "Port the client should connect to."
-          },
-          "path": {
-            "type": "string",
-            "description": "Creates unix socket connection to path. If this option is specified, host and port are ignored."
-          },
-          "rejectUnauthorized": {
-            "type": "boolean",
-            "description": "If true, the server certificate is verified against the list of supplied CAs. An 'error' event is emitted if verification fails; err.code contains the OpenSSL error code. Defaults to true."
-          },
-          "NPNProtocols": {
-            "type": "array",
-            "description": "An array of strings or Buffers containing supported NPN protocols. Buffers should have the format [len][name][len][name]... e.g. 0x05hello0x05world, where the first byte is the length of the next protocol name. Passing an array is usually much simpler, e.g. ['hello', 'world'].",
-            "items": {
-              "type": "string"
-            }
-          },
-          "ALPNProtocols": {
-            "type": "array",
-            "description": "An array of strings or Buffers containing the supported ALPN protocols. Buffers should have the format [len][name][len][name]... e.g. 0x05hello0x05world, where the first byte is the length of the next protocol name. Passing an array is usually much simpler: ['hello', 'world'].)",
-            "items": {
-              "type": "string"
-            }
-          },
-          "servername": {
-            "type": "string",
-            "description": "Server name for the SNI (Server Name Indication) TLS extension."
-          },
-          "minDHSize": {
-            "type": "number",
-            "description": "Minimum size of the DH parameter in bits to accept a TLS connection. When a server offers a DH parameter with a size less than minDHSize, the TLS connection is destroyed and an error is thrown. Defaults to 1024."
-          },
-          "pfx": {
-            "type": "string",
-            "description": "Optional PFX or PKCS12 encoded private key and certificate chain. pfx is an alternative to providing key and cert individually. PFX is usually encrypted, if it is, passphrase will be used to decrypt it."
-          },
-          "key": {
-            "type": ["string", "array"],
-            "description": "Optional private keys in PEM format. PEM allows the option of private keys being encrypted. Encrypted keys will be decrypted with options.passphrase. Multiple keys using different algorithms can be provided either as an array of unencrypted key strings or buffers, or an array of objects in the form {pem: <string|buffer>[, passphrase: <string>]}. The object form can only occur in an array. object.passphrase is optional. Encrypted keys will be decrypted with object.passphrase if provided, or options.passphrase if it is not.",
-            "items": {
-              "type": "string"
-            }
-          },
-          "passphrase": {
-            "type": "string",
-            "description": "Optional shared passphrase used for a single private key and/or a PFX."
-          },
-          "cert": {
-            "type": ["string", "array"],
-            "description": "Optional cert chains in PEM format. One cert chain should be provided per private key. Each cert chain should consist of the PEM formatted certificate for a provided private key, followed by the PEM formatted intermediate certificates (if any), in order, and not including the root CA (the root CA must be pre-known to the peer, see ca). When providing multiple cert chains, they do not have to be in the same order as their private keys in key. If the intermediate certificates are not provided, the peer will not be able to validate the certificate, and the handshake will fail.",
-            "items": {
-              "type": "string"
-            }
-          },
-          "ca": {
-            "type": ["string", "array"],
-            "description": "Optionally override the trusted CA certificates. Default is to trust the well-known CAs curated by Mozilla. Mozilla's CAs are completely replaced when CAs are explicitly specified using this option. The value can be a string or Buffer, or an Array of strings and/or Buffers. Any string or Buffer can contain multiple PEM CAs concatenated together. The peer's certificate must be chainable to a CA trusted by the server for the connection to be authenticated. When using certificates that are not chainable to a well-known CA, the certificate's CA must be explicitly specified as a trusted or the connection will fail to authenticate. If the peer uses a certificate that doesn't match or chain to one of the default CAs, use the ca option to provide a CA certificate that the peer's certificate can match or chain to. For self-signed certificates, the certificate is its own CA, and must be provided.",
-            "items": {
-              "type": "string"
-            }
-          },
-          "crl": {
-            "type": ["string", "array"],
-            "description": "Optional PEM formatted CRLs (Certificate Revocation Lists).",
-            "items": {
-              "type": "string"
-            }
-          },
-          "ciphers": {
-            "type": "string",
-            "description": "Optional cipher suite specification, replacing the default. For more information, see modifying the default cipher suite."
-          },
-          "honorCipherOrder": {
-            "type": "boolean",
-            "description": "Attempt to use the server's cipher suite preferences instead of the client's. When true, causes SSL_OP_CIPHER_SERVER_PREFERENCE to be set in secureOptions, see OpenSSL Options for more information. Note: tls.createServer() sets the default value to true, other APIs that create secure contexts leave it unset."
-          },
-          "ecdhCurve": {
-            "type": "string",
-            "description": "A string describing a named curve to use for ECDH key agreement or false to disable ECDH. Defaults to tls.DEFAULT_ECDH_CURVE. Use crypto.getCurves() to obtain a list of available curve names. On recent releases, openssl ecparam -list_curves will also display the name and description of each available elliptic curve."
-          },
-          "dhparam": {
-            "type": "string",
-            "description": "Diffie Hellman parameters, required for Perfect Forward Secrecy. Use openssl dhparam to create the parameters. The key length must be greater than or equal to 1024 bits, otherwise an error will be thrown. It is strongly recommended to use 2048 bits or larger for stronger security. If omitted or invalid, the parameters are silently discarded and DHE ciphers will not be available."
-          },
-          "secureProtocol": {
-            "type": "string",
-            "description": "Optional SSL method to use, default is \"SSLv23_method\". The possible values are listed as SSL_METHODS, use the function names as strings. For example, \"SSLv3_method\" to force SSL version 3."
-          },
-          "secureOptions": {
-            "type": "number",
-            "description": "Optionally affect the OpenSSL protocol behaviour, which is not usually necessary. This should be used carefully if at all! Value is a numeric bitmask of the SSL_OP_* options from OpenSSL Options."
-          },
-          "sessionIdContext": {
-            "type": "string",
-            "description": "Optional opaque identifier used by servers to ensure session state is not shared between applications. Unused by clients. Note: tls.createServer() uses a 128 bit truncated SHA1 hash value generated from process.argv, other APIs that create secure contexts have no default value."
-          }
-        }
+        "type": ["object", "null"]
+      },
+      "passive": {
+        "type": "boolean",
+        "description": "Compatibility field accepted by runtime validation."
       },
       "networkInterface": {
-        "type": [
-          "string",
-          "null"
-        ],
+        "type": ["string", "null"],
         "minLength": 1,
-        "description": "FTP only: bind control and passive data connections to an adapter name (for example Ethernet). Requires a usable IPv4 address. Omit or use null for system routing. No fallback if the selected adapter is unavailable."
+        "description": "FTP-only named IPv4 adapter. Null or omission uses system routing."
+      },
+      "ftpKeepAliveInterval": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "FTP NOOP interval. Omission or zero disables it."
+      },
+      "ftpReconnectAttempts": {
+        "type": "integer",
+        "minimum": 0,
+        "default": 0
       }
     }
   }

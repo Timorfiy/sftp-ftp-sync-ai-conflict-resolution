@@ -8,7 +8,7 @@ describe('safe setup schema and onboarding', () => {
 
     expect(watcher.properties.files.oneOf).toEqual([
       { type: 'string' },
-      { enum: [false] },
+      { enum: [false, null] },
     ]);
     expect(watcher.default).toEqual({
       files: false,

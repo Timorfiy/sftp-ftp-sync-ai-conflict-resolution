@@ -1,3 +1,20 @@
+## 0.1.0 - 2026-09-24
+
+First standalone release of `Timorfiy.sftp-sync-ai` for Windows 10/11,
+VS Code 1.104.0+, and Cursor 3.17.8+.
+
+* Supports SFTP and plain FTP with read-only Test Connection, safe generated
+  configuration, explicit Local-to-Remote bulk confirmation, actionable
+  transfer recovery, and endpoint-scoped Secret Storage.
+* Adds manual and automatically registered editor-agent conflict resolution
+  with revision checks, terminal upload status, and bounded private state.
+* Adds local text/source overwrite backups with 100 generated-template
+  versions per file and precise delete/recovery limitations.
+* FTPS remains experimental. Existing configuration files are not migrated.
+
+The entries below are inherited project history and attribution; their version
+numbers are not versions of this standalone extension.
+
 ## 3.6.0 - 2026-09-22
 
 * Add opt-in FTP `networkInterface` selection by adapter name, resolving its current IPv4 address on reconnect.

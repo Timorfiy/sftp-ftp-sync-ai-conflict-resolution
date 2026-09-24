@@ -42,7 +42,7 @@
       "activitybar": [
         {
           "id": "sftp",
-          "title": "SFTP",
+          "title": "SFTP/FTP",
           "icon": "resources/remote-explorer.svg"
         }
       ]
@@ -66,7 +66,7 @@
     "viewsWelcome": [
       {
         "view": "remoteExplorer",
-        "contents": "No SFTP configuration found in this workspace.\n[Create SFTP Config](command:sftpSyncAI.config)\n[Test Connection](command:sftpSyncAI.testConnection)",
+        "contents": "No SFTP/FTP configuration found in this workspace.\n[Create Config](command:sftpSyncAI.config)\n[Test Connection](command:sftpSyncAI.testConnection)",
         "when": "!sftpSyncAI.hasConfig"
       },
       {
@@ -76,7 +76,7 @@
       },
       {
         "view": "transferQueue",
-        "contents": "Open a workspace folder and create an SFTP config to get started.",
+        "contents": "Open a workspace folder and create an SFTP/FTP config to get started.",
         "when": "!sftpSyncAI.enabled"
       },
       {
@@ -87,27 +87,27 @@
     ],
     "configuration": {
       "type": "object",
-      "title": "sftp configuration",
+      "title": "SFTP/FTP Sync + AI Conflict Resolution",
       "properties": {
         "sftp.printDebugLog": {
           "type": "boolean",
           "default": false,
-          "description": "print debug log on sftp output channel.(reload vscode when change this)"
+          "description": "Print protocol debug output in the SFTP channel. Reload the editor after changing this setting."
         },
         "sftp.debug": {
           "type": "boolean",
           "default": false,
-          "description": "print debug log on sftp output channel.(reload vscode when change this)"
+          "description": "Print protocol debug output in the SFTP channel. Reload the editor after changing this setting."
         },
         "sftp.downloadWhenOpenInRemoteExplorer": {
           "type": "boolean",
           "default": false,
-          "description": "\"Download\" instead of \"View Content\" when open file in Remote Explorer"
+          "description": "Download a remote file for local editing instead of opening read-only remote content."
         },
         "sftp.suppressPlaintextPasswordWarning": {
           "type": "boolean",
           "default": false,
-          "description": "Suppress the security warning shown when a plaintext password is stored in sftp.json."
+          "description": "Suppress the local plaintext-credential warning. This does not encrypt the configuration or plain FTP traffic."
         }
       }
     },
