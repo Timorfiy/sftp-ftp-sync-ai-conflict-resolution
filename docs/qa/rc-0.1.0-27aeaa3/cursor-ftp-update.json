@@ -1,0 +1,355 @@
+{
+  "row": "cursor-ftp-update",
+  "records": [
+    {
+      "id": "installed",
+      "status": "PASS",
+      "utc": "2026-09-24T13:04:18.690Z",
+      "candidateSha256": "1256ba34302813c6d06caf694d2b8e80fc93e0bae7e8ad3005e55c348257e719",
+      "source": "27aeaa3ecb80c4766dacbfde75d72425522df738",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Synthetic predecessor installed bytes, active product, English editor",
+      "observed": {
+        "editor": "Cursor",
+        "version": "1.128.0",
+        "language": "en",
+        "productVersion": "0.0.0",
+        "productActive": true,
+        "extensionPath": "<sandbox>\\extensions\\timorfiy.sftp-sync-ai-0.0.0",
+        "workspace": "<sandbox>\\workspace",
+        "commands": [
+          "sftpSyncAI.openTroubleshooting",
+          "sftpSyncAI.cancelAllTransfer",
+          "sftpSyncAI.clearConflictState",
+          "sftpSyncAI.config",
+          "sftpSyncAI.deleteSavedPassword",
+          "sftpSyncAI.listActiveFolder",
+          "sftpSyncAI.openConnectInTerminal",
+          "sftpSyncAI.remoteBackups.delete",
+          "sftpSyncAI.remoteBackups.open",
+          "sftpSyncAI.remoteBackups.refresh",
+          "sftpSyncAI.remoteBackups.restore",
+          "sftpSyncAI.remoteExplorer.clearFilter",
+          "sftpSyncAI.remoteExplorer.filter",
+          "sftpSyncAI.rename.remote",
+          "sftpSyncAI.selectNetworkInterface",
+          "sftpSyncAI.setProfile",
+          "sftpSyncAI.testConnection",
+          "sftpSyncAI.toggleOutput",
+          "sftpSyncAI.upload.changedFiles",
+          "sftpSyncAI.create.file",
+          "sftpSyncAI.create.folder",
+          "sftpSyncAI.delete.remote",
+          "sftpSyncAI.diff",
+          "sftpSyncAI.diff.activeFile",
+          "sftpSyncAI.download",
+          "sftpSyncAI.download.activeFile",
+          "sftpSyncAI.download.activeFolder",
+          "sftpSyncAI.download.file",
+          "sftpSyncAI.download.folder",
+          "sftpSyncAI.forceDownload",
+          "sftpSyncAI.download.project",
+          "sftpSyncAI.remoteExplorer.editInLocal",
+          "sftpSyncAI.list",
+          "sftpSyncAI.listAll",
+          "sftpSyncAI.revealInExplorer",
+          "sftpSyncAI.revealInRemoteExplorer",
+          "sftpSyncAI.sync.bothDirections",
+          "sftpSyncAI.sync.localToRemote",
+          "sftpSyncAI.sync.remoteToLocal",
+          "sftpSyncAI.upload",
+          "sftpSyncAI.upload.activeFile",
+          "sftpSyncAI.upload.activeFolder",
+          "sftpSyncAI.upload.file",
+          "sftpSyncAI.upload.folder",
+          "sftpSyncAI.forceUpload",
+          "sftpSyncAI.upload.project",
+          "sftpSyncAI.upload.activeFile.to.allProfiles",
+          "sftpSyncAI.upload.activeFolder.to.allProfiles",
+          "sftpSyncAI.upload.file.to.allProfiles",
+          "sftpSyncAI.upload.folder.to.allProfiles",
+          "sftpSyncAI.forceUpload.to.allProfiles",
+          "sftpSyncAI.upload.project.to.allProfiles",
+          "sftpSyncAI.upload.to.allProfiles",
+          "sftpSyncAI.remoteExplorer.refresh",
+          "sftpSyncAI.viewContent",
+          "sftpSyncAI.transferQueue.cancel",
+          "sftpSyncAI.transferQueue.clear"
+        ],
+        "editorBuild": "3.17.8\n2fdd31c9f33f7fbe501f2d57772dc5bf64b63620\nx64",
+        "protocol": "ftp",
+        "port": 57510,
+        "pid": 25860,
+        "debugPort": 57519,
+        "verifiedEntries": [
+          "changelog.md",
+          "FAQ.md",
+          "LICENSE.txt",
+          "readme.md",
+          "package.json",
+          "dist/extension.js",
+          "dist/mcp-server.js",
+          "docs/commands.md",
+          "docs/common_configuration.md",
+          "docs/configuration.md",
+          "docs/ftp_configuration.md",
+          "docs/home.md",
+          "docs/network-interface.md",
+          "docs/options.md",
+          "docs/setting.md",
+          "docs/sftp_configuration.md",
+          "docs/troubleshooting.md",
+          "resources/icon.png",
+          "resources/remote-explorer.svg",
+          "schema/config.schema.json",
+          "schema/definitions.json",
+          "schema/ftp.schema.json",
+          "schema/sftp.schema.json",
+          "schema/simple-config.schema.json",
+          "assets/faq/upload_changed_files_shortcut.png",
+          "assets/showcase/remote-explorer.png",
+          "resources/dark/refresh.svg",
+          "resources/dark/upload.svg",
+          "resources/light/refresh.svg",
+          "resources/light/upload.svg",
+          "resources/mcp/conflict-resolution-instructions.md"
+        ],
+        "candidate": {
+          "file": "sftp-sync-ai-0.1.0.vsix",
+          "bytes": 723358,
+          "sha256": "1256ba34302813c6d06caf694d2b8e80fc93e0bae7e8ad3005e55c348257e719",
+          "source": "27aeaa3ecb80c4766dacbfde75d72425522df738",
+          "run": "36000977616",
+          "artifact": "10808705885"
+        },
+        "os": {
+          "type": "Windows_NT",
+          "release": "10.0.26200",
+          "arch": "x64"
+        }
+      }
+    },
+    {
+      "id": "configuration",
+      "status": "PASS",
+      "utc": "2026-09-24T13:04:21.654Z",
+      "candidateSha256": "1256ba34302813c6d06caf694d2b8e80fc93e0bae7e8ad3005e55c348257e719",
+      "source": "27aeaa3ecb80c4766dacbfde75d72425522df738",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Strict JSON safe defaults; existing config not rewritten",
+      "observed": {
+        "generated": {
+          "name": "My Server",
+          "host": "localhost",
+          "protocol": "sftp",
+          "port": 22,
+          "username": "username",
+          "remotePath": "/",
+          "uploadOnSave": false,
+          "conflictCheck": true,
+          "useTempFile": false,
+          "openSsh": false,
+          "concurrency": 4,
+          "watcher": {
+            "files": false,
+            "autoUpload": false,
+            "autoDelete": false,
+            "autoRename": false
+          },
+          "syncOption": {
+            "delete": false,
+            "skipCreate": false,
+            "ignoreExisting": false,
+            "update": false
+          },
+          "ignore": [
+            ".vscode",
+            ".git",
+            ".github",
+            ".DS_Store",
+            "Thumbs.db",
+            "src",
+            ".env",
+            ".env.*",
+            "AGENTS.md",
+            "CLAUDE.md",
+            ".claude",
+            ".cursor",
+            "*.log",
+            "*.tmp",
+            "*.bak"
+          ],
+          "backup": {
+            "enabled": true,
+            "location": "local",
+            "folder": ".vscode/sftp-backup",
+            "versions": 100,
+            "onDelete": false
+          }
+        },
+        "existingSha256": "a5e26fc316fce78e811e8ed051512a9b64bb2e496a0e5ab5e4657365414a9239",
+        "noPlaintextCredential": true
+      }
+    },
+    {
+      "id": "ftp-warning-cancel",
+      "status": "PASS",
+      "utc": "2026-09-24T13:04:23.109Z",
+      "candidateSha256": "1256ba34302813c6d06caf694d2b8e80fc93e0bae7e8ad3005e55c348257e719",
+      "source": "27aeaa3ecb80c4766dacbfde75d72425522df738",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Encryption warning Cancel causes zero protocol work",
+      "observed": {
+        "modal": [
+          {
+            "name": "Continue",
+            "id": 0,
+            "type": "Native.Button"
+          },
+          {
+            "name": "Cancel",
+            "id": 0,
+            "type": "Native.Button"
+          },
+          {
+            "name": "Plain FTP has no transport encryption: credentials and file contents can be read or changed in transit.",
+            "type": "ControlType.Text"
+          }
+        ],
+        "unchanged": true
+      }
+    },
+    {
+      "id": "connection",
+      "status": "PASS",
+      "utc": "2026-09-24T13:04:25.192Z",
+      "candidateSha256": "1256ba34302813c6d06caf694d2b8e80fc93e0bae7e8ad3005e55c348257e719",
+      "source": "27aeaa3ecb80c4766dacbfde75d72425522df738",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Product prompt/save and read-only successful probe",
+      "observed": {
+        "message": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nWORKSPACE\n.vscode\nsftp.json\nOUTLINE\nTIMELINE\nNew Agent\nCtrl\n+\nShift\n+\nL\nShow Terminal\nCtrl\n+\nJ\nSearch Files\nCtrl\n+\nP\nOpen Browser\nCtrl\n+\nShift\n+\nB\nMaximize Chat\nCtrl\n+\nAlt\n+\nE\nAdd Folder\nCtrl\n+\nAlt\n+\nA\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\nworkspace\n 0 \n 0\nSFTP\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nCursor Tab\nInfo: Test Connection succeeded: Connected with FTP and read /. No remote data was changed.\nTest Connection succeeded: Connected with FTP and read /. No remote data was changed.",
+        "operations": [
+          {
+            "operation": "OPTS",
+            "target": "UTF8 ON"
+          },
+          {
+            "operation": "USER",
+            "target": "test"
+          },
+          {
+            "operation": "PASS",
+            "target": "[redacted]"
+          },
+          {
+            "operation": "FEAT",
+            "target": ""
+          },
+          {
+            "operation": "TYPE",
+            "target": "I"
+          },
+          {
+            "operation": "STRU",
+            "target": "F"
+          },
+          {
+            "operation": "OPTS",
+            "target": "UTF8 ON"
+          },
+          {
+            "operation": "EPSV",
+            "target": ""
+          },
+          {
+            "operation": "LIST",
+            "target": "-a /"
+          },
+          {
+            "operation": "QUIT",
+            "target": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "backup-restore",
+      "status": "PASS",
+      "utc": "2026-09-24T13:04:32.653Z",
+      "candidateSha256": "1256ba34302813c6d06caf694d2b8e80fc93e0bae7e8ad3005e55c348257e719",
+      "source": "27aeaa3ecb80c4766dacbfde75d72425522df738",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Actual Local Backups view/open; cancel inert; restore exact bytes with pre-restore protection",
+      "observed": {
+        "opened": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nEXPLORER\nCustom FTP update profile\nrestore.txt\nsample.txt\nTRANSFER QUEUE\nlocal ➞ remote <sandbox>\\workspace\\restore.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\restore.txt (0.0s)\nLOCAL BACKUPS\n9/24/2026, 6:04:26 PM (28 B)\nsftp.json\nrestore.txt.20260924130426523.bak\n1\n2\nrestore earlier remote text\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP 1/1\nworkspace\n 0 \n 0\ndone restore.txt\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nPlain Text\nSpaces: 4\nLn 1, Col 1\nCursor Tab\nInfo: Test Connection succeeded: Connected with FTP and read /. No remote data was changed.",
+        "modal": [
+          {
+            "name": "Restore",
+            "id": 0,
+            "type": "Native.Button"
+          },
+          {
+            "name": "Cancel",
+            "id": 0,
+            "type": "Native.Button"
+          },
+          {
+            "name": "Restore backup from 9/24/2026, 6:04:26 PM to /restore.txt?",
+            "type": "ControlType.Text"
+          }
+        ],
+        "cancelUnchanged": true,
+        "restored": true,
+        "preRestoreProtection": true,
+        "backupCount": 2,
+        "ui": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nEXPLORER\nCustom FTP update profile\nrestore.txt\nsample.txt\nTRANSFER QUEUE\nlocal ➞ remote <sandbox>\\workspace\\restore.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\restore.txt (0.0s)\nLOCAL BACKUPS\n9/24/2026, 6:04:26 PM (28 B)\nsftp.json\nrestore.txt.20260924130426523.bak\n1\n2\nrestore earlier remote text\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP 1/1\nworkspace\n 0 \n 0\nSFTP\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nPlain Text\nSpaces: 4\nLn 2, Col 1\nCursor Tab\nInfo: Restored backup to /restore.txt\nRestored backup to /restore.txt",
+        "scope": "text only; no sync-delete or download undo guarantee"
+      }
+    },
+    {
+      "id": "in-place-update",
+      "status": "PASS",
+      "utc": "2026-09-24T13:04:46.682Z",
+      "candidateSha256": "1256ba34302813c6d06caf694d2b8e80fc93e0bae7e8ad3005e55c348257e719",
+      "source": "27aeaa3ecb80c4766dacbfde75d72425522df738",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Local synthetic 0.0.0 to canonical 0.1.0 same profile/home/workspace/endpoint; real secrets/config/backups persist",
+      "observed": {
+        "upgrade": {
+          "predecessor": {
+            "file": "sftp-sync-ai-0.0.0.vsix",
+            "sha256": "a4137b570f30f130501ca709cc1fd95a8792595ae3dcfc1cdcbe61c2fde31e2c",
+            "bytes": 722892,
+            "changed": [
+              "extension.vsixmanifest",
+              "extension/package.json"
+            ]
+          },
+          "candidate": {
+            "file": "sftp-sync-ai-0.1.0.vsix",
+            "bytes": 723358,
+            "sha256": "1256ba34302813c6d06caf694d2b8e80fc93e0bae7e8ad3005e55c348257e719",
+            "source": "27aeaa3ecb80c4766dacbfde75d72425522df738",
+            "run": "36000977616",
+            "artifact": "10808705885"
+          },
+          "configHash": "2ffe982e968769cd5e3093da7ef84aaf49381e90a561bc9f483382a32240a1e2",
+          "version": "0.1.0",
+          "installedEntriesVerified": 31,
+          "fullRestart": true,
+          "endpointPortUnchanged": 57510,
+          "installation": "Extensions: Install from VSIX / native file chooser",
+          "uiBeforeRestart": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nEXPLORER\nCustom FTP update profile\nrestore.txt\nsample.txt\nTRANSFER QUEUE\nlocal ➞ remote <sandbox>\\workspace\\restore.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\restore.txt (0.0s)\nLOCAL BACKUPS\n9/24/2026, 6:04:26 PM (28 B)\nNew Agent\nCtrl\n+\nShift\n+\nL\nShow Terminal\nCtrl\n+\nJ\nSearch Files\nCtrl\n+\nP\nOpen Browser\nCtrl\n+\nShift\n+\nB\nMaximize Chat\nCtrl\n+\nAlt\n+\nE\nAdd Folder\nCtrl\n+\nAlt\n+\nA\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP 1/1\nworkspace\n 0 \n 0\nSFTP\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nCursor Tab\nInfo: Completed installing extension. Please restart extensions to enable it.\nRestart Extensions\nCompleted installing extension. Please restart extensions to enable it.\nRestored backup to /restore.txt"
+        },
+        "configHashBefore": "2ffe982e968769cd5e3093da7ef84aaf49381e90a561bc9f483382a32240a1e2",
+        "configHashAfter": "2ffe982e968769cd5e3093da7ef84aaf49381e90a561bc9f483382a32240a1e2",
+        "connection": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nWORKSPACE\n.vscode\nsftp-backup\nsftp.json\nrestore.txt\nOUTLINE\nTIMELINE\nNew Agent\nCtrl\n+\nShift\n+\nL\nShow Terminal\nCtrl\n+\nJ\nSearch Files\nCtrl\n+\nP\nOpen Browser\nCtrl\n+\nShift\n+\nB\nMaximize Chat\nCtrl\n+\nAlt\n+\nE\nAdd Folder\nCtrl\n+\nAlt\n+\nA\nNew Agent\nLoading Chat\nworkspace\n 0 \n 0\nSFTP\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nCursor Tab\nInfo: Test Connection succeeded: Connected with FTP and read /. No remote data was changed.\nNotifications\nTest Connection succeeded: Connected with FTP and read /. No remote data was changed.\nTesting Custom FTP update profile...",
+        "credentialPromptsAfterUpdate": 0,
+        "transferSucceeded": true,
+        "preservedBackupCount": 2,
+        "oldBackupRestored": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+# Signed QA evidence must retain the same bytes across Windows checkouts.
+docs/qa/rc-*/** text eol=lf

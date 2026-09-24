@@ -176,7 +176,7 @@ extension recovery version, so commit or copy important local work first.
 
 **SFTP: Sync Local → Remote** always shows a modal before hooks, connection,
 listing, or mutation. It names the profile and both paths. **Cancel** changes
-nothing; **Continue** may overwrite many remote files. If
+nothing; **Sync Local → Remote** may overwrite many remote files. If
 `syncOption.delete` is enabled, the modal also names the side whose
 destination-only files will be recursively deleted.
 

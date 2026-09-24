@@ -14,6 +14,7 @@ function normalizeRemote(remotePath) {
 module.exports = async function createProtocolSandbox() {
   const root = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'sftp-sync-protocol-'));
   const denied = new Set();
+  const writeDenied = new Set();
   const disconnects = new Map();
   const operations = [];
   let connectionCount = 0;
@@ -66,6 +67,16 @@ module.exports = async function createProtocolSandbox() {
     credentials: { username: 'test', password: 'test' },
     resolve,
     assertAllowed,
+    assertWritable(remotePath) {
+      const localPath = assertAllowed(remotePath);
+      const { normalized } = resolve(remotePath);
+      for (const deniedPath of writeDenied) {
+        if (normalized === deniedPath || normalized.startsWith(`${deniedPath}/`)) {
+          throw Object.assign(new Error(`Write permission denied: ${normalized}`), { code: 'EACCES' });
+        }
+      }
+      return localPath;
+    },
     noteConnection() {
       connectionCount += 1;
     },
@@ -88,8 +99,17 @@ module.exports = async function createProtocolSandbox() {
     allow(remotePath) {
       denied.delete(normalizeRemote(remotePath));
     },
+    denyWrite(remotePath) {
+      writeDenied.add(normalizeRemote(remotePath));
+    },
+    allowWrite(remotePath) {
+      writeDenied.delete(normalizeRemote(remotePath));
+    },
     disconnect(operation, mode = 'once') {
       disconnects.set(operation, mode);
+    },
+    clearDisconnects() {
+      disconnects.clear();
     },
     consumeDisconnect(operation) {
       const mode = disconnects.get(operation);

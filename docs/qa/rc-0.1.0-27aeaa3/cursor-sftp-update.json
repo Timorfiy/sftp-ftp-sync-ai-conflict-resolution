@@ -1,0 +1,326 @@
+{
+  "row": "cursor-sftp-update",
+  "records": [
+    {
+      "id": "installed",
+      "status": "PASS",
+      "utc": "2026-09-24T13:05:47.325Z",
+      "candidateSha256": "1256ba34302813c6d06caf694d2b8e80fc93e0bae7e8ad3005e55c348257e719",
+      "source": "27aeaa3ecb80c4766dacbfde75d72425522df738",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Synthetic predecessor installed bytes, active product, English editor",
+      "observed": {
+        "editor": "Cursor",
+        "version": "1.128.0",
+        "language": "en",
+        "productVersion": "0.0.0",
+        "productActive": true,
+        "extensionPath": "<sandbox>\\extensions\\timorfiy.sftp-sync-ai-0.0.0",
+        "workspace": "<sandbox>\\workspace",
+        "commands": [
+          "sftpSyncAI.openTroubleshooting",
+          "sftpSyncAI.cancelAllTransfer",
+          "sftpSyncAI.clearConflictState",
+          "sftpSyncAI.config",
+          "sftpSyncAI.deleteSavedPassword",
+          "sftpSyncAI.listActiveFolder",
+          "sftpSyncAI.openConnectInTerminal",
+          "sftpSyncAI.remoteBackups.delete",
+          "sftpSyncAI.remoteBackups.open",
+          "sftpSyncAI.remoteBackups.refresh",
+          "sftpSyncAI.remoteBackups.restore",
+          "sftpSyncAI.remoteExplorer.clearFilter",
+          "sftpSyncAI.remoteExplorer.filter",
+          "sftpSyncAI.rename.remote",
+          "sftpSyncAI.selectNetworkInterface",
+          "sftpSyncAI.setProfile",
+          "sftpSyncAI.testConnection",
+          "sftpSyncAI.toggleOutput",
+          "sftpSyncAI.upload.changedFiles",
+          "sftpSyncAI.create.file",
+          "sftpSyncAI.create.folder",
+          "sftpSyncAI.delete.remote",
+          "sftpSyncAI.diff",
+          "sftpSyncAI.diff.activeFile",
+          "sftpSyncAI.download",
+          "sftpSyncAI.download.activeFile",
+          "sftpSyncAI.download.activeFolder",
+          "sftpSyncAI.download.file",
+          "sftpSyncAI.download.folder",
+          "sftpSyncAI.forceDownload",
+          "sftpSyncAI.download.project",
+          "sftpSyncAI.remoteExplorer.editInLocal",
+          "sftpSyncAI.list",
+          "sftpSyncAI.listAll",
+          "sftpSyncAI.revealInExplorer",
+          "sftpSyncAI.revealInRemoteExplorer",
+          "sftpSyncAI.sync.bothDirections",
+          "sftpSyncAI.sync.localToRemote",
+          "sftpSyncAI.sync.remoteToLocal",
+          "sftpSyncAI.upload",
+          "sftpSyncAI.upload.activeFile",
+          "sftpSyncAI.upload.activeFolder",
+          "sftpSyncAI.upload.file",
+          "sftpSyncAI.upload.folder",
+          "sftpSyncAI.forceUpload",
+          "sftpSyncAI.upload.project",
+          "sftpSyncAI.upload.activeFile.to.allProfiles",
+          "sftpSyncAI.upload.activeFolder.to.allProfiles",
+          "sftpSyncAI.upload.file.to.allProfiles",
+          "sftpSyncAI.upload.folder.to.allProfiles",
+          "sftpSyncAI.forceUpload.to.allProfiles",
+          "sftpSyncAI.upload.project.to.allProfiles",
+          "sftpSyncAI.upload.to.allProfiles",
+          "sftpSyncAI.remoteExplorer.refresh",
+          "sftpSyncAI.viewContent",
+          "sftpSyncAI.transferQueue.cancel",
+          "sftpSyncAI.transferQueue.clear"
+        ],
+        "editorBuild": "3.17.8\n2fdd31c9f33f7fbe501f2d57772dc5bf64b63620\nx64",
+        "protocol": "sftp",
+        "port": 50724,
+        "fingerprint": "5bac638a5e707be19a4e39ffdc4f9e5be6119a2904e9bed0294a09ce0f0c508f",
+        "pid": 35272,
+        "debugPort": 50728,
+        "verifiedEntries": [
+          "changelog.md",
+          "FAQ.md",
+          "LICENSE.txt",
+          "readme.md",
+          "package.json",
+          "dist/extension.js",
+          "dist/mcp-server.js",
+          "docs/commands.md",
+          "docs/common_configuration.md",
+          "docs/configuration.md",
+          "docs/ftp_configuration.md",
+          "docs/home.md",
+          "docs/network-interface.md",
+          "docs/options.md",
+          "docs/setting.md",
+          "docs/sftp_configuration.md",
+          "docs/troubleshooting.md",
+          "resources/icon.png",
+          "resources/remote-explorer.svg",
+          "schema/config.schema.json",
+          "schema/definitions.json",
+          "schema/ftp.schema.json",
+          "schema/sftp.schema.json",
+          "schema/simple-config.schema.json",
+          "assets/faq/upload_changed_files_shortcut.png",
+          "assets/showcase/remote-explorer.png",
+          "resources/dark/refresh.svg",
+          "resources/dark/upload.svg",
+          "resources/light/refresh.svg",
+          "resources/light/upload.svg",
+          "resources/mcp/conflict-resolution-instructions.md"
+        ],
+        "candidate": {
+          "file": "sftp-sync-ai-0.1.0.vsix",
+          "bytes": 723358,
+          "sha256": "1256ba34302813c6d06caf694d2b8e80fc93e0bae7e8ad3005e55c348257e719",
+          "source": "27aeaa3ecb80c4766dacbfde75d72425522df738",
+          "run": "36000977616",
+          "artifact": "10808705885"
+        },
+        "os": {
+          "type": "Windows_NT",
+          "release": "10.0.26200",
+          "arch": "x64"
+        }
+      }
+    },
+    {
+      "id": "configuration",
+      "status": "PASS",
+      "utc": "2026-09-24T13:05:50.321Z",
+      "candidateSha256": "1256ba34302813c6d06caf694d2b8e80fc93e0bae7e8ad3005e55c348257e719",
+      "source": "27aeaa3ecb80c4766dacbfde75d72425522df738",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Strict JSON safe defaults; existing config not rewritten",
+      "observed": {
+        "generated": {
+          "name": "My Server",
+          "host": "localhost",
+          "protocol": "sftp",
+          "port": 22,
+          "username": "username",
+          "remotePath": "/",
+          "uploadOnSave": false,
+          "conflictCheck": true,
+          "useTempFile": false,
+          "openSsh": false,
+          "concurrency": 4,
+          "watcher": {
+            "files": false,
+            "autoUpload": false,
+            "autoDelete": false,
+            "autoRename": false
+          },
+          "syncOption": {
+            "delete": false,
+            "skipCreate": false,
+            "ignoreExisting": false,
+            "update": false
+          },
+          "ignore": [
+            ".vscode",
+            ".git",
+            ".github",
+            ".DS_Store",
+            "Thumbs.db",
+            "src",
+            ".env",
+            ".env.*",
+            "AGENTS.md",
+            "CLAUDE.md",
+            ".claude",
+            ".cursor",
+            "*.log",
+            "*.tmp",
+            "*.bak"
+          ],
+          "backup": {
+            "enabled": true,
+            "location": "local",
+            "folder": ".vscode/sftp-backup",
+            "versions": 100,
+            "onDelete": false
+          }
+        },
+        "existingSha256": "f4ffc05a1ecb7595c3015af253bf872ecb7694e1700b7b0e98b7fe0ee543867e",
+        "noPlaintextCredential": true
+      }
+    },
+    {
+      "id": "sftp-first-key",
+      "status": "PASS",
+      "utc": "2026-09-24T13:05:51.507Z",
+      "candidateSha256": "1256ba34302813c6d06caf694d2b8e80fc93e0bae7e8ad3005e55c348257e719",
+      "source": "27aeaa3ecb80c4766dacbfde75d72425522df738",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "First-key prompt matches independently generated fixture fingerprint",
+      "observed": {
+        "fingerprint": "5bac638a5e707be19a4e39ffdc4f9e5be6119a2904e9bed0294a09ce0f0c508f",
+        "prompt": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nWORKSPACE\n.vscode\nsftp.json\nOUTLINE\nTIMELINE\nNew Agent\nCtrl\n+\nShift\n+\nL\nShow Terminal\nCtrl\n+\nJ\nSearch Files\nCtrl\n+\nP\nOpen Browser\nCtrl\n+\nShift\n+\nB\nMaximize Chat\nCtrl\n+\nAlt\n+\nE\nAdd Folder\nCtrl\n+\nAlt\n+\nA\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\nworkspace\n 0 \n 0\nSFTP\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nCursor Tab\nInfo: The SSH host key for 127.0.0.1 is not recognized. Fingerprint (SHA-256): 5bac638a5e707be19a4e39ffdc4f9e5be6119a2904e9bed0294a09ce0f0c508f Accept and connect?\nNotifications\nSource: SFTP/FTP Sync + AI Conflict Resolution\nReject\nAccept\nThe SSH host key for 127.0.0.1 is not recognized. Fingerprint (SHA-256): 5bac638a5e707be19a4e39ffdc4f9e5be6119a2904e9bed0294a09ce0f0c508f Accept and connect?\nTesting RC SFTP..."
+      }
+    },
+    {
+      "id": "connection",
+      "status": "PASS",
+      "utc": "2026-09-24T13:05:52.149Z",
+      "candidateSha256": "1256ba34302813c6d06caf694d2b8e80fc93e0bae7e8ad3005e55c348257e719",
+      "source": "27aeaa3ecb80c4766dacbfde75d72425522df738",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Product prompt/save and read-only successful probe",
+      "observed": {
+        "message": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nWORKSPACE\n.vscode\nsftp.json\nOUTLINE\nTIMELINE\nNew Agent\nCtrl\n+\nShift\n+\nL\nShow Terminal\nCtrl\n+\nJ\nSearch Files\nCtrl\n+\nP\nOpen Browser\nCtrl\n+\nShift\n+\nB\nMaximize Chat\nCtrl\n+\nAlt\n+\nE\nAdd Folder\nCtrl\n+\nAlt\n+\nA\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\nworkspace\n 0 \n 0\nSFTP\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nCursor Tab\nInfo: Test Connection succeeded: Connected with SFTP and read /. No remote data was changed.\nTest Connection succeeded: Connected with SFTP and read /. No remote data was changed.",
+        "operations": [
+          {
+            "operation": "AUTH",
+            "target": "none"
+          },
+          {
+            "operation": "AUTH",
+            "target": "password"
+          },
+          {
+            "operation": "LSTAT",
+            "target": "/"
+          },
+          {
+            "operation": "OPENDIR",
+            "target": "/"
+          },
+          {
+            "operation": "READDIR",
+            "target": ""
+          },
+          {
+            "operation": "READDIR",
+            "target": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "backup-restore",
+      "status": "PASS",
+      "utc": "2026-09-24T13:05:59.482Z",
+      "candidateSha256": "1256ba34302813c6d06caf694d2b8e80fc93e0bae7e8ad3005e55c348257e719",
+      "source": "27aeaa3ecb80c4766dacbfde75d72425522df738",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Actual Local Backups view/open; cancel inert; restore exact bytes with pre-restore protection",
+      "observed": {
+        "opened": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nEXPLORER\nCustom SFTP update profile\nrestore.txt\nsample.txt\nTRANSFER QUEUE\nlocal ➞ remote <sandbox>\\workspace\\restore.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\restore.txt (0.0s)\nLOCAL BACKUPS\n9/24/2026, 6:05:53 PM (28 B)\nsftp.json\nrestore.txt.20260924130553465.bak\n1\n2\nrestore earlier remote text\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP 1/1\nworkspace\n 0 \n 0\ndone restore.txt\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nPlain Text\nSpaces: 4\nLn 1, Col 1\nCursor Tab\nInfo: Test Connection succeeded: Connected with SFTP and read /. No remote data was changed.",
+        "modal": [
+          {
+            "name": "Restore",
+            "id": 0,
+            "type": "Native.Button"
+          },
+          {
+            "name": "Cancel",
+            "id": 0,
+            "type": "Native.Button"
+          },
+          {
+            "name": "Restore backup from 9/24/2026, 6:05:53 PM to /restore.txt?",
+            "type": "ControlType.Text"
+          }
+        ],
+        "cancelUnchanged": true,
+        "restored": true,
+        "preRestoreProtection": true,
+        "backupCount": 2,
+        "ui": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nEXPLORER\nCustom SFTP update profile\nrestore.txt\nsample.txt\nTRANSFER QUEUE\nlocal ➞ remote <sandbox>\\workspace\\restore.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\restore.txt (0.0s)\nLOCAL BACKUPS\n9/24/2026, 6:05:53 PM (28 B)\nsftp.json\nrestore.txt.20260924130553465.bak\n1\n2\nrestore earlier remote text\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP 1/1\nworkspace\n 0 \n 0\nSFTP\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nPlain Text\nSpaces: 4\nLn 1, Col 1\nCursor Tab\nInfo: Restored backup to /restore.txt\nRestored backup to /restore.txt",
+        "scope": "text only; no sync-delete or download undo guarantee"
+      }
+    },
+    {
+      "id": "in-place-update",
+      "status": "PASS",
+      "utc": "2026-09-24T13:06:11.181Z",
+      "candidateSha256": "1256ba34302813c6d06caf694d2b8e80fc93e0bae7e8ad3005e55c348257e719",
+      "source": "27aeaa3ecb80c4766dacbfde75d72425522df738",
+      "operator": "Kent (gpt-6-astra implementation agent)",
+      "expected": "Local synthetic 0.0.0 to canonical 0.1.0 same profile/home/workspace/endpoint; real secrets/config/backups persist",
+      "observed": {
+        "upgrade": {
+          "predecessor": {
+            "file": "sftp-sync-ai-0.0.0.vsix",
+            "sha256": "a4137b570f30f130501ca709cc1fd95a8792595ae3dcfc1cdcbe61c2fde31e2c",
+            "bytes": 722892,
+            "changed": [
+              "extension.vsixmanifest",
+              "extension/package.json"
+            ]
+          },
+          "candidate": {
+            "file": "sftp-sync-ai-0.1.0.vsix",
+            "bytes": 723358,
+            "sha256": "1256ba34302813c6d06caf694d2b8e80fc93e0bae7e8ad3005e55c348257e719",
+            "source": "27aeaa3ecb80c4766dacbfde75d72425522df738",
+            "run": "36000977616",
+            "artifact": "10808705885"
+          },
+          "configHash": "7bcc9250af8d07126d3d4d98790b1d87c0255010ab2415f546823963fa9affbe",
+          "version": "0.1.0",
+          "installedEntriesVerified": 31,
+          "fullRestart": true,
+          "endpointPortUnchanged": 50724,
+          "installation": "Extensions: Install from VSIX / native file chooser",
+          "uiBeforeRestart": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nEXPLORER\nCustom SFTP update profile\nrestore.txt\nsample.txt\nTRANSFER QUEUE\nlocal ➞ remote <sandbox>\\workspace\\restore.txt (0.0s)\nremote ➞ local <sandbox>\\workspace\\restore.txt (0.0s)\nLOCAL BACKUPS\n9/24/2026, 6:05:53 PM (28 B)\nNew Agent\nCtrl\n+\nShift\n+\nL\nShow Terminal\nCtrl\n+\nJ\nSearch Files\nCtrl\n+\nP\nOpen Browser\nCtrl\n+\nShift\n+\nB\nMaximize Chat\nCtrl\n+\nAlt\n+\nE\nAdd Folder\nCtrl\n+\nAlt\n+\nA\nNew Agent\n\n\n\n\nPlan, Build, / for skills, @ for context\nLog in\n⏎\n SFTP 1/1\nworkspace\n 0 \n 0\nSFTP\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nCursor Tab\nInfo: Completed installing extension. Please restart extensions to enable it.\nRestart Extensions\nCompleted installing extension. Please restart extensions to enable it.\nRestored backup to /restore.txt"
+        },
+        "configHashBefore": "7bcc9250af8d07126d3d4d98790b1d87c0255010ab2415f546823963fa9affbe",
+        "configHashAfter": "7bcc9250af8d07126d3d4d98790b1d87c0255010ab2415f546823963fa9affbe",
+        "knownHostsHashUnchanged": true,
+        "connection": "File\nEdit\nSelection\nView\nGo\nRun\nTerminal\nHelp\nworkspace - RC qualification\nUpgrade to Pro\nWORKSPACE\n.vscode\nsftp-backup\nsftp.json\nrestore.txt\nOUTLINE\nTIMELINE\nNew Agent\nCtrl\n+\nShift\n+\nL\nShow Terminal\nCtrl\n+\nJ\nSearch Files\nCtrl\n+\nP\nOpen Browser\nCtrl\n+\nShift\n+\nB\nMaximize Chat\nCtrl\n+\nAlt\n+\nE\nAdd Folder\nCtrl\n+\nAlt\n+\nA\nNew Agent\nLoading Chat\nworkspace\n 0 \n 0\nSFTP\n No commit scored\n Agent Stats: 0/0 (0%)\n Tab Stats: 0/0 (0%)\nCursor Tab\nInfo: Test Connection succeeded: Connected with SFTP and read /. No remote data was changed.\nNotifications\nTest Connection succeeded: Connected with SFTP and read /. No remote data was changed.\nTesting Custom SFTP update profile...",
+        "credentialPromptsAfterUpdate": 0,
+        "transferSucceeded": true,
+        "preservedBackupCount": 2,
+        "oldBackupRestored": true
+      }
+    }
+  ]
+}

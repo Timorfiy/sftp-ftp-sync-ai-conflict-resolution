@@ -1,0 +1,655 @@
+{
+  "candidate": {
+    "file": "sftp-sync-ai-0.1.0.vsix",
+    "bytes": 723857,
+    "sha256": "f861ecd4c3b3dad9310fbca9fe98ce64dac70bf4d74c37fc46e233769b3d3da7",
+    "source": "a2ebe0cbfc2fb6625c8e82487373593cc4b3ddff",
+    "run": "36008363622",
+    "artifact": "10812015294"
+  },
+  "note": "Selected runtime warnings; sample log timestamps are editor local time UTC+05. Raw logs remain private.",
+  "warnings": [
+    {
+      "row": "vscode-ftp-clean",
+      "groups": [
+        {
+          "id": "editor-deprecation",
+          "impact": "Editor/CLI dependency deprecation; installations and all assertions passed.",
+          "count": 3,
+          "samples": [
+            {
+              "log": "install.log",
+              "line": "(node:8216) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            },
+            {
+              "log": "install.log",
+              "line": "(node:22056) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "windows-jump-list",
+          "impact": "Editor integration with Windows jump list; no observed effect on tested extension behavior.",
+          "count": 1,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T192945/main.log",
+              "line": "2026-09-24 19:29:47.718 [warning] updateWindowsJumpList#setJumpList unexpected result: error",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "editor-git-process",
+          "impact": "Stack identifies the editor-owned Git extension ChildProcess/getRepositoryRoot path. ENOTCONN is not evidence of a loopback FTP/SFTP fault; no product change is requested for this Git error.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T192945/window1/exthost/exthost.log",
+              "line": "2026-09-24 19:30:01.540 [error] Error: read ENOTCONN",
+              "originStack": [
+                "\tat ChildProcess.spawn (node:internal/child_process:492:23)",
+                "\tat Nm.spawn (<sandbox>\\AppData\\Local\\Programs\\Microsoft VS Code\\2242ebbb54\\resources\\app\\extensions\\git\\dist\\main.js:28:598)",
+                "\tat Nm._exec (<sandbox>\\AppData\\Local\\Programs\\Microsoft VS Code\\2242ebbb54\\resources\\app\\extensions\\git\\dist\\main.js:24:46)",
+                "\tat Nm.exec (<sandbox>\\AppData\\Local\\Programs\\Microsoft VS Code\\2242ebbb54\\resources\\app\\extensions\\git\\dist\\main.js:23:408)"
+              ]
+            },
+            {
+              "log": "user-data/logs/20260924T192945/window1/exthost/exthost.log",
+              "line": "2026-09-24 19:30:01.542 [error] Error: read ENOTCONN",
+              "originStack": [
+                "\tat ChildProcess.spawn (node:internal/child_process:492:23)",
+                "\tat Nm.spawn (<sandbox>\\AppData\\Local\\Programs\\Microsoft VS Code\\2242ebbb54\\resources\\app\\extensions\\git\\dist\\main.js:28:598)",
+                "\tat Nm._exec (<sandbox>\\AppData\\Local\\Programs\\Microsoft VS Code\\2242ebbb54\\resources\\app\\extensions\\git\\dist\\main.js:24:46)",
+                "\tat Nm.exec (<sandbox>\\AppData\\Local\\Programs\\Microsoft VS Code\\2242ebbb54\\resources\\app\\extensions\\git\\dist\\main.js:23:408)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "fixture-protocol-failure",
+          "impact": "Product diagnostic includes the deterministic loopback fixture failure text; distinct from editor Git errors. The corresponding transfer/failure scenario verifies the result and recovery.",
+          "count": 6,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T192945/window1/exthost/output_logging_20260924T192946/1-sftp.log",
+              "line": "[09-24 19:30:07] [error] s: 426 Connection closed; transfer aborted",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T192945/window1/exthost/output_logging_20260924T192946/1-sftp.log",
+              "line": "[09-24 19:30:07] [error] {",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "generic-editor-error",
+          "impact": "Generic renderer log entry: origin is not assigned from this message alone. Independent review observed no matching generic text in UI during two sampled existing clean journeys. This does not waive the separately reproduced raw Remote Explorer permission toast.",
+          "count": 1,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T192945/window1/renderer.log",
+              "line": "2026-09-24 19:30:01.583 [error] An unknown error occurred. Please consult the log for more details.",
+              "originStack": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "row": "vscode-ftp-update",
+      "groups": [
+        {
+          "id": "editor-deprecation",
+          "impact": "Editor/CLI dependency deprecation; installations and all assertions passed.",
+          "count": 4,
+          "samples": [
+            {
+              "log": "install.log",
+              "line": "(node:29088) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            },
+            {
+              "log": "install.log",
+              "line": "(node:9300) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "windows-jump-list",
+          "impact": "Editor integration with Windows jump list; no observed effect on tested extension behavior.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T193051/main.log",
+              "line": "2026-09-24 19:30:53.958 [warning] updateWindowsJumpList#setJumpList unexpected result: error",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T193108/main.log",
+              "line": "2026-09-24 19:31:11.205 [warning] updateWindowsJumpList#setJumpList unexpected result: error",
+              "originStack": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "row": "vscode-sftp-clean",
+      "groups": [
+        {
+          "id": "editor-deprecation",
+          "impact": "Editor/CLI dependency deprecation; installations and all assertions passed.",
+          "count": 3,
+          "samples": [
+            {
+              "log": "install.log",
+              "line": "(node:17200) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            },
+            {
+              "log": "install.log",
+              "line": "(node:2624) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "windows-jump-list",
+          "impact": "Editor integration with Windows jump list; no observed effect on tested extension behavior.",
+          "count": 1,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T193115/main.log",
+              "line": "2026-09-24 19:31:18.308 [warning] updateWindowsJumpList#setJumpList unexpected result: error",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "editor-git-process",
+          "impact": "Stack identifies the editor-owned Git extension ChildProcess/getRepositoryRoot path. ENOTCONN is not evidence of a loopback FTP/SFTP fault; no product change is requested for this Git error.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T193115/window1/exthost/exthost.log",
+              "line": "2026-09-24 19:31:30.741 [error] Error: read ENOTCONN",
+              "originStack": [
+                "\tat ChildProcess.spawn (node:internal/child_process:492:23)",
+                "\tat Nm.spawn (<sandbox>\\AppData\\Local\\Programs\\Microsoft VS Code\\2242ebbb54\\resources\\app\\extensions\\git\\dist\\main.js:28:598)",
+                "\tat Nm._exec (<sandbox>\\AppData\\Local\\Programs\\Microsoft VS Code\\2242ebbb54\\resources\\app\\extensions\\git\\dist\\main.js:24:46)",
+                "\tat Nm.exec (<sandbox>\\AppData\\Local\\Programs\\Microsoft VS Code\\2242ebbb54\\resources\\app\\extensions\\git\\dist\\main.js:23:408)"
+              ]
+            },
+            {
+              "log": "user-data/logs/20260924T193115/window1/exthost/exthost.log",
+              "line": "2026-09-24 19:31:30.744 [error] Error: read ENOTCONN",
+              "originStack": [
+                "\tat ChildProcess.spawn (node:internal/child_process:492:23)",
+                "\tat Nm.spawn (<sandbox>\\AppData\\Local\\Programs\\Microsoft VS Code\\2242ebbb54\\resources\\app\\extensions\\git\\dist\\main.js:28:598)",
+                "\tat Nm._exec (<sandbox>\\AppData\\Local\\Programs\\Microsoft VS Code\\2242ebbb54\\resources\\app\\extensions\\git\\dist\\main.js:24:46)",
+                "\tat Nm.exec (<sandbox>\\AppData\\Local\\Programs\\Microsoft VS Code\\2242ebbb54\\resources\\app\\extensions\\git\\dist\\main.js:23:408)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "optional-ssh-config",
+          "impact": "Empty isolated home has no optional SSH config; configured SFTP and saved credentials still passed.",
+          "count": 1,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T193115/window1/exthost/output_logging_20260924T193117/1-sftp.log",
+              "line": "[09-24 19:31:19] [warn] ENOENT: no such file or directory, open '<sandbox>\\home\\.ssh\\config' load <sandbox>\\home\\.ssh\\config failed",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "fixture-protocol-failure",
+          "impact": "Product diagnostic includes the deterministic loopback fixture failure text; distinct from editor Git errors. The corresponding transfer/failure scenario verifies the result and recovery.",
+          "count": 4,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T193115/window1/exthost/output_logging_20260924T193117/1-sftp.log",
+              "line": "[09-24 19:31:53] [error] Error: Connection lost by fixture",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T193115/window1/exthost/output_logging_20260924T193117/1-sftp.log",
+              "line": "[09-24 19:31:53] [error] Error: Connection lost by fixture",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "generic-editor-error",
+          "impact": "Generic renderer log entry: origin is not assigned from this message alone. Independent review observed no matching generic text in UI during two sampled existing clean journeys. This does not waive the separately reproduced raw Remote Explorer permission toast.",
+          "count": 1,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T193115/window1/renderer.log",
+              "line": "2026-09-24 19:31:30.778 [error] An unknown error occurred. Please consult the log for more details.",
+              "originStack": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "row": "vscode-sftp-update",
+      "groups": [
+        {
+          "id": "editor-deprecation",
+          "impact": "Editor/CLI dependency deprecation; installations and all assertions passed.",
+          "count": 4,
+          "samples": [
+            {
+              "log": "install.log",
+              "line": "(node:33268) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            },
+            {
+              "log": "install.log",
+              "line": "(node:5528) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "windows-jump-list",
+          "impact": "Editor integration with Windows jump list; no observed effect on tested extension behavior.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T193206/main.log",
+              "line": "2026-09-24 19:32:09.556 [warning] updateWindowsJumpList#setJumpList unexpected result: error",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T193222/main.log",
+              "line": "2026-09-24 19:32:25.154 [warning] updateWindowsJumpList#setJumpList unexpected result: error",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "optional-ssh-config",
+          "impact": "Empty isolated home has no optional SSH config; configured SFTP and saved credentials still passed.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T193206/window1/exthost/output_logging_20260924T193208/1-sftp.log",
+              "line": "[09-24 19:32:10] [warn] ENOENT: no such file or directory, open '<sandbox>\\home\\.ssh\\config' load <sandbox>\\home\\.ssh\\config failed",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T193222/window1/exthost/output_logging_20260924T193223/1-sftp.log",
+              "line": "[09-24 19:32:24] [warn] ENOENT: no such file or directory, open '<sandbox>\\home\\.ssh\\config' load <sandbox>\\home\\.ssh\\config failed",
+              "originStack": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "row": "cursor-ftp-clean",
+      "groups": [
+        {
+          "id": "editor-deprecation",
+          "impact": "Editor/CLI dependency deprecation; installations and all assertions passed.",
+          "count": 3,
+          "samples": [
+            {
+              "log": "install.log",
+              "line": "(node:4324) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            },
+            {
+              "log": "install.log",
+              "line": "(node:16768) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "windows-jump-list",
+          "impact": "Editor integration with Windows jump list; no observed effect on tested extension behavior.",
+          "count": 1,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T193229/main.log",
+              "line": "2026-09-24 19:32:32.038 [warning] updateWindowsJumpList#setJumpList unexpected result: error",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "editor-git-process",
+          "impact": "Stack identifies the editor-owned Git extension ChildProcess/getRepositoryRoot path. ENOTCONN is not evidence of a loopback FTP/SFTP fault; no product change is requested for this Git error.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T193229/window1/exthost/exthost.log",
+              "line": "2026-09-24 19:32:49.982 [error] Error: read ENOTCONN",
+              "originStack": [
+                "\tat ChildProcess.spawn (node:internal/child_process:475:23)",
+                "\tat wi.spawn (<sandbox>\\AppData\\Local\\Programs\\cursor\\resources\\app\\extensions\\git\\dist\\main.js:7:570)",
+                "\tat wi.<anonymous> (<sandbox>\\AppData\\Local\\Programs\\cursor\\resources\\app\\extensions\\git\\dist\\main.js:4:93)",
+                "\tat <sandbox>\\AppData\\Local\\Programs\\cursor\\resources\\app\\extensions\\git\\dist\\main.js:3:7876"
+              ]
+            },
+            {
+              "log": "user-data/logs/20260924T193229/window1/exthost/exthost.log",
+              "line": "2026-09-24 19:32:49.984 [error] Error: read ENOTCONN",
+              "originStack": [
+                "\tat ChildProcess.spawn (node:internal/child_process:475:23)",
+                "\tat wi.spawn (<sandbox>\\AppData\\Local\\Programs\\cursor\\resources\\app\\extensions\\git\\dist\\main.js:7:570)",
+                "\tat wi.<anonymous> (<sandbox>\\AppData\\Local\\Programs\\cursor\\resources\\app\\extensions\\git\\dist\\main.js:4:93)",
+                "\tat <sandbox>\\AppData\\Local\\Programs\\cursor\\resources\\app\\extensions\\git\\dist\\main.js:3:7876"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "fixture-protocol-failure",
+          "impact": "Product diagnostic includes the deterministic loopback fixture failure text; distinct from editor Git errors. The corresponding transfer/failure scenario verifies the result and recovery.",
+          "count": 6,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T193229/window1/exthost/output_logging_20260924T193232_e0e47e1e/1-sftp.log",
+              "line": "[09-24 19:32:56] [error] s: 426 Connection closed; transfer aborted",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T193229/window1/exthost/output_logging_20260924T193232_e0e47e1e/1-sftp.log",
+              "line": "[09-24 19:32:56] [error] {",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "cursor-fresh-state",
+          "impact": "Cursor initializes its own fresh-profile application settings; no personal profile was used.",
+          "count": 81,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T193229/window1/renderer.log",
+              "line": "2026-09-24 19:32:31.265 [warning] Missing property \"alwaysKeepComposerInBound\" in oldValue. Filling with value from initValue. Please add a migration if necessary.",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T193229/window1/renderer.log",
+              "line": "2026-09-24 19:32:31.265 [warning] Missing property \"defaultCapabilities\" in oldValue. Filling with value from initValue. Please add a migration if necessary.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "generic-editor-error",
+          "impact": "Generic renderer log entry: origin is not assigned from this message alone. Independent review observed no matching generic text in UI during two sampled existing clean journeys. This does not waive the separately reproduced raw Remote Explorer permission toast.",
+          "count": 1,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T193229/window1/renderer.log",
+              "line": "2026-09-24 19:32:50.031 [error] An unknown error occurred. Please consult the log for more details. {\"errno\":-4053,\"code\":\"ENOTCONN\",\"syscall\":\"read\"}",
+              "originStack": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "row": "cursor-ftp-update",
+      "groups": [
+        {
+          "id": "editor-deprecation",
+          "impact": "Editor/CLI dependency deprecation; installations and all assertions passed.",
+          "count": 4,
+          "samples": [
+            {
+              "log": "install.log",
+              "line": "(node:25072) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            },
+            {
+              "log": "install.log",
+              "line": "(node:11544) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "windows-jump-list",
+          "impact": "Editor integration with Windows jump list; no observed effect on tested extension behavior.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T193341/main.log",
+              "line": "2026-09-24 19:33:43.977 [warning] updateWindowsJumpList#setJumpList unexpected result: error",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T193402/main.log",
+              "line": "2026-09-24 19:34:05.584 [warning] updateWindowsJumpList#setJumpList unexpected result: error",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "cursor-fresh-state",
+          "impact": "Cursor initializes its own fresh-profile application settings; no personal profile was used.",
+          "count": 82,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T193341/window1/renderer.log",
+              "line": "2026-09-24 19:33:43.215 [warning] Missing property \"alwaysKeepComposerInBound\" in oldValue. Filling with value from initValue. Please add a migration if necessary.",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T193341/window1/renderer.log",
+              "line": "2026-09-24 19:33:43.215 [warning] Missing property \"defaultCapabilities\" in oldValue. Filling with value from initValue. Please add a migration if necessary.",
+              "originStack": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "row": "cursor-sftp-clean",
+      "groups": [
+        {
+          "id": "editor-deprecation",
+          "impact": "Editor/CLI dependency deprecation; installations and all assertions passed.",
+          "count": 3,
+          "samples": [
+            {
+              "log": "install.log",
+              "line": "(node:26156) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            },
+            {
+              "log": "install.log",
+              "line": "(node:6808) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "windows-jump-list",
+          "impact": "Editor integration with Windows jump list; no observed effect on tested extension behavior.",
+          "count": 1,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T193414/main.log",
+              "line": "2026-09-24 19:34:16.870 [warning] updateWindowsJumpList#setJumpList unexpected result: error",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "editor-git-process",
+          "impact": "Stack identifies the editor-owned Git extension ChildProcess/getRepositoryRoot path. ENOTCONN is not evidence of a loopback FTP/SFTP fault; no product change is requested for this Git error.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T193414/window1/exthost/exthost.log",
+              "line": "2026-09-24 19:34:33.601 [error] Error: read ENOTCONN",
+              "originStack": [
+                "\tat ChildProcess.spawn (node:internal/child_process:475:23)",
+                "\tat wi.spawn (<sandbox>\\AppData\\Local\\Programs\\cursor\\resources\\app\\extensions\\git\\dist\\main.js:7:570)",
+                "\tat wi.<anonymous> (<sandbox>\\AppData\\Local\\Programs\\cursor\\resources\\app\\extensions\\git\\dist\\main.js:4:93)",
+                "\tat <sandbox>\\AppData\\Local\\Programs\\cursor\\resources\\app\\extensions\\git\\dist\\main.js:3:7876"
+              ]
+            },
+            {
+              "log": "user-data/logs/20260924T193414/window1/exthost/exthost.log",
+              "line": "2026-09-24 19:34:33.603 [error] Error: read ENOTCONN",
+              "originStack": [
+                "\tat ChildProcess.spawn (node:internal/child_process:475:23)",
+                "\tat wi.spawn (<sandbox>\\AppData\\Local\\Programs\\cursor\\resources\\app\\extensions\\git\\dist\\main.js:7:570)",
+                "\tat wi.<anonymous> (<sandbox>\\AppData\\Local\\Programs\\cursor\\resources\\app\\extensions\\git\\dist\\main.js:4:93)",
+                "\tat <sandbox>\\AppData\\Local\\Programs\\cursor\\resources\\app\\extensions\\git\\dist\\main.js:3:7876"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "optional-ssh-config",
+          "impact": "Empty isolated home has no optional SSH config; configured SFTP and saved credentials still passed.",
+          "count": 1,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T193414/window1/exthost/output_logging_20260924T193417_83aefce0/1-sftp.log",
+              "line": "[09-24 19:34:20] [warn] ENOENT: no such file or directory, open '<sandbox>\\home\\.ssh\\config' load <sandbox>\\home\\.ssh\\config failed",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "fixture-protocol-failure",
+          "impact": "Product diagnostic includes the deterministic loopback fixture failure text; distinct from editor Git errors. The corresponding transfer/failure scenario verifies the result and recovery.",
+          "count": 4,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T193414/window1/exthost/output_logging_20260924T193417_83aefce0/1-sftp.log",
+              "line": "[09-24 19:34:56] [error] Error: Connection lost by fixture",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T193414/window1/exthost/output_logging_20260924T193417_83aefce0/1-sftp.log",
+              "line": "[09-24 19:34:56] [error] Error: Connection lost by fixture",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "cursor-fresh-state",
+          "impact": "Cursor initializes its own fresh-profile application settings; no personal profile was used.",
+          "count": 81,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T193414/window1/renderer.log",
+              "line": "2026-09-24 19:34:16.311 [warning] Missing property \"alwaysKeepComposerInBound\" in oldValue. Filling with value from initValue. Please add a migration if necessary.",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T193414/window1/renderer.log",
+              "line": "2026-09-24 19:34:16.311 [warning] Missing property \"defaultCapabilities\" in oldValue. Filling with value from initValue. Please add a migration if necessary.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "generic-editor-error",
+          "impact": "Generic renderer log entry: origin is not assigned from this message alone. Independent review observed no matching generic text in UI during two sampled existing clean journeys. This does not waive the separately reproduced raw Remote Explorer permission toast.",
+          "count": 1,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T193414/window1/renderer.log",
+              "line": "2026-09-24 19:34:33.649 [error] An unknown error occurred. Please consult the log for more details. {\"errno\":-4053,\"code\":\"ENOTCONN\",\"syscall\":\"read\"}",
+              "originStack": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "row": "cursor-sftp-update",
+      "groups": [
+        {
+          "id": "editor-deprecation",
+          "impact": "Editor/CLI dependency deprecation; installations and all assertions passed.",
+          "count": 4,
+          "samples": [
+            {
+              "log": "install.log",
+              "line": "(node:2940) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            },
+            {
+              "log": "install.log",
+              "line": "(node:25104) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "windows-jump-list",
+          "impact": "Editor integration with Windows jump list; no observed effect on tested extension behavior.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T193510/main.log",
+              "line": "2026-09-24 19:35:13.666 [warning] updateWindowsJumpList#setJumpList unexpected result: error",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T193530/main.log",
+              "line": "2026-09-24 19:35:33.644 [warning] updateWindowsJumpList#setJumpList unexpected result: error",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "optional-ssh-config",
+          "impact": "Empty isolated home has no optional SSH config; configured SFTP and saved credentials still passed.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T193510/window1/exthost/output_logging_20260924T193514_d00aeca0/1-sftp.log",
+              "line": "[09-24 19:35:16] [warn] ENOENT: no such file or directory, open '<sandbox>\\home\\.ssh\\config' load <sandbox>\\home\\.ssh\\config failed",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T193530/window1/exthost/output_logging_20260924T193533_a38ce6ca/1-sftp.log",
+              "line": "[09-24 19:35:34] [warn] ENOENT: no such file or directory, open '<sandbox>\\home\\.ssh\\config' load <sandbox>\\home\\.ssh\\config failed",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "cursor-fresh-state",
+          "impact": "Cursor initializes its own fresh-profile application settings; no personal profile was used.",
+          "count": 82,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T193510/window1/renderer.log",
+              "line": "2026-09-24 19:35:12.899 [warning] Missing property \"alwaysKeepComposerInBound\" in oldValue. Filling with value from initValue. Please add a migration if necessary.",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T193510/window1/renderer.log",
+              "line": "2026-09-24 19:35:12.899 [warning] Missing property \"defaultCapabilities\" in oldValue. Filling with value from initValue. Please add a migration if necessary.",
+              "originStack": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

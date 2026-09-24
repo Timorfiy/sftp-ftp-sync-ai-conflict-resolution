@@ -1,0 +1,879 @@
+{
+  "candidate": {
+    "file": "sftp-sync-ai-0.1.0.vsix",
+    "bytes": 723358,
+    "sha256": "1256ba34302813c6d06caf694d2b8e80fc93e0bae7e8ad3005e55c348257e719",
+    "source": "27aeaa3ecb80c4766dacbfde75d72425522df738",
+    "run": "36000977616",
+    "artifact": "10808705885"
+  },
+  "note": "Selected runtime warnings; sample log timestamps are editor local time UTC+05. Raw logs remain private.",
+  "warnings": [
+    {
+      "row": "vscode-ftp-clean",
+      "groups": [
+        {
+          "id": "editor-deprecation",
+          "impact": "Editor/CLI dependency deprecation; installations and all assertions passed.",
+          "count": 3,
+          "samples": [
+            {
+              "log": "install.log",
+              "line": "(node:32288) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            },
+            {
+              "log": "install.log",
+              "line": "(node:10880) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "windows-jump-list",
+          "impact": "Editor integration with Windows jump list; no observed effect on tested extension behavior.",
+          "count": 1,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T175814/main.log",
+              "line": "2026-09-24 17:58:17.064 [warning] updateWindowsJumpList#setJumpList unexpected result: error",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "extension-root-lifecycle",
+          "impact": "Extension Remote Explorer root lookup failed. A root may be lazy/uninitialized or retired; this message alone does not prove config replacement. Independent review reproduced both lifecycle paths as log-only, and separately reproduced a visible raw permission toast.",
+          "count": 5,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T175814/window1/exthost/exthost.log",
+              "line": "2026-09-24 17:58:23.932 [error] Error: Can't find config for remote resource remote://127.0.0.1:52277/first.txt?remoteId%3D1%26fsPath%3D%252Ffirst.txt.",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T175814/window1/exthost/exthost.log",
+              "line": "2026-09-24 17:59:07.275 [error] Error: Can't find config for remote resource remote://127.0.0.1:52277/backup-failure.txt?remoteId%3D22%26fsPath%3D%252Fbackup-failure.txt.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "editor-git-process",
+          "impact": "Stack identifies the editor-owned Git extension ChildProcess/getRepositoryRoot path. ENOTCONN is not evidence of a loopback FTP/SFTP fault; no product change is requested for this Git error.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T175814/window1/exthost/exthost.log",
+              "line": "2026-09-24 17:58:30.557 [error] Error: read ENOTCONN",
+              "originStack": [
+                "\tat ChildProcess.spawn (node:internal/child_process:492:23)",
+                "\tat Nm.spawn (<sandbox>\\AppData\\Local\\Programs\\Microsoft VS Code\\2242ebbb54\\resources\\app\\extensions\\git\\dist\\main.js:28:598)",
+                "\tat Nm._exec (<sandbox>\\AppData\\Local\\Programs\\Microsoft VS Code\\2242ebbb54\\resources\\app\\extensions\\git\\dist\\main.js:24:46)",
+                "\tat Nm.exec (<sandbox>\\AppData\\Local\\Programs\\Microsoft VS Code\\2242ebbb54\\resources\\app\\extensions\\git\\dist\\main.js:23:408)"
+              ]
+            },
+            {
+              "log": "user-data/logs/20260924T175814/window1/exthost/exthost.log",
+              "line": "2026-09-24 17:58:30.559 [error] Error: read ENOTCONN",
+              "originStack": [
+                "\tat ChildProcess.spawn (node:internal/child_process:492:23)",
+                "\tat Nm.spawn (<sandbox>\\AppData\\Local\\Programs\\Microsoft VS Code\\2242ebbb54\\resources\\app\\extensions\\git\\dist\\main.js:28:598)",
+                "\tat Nm._exec (<sandbox>\\AppData\\Local\\Programs\\Microsoft VS Code\\2242ebbb54\\resources\\app\\extensions\\git\\dist\\main.js:24:46)",
+                "\tat Nm.exec (<sandbox>\\AppData\\Local\\Programs\\Microsoft VS Code\\2242ebbb54\\resources\\app\\extensions\\git\\dist\\main.js:23:408)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "fixture-protocol-failure",
+          "impact": "Product diagnostic includes the deterministic loopback fixture failure text; distinct from editor Git errors. The corresponding transfer/failure scenario verifies the result and recovery.",
+          "count": 6,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T175814/window1/exthost/output_logging_20260924T175816/1-sftp.log",
+              "line": "[09-24 17:58:35] [error] s: 426 Connection closed; transfer aborted",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T175814/window1/exthost/output_logging_20260924T175816/1-sftp.log",
+              "line": "[09-24 17:58:35] [error] {",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "generic-editor-error",
+          "impact": "Generic renderer log entry: origin is not assigned from this message alone. Independent review observed no matching generic text in UI during two sampled existing clean journeys. This does not waive the separately reproduced raw Remote Explorer permission toast.",
+          "count": 6,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T175814/window1/renderer.log",
+              "line": "2026-09-24 17:58:23.938 [error] An unknown error occurred. Please consult the log for more details.",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T175814/window1/renderer.log",
+              "line": "2026-09-24 17:58:30.597 [error] An unknown error occurred. Please consult the log for more details.",
+              "originStack": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "row": "vscode-ftp-update",
+      "groups": [
+        {
+          "id": "editor-deprecation",
+          "impact": "Editor/CLI dependency deprecation; installations and all assertions passed.",
+          "count": 4,
+          "samples": [
+            {
+              "log": "install.log",
+              "line": "(node:20652) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            },
+            {
+              "log": "install.log",
+              "line": "(node:16500) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "windows-jump-list",
+          "impact": "Editor integration with Windows jump list; no observed effect on tested extension behavior.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T175916/main.log",
+              "line": "2026-09-24 17:59:19.150 [warning] updateWindowsJumpList#setJumpList unexpected result: error",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T175934/main.log",
+              "line": "2026-09-24 17:59:37.084 [warning] updateWindowsJumpList#setJumpList unexpected result: error",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "extension-root-lifecycle",
+          "impact": "Extension Remote Explorer root lookup failed. A root may be lazy/uninitialized or retired; this message alone does not prove config replacement. Independent review reproduced both lifecycle paths as log-only, and separately reproduced a visible raw permission toast.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T175916/window1/exthost/exthost.log",
+              "line": "2026-09-24 17:59:27.381 [error] Error: Can't find config for remote resource remote://127.0.0.1:63556/restore.txt?remoteId%3D4%26fsPath%3D%252Frestore.txt.",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T175934/window1/exthost/exthost.log",
+              "line": "2026-09-24 17:59:38.762 [error] Error: Can't find config for remote resource remote://127.0.0.1:63556/after-update.txt?remoteId%3D1%26fsPath%3D%252Fafter-update.txt.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "generic-editor-error",
+          "impact": "Generic renderer log entry: origin is not assigned from this message alone. Independent review observed no matching generic text in UI during two sampled existing clean journeys. This does not waive the separately reproduced raw Remote Explorer permission toast.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T175916/window1/renderer.log",
+              "line": "2026-09-24 17:59:27.383 [error] An unknown error occurred. Please consult the log for more details.",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T175934/window1/renderer.log",
+              "line": "2026-09-24 17:59:38.763 [error] An unknown error occurred. Please consult the log for more details.",
+              "originStack": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "row": "vscode-sftp-clean",
+      "groups": [
+        {
+          "id": "editor-deprecation",
+          "impact": "Editor/CLI dependency deprecation; installations and all assertions passed.",
+          "count": 3,
+          "samples": [
+            {
+              "log": "install.log",
+              "line": "(node:24100) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            },
+            {
+              "log": "install.log",
+              "line": "(node:21428) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "windows-jump-list",
+          "impact": "Editor integration with Windows jump list; no observed effect on tested extension behavior.",
+          "count": 1,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T175941/main.log",
+              "line": "2026-09-24 17:59:44.367 [warning] updateWindowsJumpList#setJumpList unexpected result: error",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "extension-root-lifecycle",
+          "impact": "Extension Remote Explorer root lookup failed. A root may be lazy/uninitialized or retired; this message alone does not prove config replacement. Independent review reproduced both lifecycle paths as log-only, and separately reproduced a visible raw permission toast.",
+          "count": 3,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T175941/window1/exthost/exthost.log",
+              "line": "2026-09-24 17:59:49.909 [error] Error: Can't find config for remote resource remote://127.0.0.1:57288/first.txt?remoteId%3D1%26fsPath%3D%252Ffirst.txt.",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T175941/window1/exthost/exthost.log",
+              "line": "2026-09-24 18:00:22.799 [error] Error: Can't find config for remote resource remote://127.0.0.1:57288/backup-failure.txt?remoteId%3D23%26fsPath%3D%252Fbackup-failure.txt.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "editor-git-process",
+          "impact": "Stack identifies the editor-owned Git extension ChildProcess/getRepositoryRoot path. ENOTCONN is not evidence of a loopback FTP/SFTP fault; no product change is requested for this Git error.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T175941/window1/exthost/exthost.log",
+              "line": "2026-09-24 17:59:56.462 [error] Error: read ENOTCONN",
+              "originStack": [
+                "\tat ChildProcess.spawn (node:internal/child_process:492:23)",
+                "\tat Nm.spawn (<sandbox>\\AppData\\Local\\Programs\\Microsoft VS Code\\2242ebbb54\\resources\\app\\extensions\\git\\dist\\main.js:28:598)",
+                "\tat Nm._exec (<sandbox>\\AppData\\Local\\Programs\\Microsoft VS Code\\2242ebbb54\\resources\\app\\extensions\\git\\dist\\main.js:24:46)",
+                "\tat Nm.exec (<sandbox>\\AppData\\Local\\Programs\\Microsoft VS Code\\2242ebbb54\\resources\\app\\extensions\\git\\dist\\main.js:23:408)"
+              ]
+            },
+            {
+              "log": "user-data/logs/20260924T175941/window1/exthost/exthost.log",
+              "line": "2026-09-24 17:59:56.464 [error] Error: read ENOTCONN",
+              "originStack": [
+                "\tat ChildProcess.spawn (node:internal/child_process:492:23)",
+                "\tat Nm.spawn (<sandbox>\\AppData\\Local\\Programs\\Microsoft VS Code\\2242ebbb54\\resources\\app\\extensions\\git\\dist\\main.js:28:598)",
+                "\tat Nm._exec (<sandbox>\\AppData\\Local\\Programs\\Microsoft VS Code\\2242ebbb54\\resources\\app\\extensions\\git\\dist\\main.js:24:46)",
+                "\tat Nm.exec (<sandbox>\\AppData\\Local\\Programs\\Microsoft VS Code\\2242ebbb54\\resources\\app\\extensions\\git\\dist\\main.js:23:408)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "optional-ssh-config",
+          "impact": "Empty isolated home has no optional SSH config; configured SFTP and saved credentials still passed.",
+          "count": 1,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T175941/window1/exthost/output_logging_20260924T175943/1-sftp.log",
+              "line": "[09-24 17:59:45] [warn] ENOENT: no such file or directory, open '<sandbox>\\home\\.ssh\\config' load <sandbox>\\home\\.ssh\\config failed",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "fixture-protocol-failure",
+          "impact": "Product diagnostic includes the deterministic loopback fixture failure text; distinct from editor Git errors. The corresponding transfer/failure scenario verifies the result and recovery.",
+          "count": 4,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T175941/window1/exthost/output_logging_20260924T175943/1-sftp.log",
+              "line": "[09-24 18:00:19] [error] Error: Connection lost by fixture",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T175941/window1/exthost/output_logging_20260924T175943/1-sftp.log",
+              "line": "[09-24 18:00:19] [error] Error: Connection lost by fixture",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "generic-editor-error",
+          "impact": "Generic renderer log entry: origin is not assigned from this message alone. Independent review observed no matching generic text in UI during two sampled existing clean journeys. This does not waive the separately reproduced raw Remote Explorer permission toast.",
+          "count": 4,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T175941/window1/renderer.log",
+              "line": "2026-09-24 17:59:49.910 [error] An unknown error occurred. Please consult the log for more details.",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T175941/window1/renderer.log",
+              "line": "2026-09-24 17:59:56.504 [error] An unknown error occurred. Please consult the log for more details.",
+              "originStack": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "row": "vscode-sftp-update",
+      "groups": [
+        {
+          "id": "editor-deprecation",
+          "impact": "Editor/CLI dependency deprecation; installations and all assertions passed.",
+          "count": 4,
+          "samples": [
+            {
+              "log": "install.log",
+              "line": "(node:28328) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            },
+            {
+              "log": "install.log",
+              "line": "(node:28488) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "windows-jump-list",
+          "impact": "Editor integration with Windows jump list; no observed effect on tested extension behavior.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T180244/main.log",
+              "line": "2026-09-24 18:02:47.301 [warning] updateWindowsJumpList#setJumpList unexpected result: error",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T180300/main.log",
+              "line": "2026-09-24 18:03:03.326 [warning] updateWindowsJumpList#setJumpList unexpected result: error",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "extension-root-lifecycle",
+          "impact": "Extension Remote Explorer root lookup failed. A root may be lazy/uninitialized or retired; this message alone does not prove config replacement. Independent review reproduced both lifecycle paths as log-only, and separately reproduced a visible raw permission toast.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T180244/window1/exthost/exthost.log",
+              "line": "2026-09-24 18:02:54.277 [error] Error: Can't find config for remote resource remote://127.0.0.1:62741/restore.txt?remoteId%3D3%26fsPath%3D%252Frestore.txt.",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T180300/window1/exthost/exthost.log",
+              "line": "2026-09-24 18:03:04.021 [error] Error: Can't find config for remote resource remote://127.0.0.1:62741/after-update.txt?remoteId%3D1%26fsPath%3D%252Fafter-update.txt.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "optional-ssh-config",
+          "impact": "Empty isolated home has no optional SSH config; configured SFTP and saved credentials still passed.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T180244/window1/exthost/output_logging_20260924T180246/1-sftp.log",
+              "line": "[09-24 18:02:48] [warn] ENOENT: no such file or directory, open '<sandbox>\\home\\.ssh\\config' load <sandbox>\\home\\.ssh\\config failed",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T180300/window1/exthost/output_logging_20260924T180301/1-sftp.log",
+              "line": "[09-24 18:03:02] [warn] ENOENT: no such file or directory, open '<sandbox>\\home\\.ssh\\config' load <sandbox>\\home\\.ssh\\config failed",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "generic-editor-error",
+          "impact": "Generic renderer log entry: origin is not assigned from this message alone. Independent review observed no matching generic text in UI during two sampled existing clean journeys. This does not waive the separately reproduced raw Remote Explorer permission toast.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T180244/window1/renderer.log",
+              "line": "2026-09-24 18:02:54.279 [error] An unknown error occurred. Please consult the log for more details.",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T180300/window1/renderer.log",
+              "line": "2026-09-24 18:03:04.027 [error] An unknown error occurred. Please consult the log for more details.",
+              "originStack": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "row": "cursor-ftp-clean",
+      "groups": [
+        {
+          "id": "editor-deprecation",
+          "impact": "Editor/CLI dependency deprecation; installations and all assertions passed.",
+          "count": 3,
+          "samples": [
+            {
+              "log": "install.log",
+              "line": "(node:21656) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            },
+            {
+              "log": "install.log",
+              "line": "(node:31724) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "windows-jump-list",
+          "impact": "Editor integration with Windows jump list; no observed effect on tested extension behavior.",
+          "count": 1,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T180307/main.log",
+              "line": "2026-09-24 18:03:10.253 [warning] updateWindowsJumpList#setJumpList unexpected result: error",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "extension-root-lifecycle",
+          "impact": "Extension Remote Explorer root lookup failed. A root may be lazy/uninitialized or retired; this message alone does not prove config replacement. Independent review reproduced both lifecycle paths as log-only, and separately reproduced a visible raw permission toast.",
+          "count": 5,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T180307/window1/exthost/exthost.log",
+              "line": "2026-09-24 18:03:19.685 [error] Error: Can't find config for remote resource remote://127.0.0.1:53844/first.txt?remoteId%3D1%26fsPath%3D%252Ffirst.txt.",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T180307/window1/exthost/exthost.log",
+              "line": "2026-09-24 18:04:03.703 [error] Error: Can't find config for remote resource remote://127.0.0.1:53844/backup-failure.txt?remoteId%3D22%26fsPath%3D%252Fbackup-failure.txt.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "editor-git-process",
+          "impact": "Stack identifies the editor-owned Git extension ChildProcess/getRepositoryRoot path. ENOTCONN is not evidence of a loopback FTP/SFTP fault; no product change is requested for this Git error.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T180307/window1/exthost/exthost.log",
+              "line": "2026-09-24 18:03:28.149 [error] Error: read ENOTCONN",
+              "originStack": [
+                "\tat ChildProcess.spawn (node:internal/child_process:475:23)",
+                "\tat wi.spawn (<sandbox>\\AppData\\Local\\Programs\\cursor\\resources\\app\\extensions\\git\\dist\\main.js:7:570)",
+                "\tat wi.<anonymous> (<sandbox>\\AppData\\Local\\Programs\\cursor\\resources\\app\\extensions\\git\\dist\\main.js:4:93)",
+                "\tat <sandbox>\\AppData\\Local\\Programs\\cursor\\resources\\app\\extensions\\git\\dist\\main.js:3:7876"
+              ]
+            },
+            {
+              "log": "user-data/logs/20260924T180307/window1/exthost/exthost.log",
+              "line": "2026-09-24 18:03:28.151 [error] Error: read ENOTCONN",
+              "originStack": [
+                "\tat ChildProcess.spawn (node:internal/child_process:475:23)",
+                "\tat wi.spawn (<sandbox>\\AppData\\Local\\Programs\\cursor\\resources\\app\\extensions\\git\\dist\\main.js:7:570)",
+                "\tat wi.<anonymous> (<sandbox>\\AppData\\Local\\Programs\\cursor\\resources\\app\\extensions\\git\\dist\\main.js:4:93)",
+                "\tat <sandbox>\\AppData\\Local\\Programs\\cursor\\resources\\app\\extensions\\git\\dist\\main.js:3:7876"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "fixture-protocol-failure",
+          "impact": "Product diagnostic includes the deterministic loopback fixture failure text; distinct from editor Git errors. The corresponding transfer/failure scenario verifies the result and recovery.",
+          "count": 6,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T180307/window1/exthost/output_logging_20260924T180311_9cbd1da4/1-sftp.log",
+              "line": "[09-24 18:03:33] [error] s: 426 Connection closed; transfer aborted",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T180307/window1/exthost/output_logging_20260924T180311_9cbd1da4/1-sftp.log",
+              "line": "[09-24 18:03:33] [error] {",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "cursor-fresh-state",
+          "impact": "Cursor initializes its own fresh-profile application settings; no personal profile was used.",
+          "count": 82,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T180307/window1/renderer.log",
+              "line": "2026-09-24 18:03:09.752 [warning] Missing property \"alwaysKeepComposerInBound\" in oldValue. Filling with value from initValue. Please add a migration if necessary.",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T180307/window1/renderer.log",
+              "line": "2026-09-24 18:03:09.752 [warning] Missing property \"defaultCapabilities\" in oldValue. Filling with value from initValue. Please add a migration if necessary.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "generic-editor-error",
+          "impact": "Generic renderer log entry: origin is not assigned from this message alone. Independent review observed no matching generic text in UI during two sampled existing clean journeys. This does not waive the separately reproduced raw Remote Explorer permission toast.",
+          "count": 6,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T180307/window1/renderer.log",
+              "line": "2026-09-24 18:03:19.686 [error] An unknown error occurred. Please consult the log for more details. {}",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T180307/window1/renderer.log",
+              "line": "2026-09-24 18:03:28.196 [error] An unknown error occurred. Please consult the log for more details. {\"errno\":-4053,\"code\":\"ENOTCONN\",\"syscall\":\"read\"}",
+              "originStack": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "row": "cursor-ftp-update",
+      "groups": [
+        {
+          "id": "editor-deprecation",
+          "impact": "Editor/CLI dependency deprecation; installations and all assertions passed.",
+          "count": 4,
+          "samples": [
+            {
+              "log": "install.log",
+              "line": "(node:30916) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            },
+            {
+              "log": "install.log",
+              "line": "(node:400) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "windows-jump-list",
+          "impact": "Editor integration with Windows jump list; no observed effect on tested extension behavior.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T180413/main.log",
+              "line": "2026-09-24 18:04:16.446 [warning] updateWindowsJumpList#setJumpList unexpected result: error",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T180436/main.log",
+              "line": "2026-09-24 18:04:39.342 [warning] updateWindowsJumpList#setJumpList unexpected result: error",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "extension-root-lifecycle",
+          "impact": "Extension Remote Explorer root lookup failed. A root may be lazy/uninitialized or retired; this message alone does not prove config replacement. Independent review reproduced both lifecycle paths as log-only, and separately reproduced a visible raw permission toast.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T180413/window1/exthost/exthost.log",
+              "line": "2026-09-24 18:04:27.563 [error] Error: Can't find config for remote resource remote://127.0.0.1:57510/restore.txt?remoteId%3D4%26fsPath%3D%252Frestore.txt.",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T180436/window1/exthost/exthost.log",
+              "line": "2026-09-24 18:04:43.534 [error] Error: Can't find config for remote resource remote://127.0.0.1:57510/after-update.txt?remoteId%3D1%26fsPath%3D%252Fafter-update.txt.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "cursor-fresh-state",
+          "impact": "Cursor initializes its own fresh-profile application settings; no personal profile was used.",
+          "count": 82,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T180413/window1/renderer.log",
+              "line": "2026-09-24 18:04:15.766 [warning] Missing property \"alwaysKeepComposerInBound\" in oldValue. Filling with value from initValue. Please add a migration if necessary.",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T180413/window1/renderer.log",
+              "line": "2026-09-24 18:04:15.766 [warning] Missing property \"defaultCapabilities\" in oldValue. Filling with value from initValue. Please add a migration if necessary.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "generic-editor-error",
+          "impact": "Generic renderer log entry: origin is not assigned from this message alone. Independent review observed no matching generic text in UI during two sampled existing clean journeys. This does not waive the separately reproduced raw Remote Explorer permission toast.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T180413/window1/renderer.log",
+              "line": "2026-09-24 18:04:27.564 [error] An unknown error occurred. Please consult the log for more details. {}",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T180436/window1/renderer.log",
+              "line": "2026-09-24 18:04:43.537 [error] An unknown error occurred. Please consult the log for more details. {}",
+              "originStack": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "row": "cursor-sftp-clean",
+      "groups": [
+        {
+          "id": "editor-deprecation",
+          "impact": "Editor/CLI dependency deprecation; installations and all assertions passed.",
+          "count": 3,
+          "samples": [
+            {
+              "log": "install.log",
+              "line": "(node:26104) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            },
+            {
+              "log": "install.log",
+              "line": "(node:34548) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "windows-jump-list",
+          "impact": "Editor integration with Windows jump list; no observed effect on tested extension behavior.",
+          "count": 1,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T180449/main.log",
+              "line": "2026-09-24 18:04:51.830 [warning] updateWindowsJumpList#setJumpList unexpected result: error",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "extension-root-lifecycle",
+          "impact": "Extension Remote Explorer root lookup failed. A root may be lazy/uninitialized or retired; this message alone does not prove config replacement. Independent review reproduced both lifecycle paths as log-only, and separately reproduced a visible raw permission toast.",
+          "count": 3,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T180449/window1/exthost/exthost.log",
+              "line": "2026-09-24 18:05:00.581 [error] Error: Can't find config for remote resource remote://127.0.0.1:52534/first.txt?remoteId%3D1%26fsPath%3D%252Ffirst.txt.",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T180449/window1/exthost/exthost.log",
+              "line": "2026-09-24 18:05:35.277 [error] Error: Can't find config for remote resource remote://127.0.0.1:52534/backup-failure.txt?remoteId%3D23%26fsPath%3D%252Fbackup-failure.txt.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "editor-git-process",
+          "impact": "Stack identifies the editor-owned Git extension ChildProcess/getRepositoryRoot path. ENOTCONN is not evidence of a loopback FTP/SFTP fault; no product change is requested for this Git error.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T180449/window1/exthost/exthost.log",
+              "line": "2026-09-24 18:05:09.413 [error] Error: read ENOTCONN",
+              "originStack": [
+                "\tat ChildProcess.spawn (node:internal/child_process:475:23)",
+                "\tat wi.spawn (<sandbox>\\AppData\\Local\\Programs\\cursor\\resources\\app\\extensions\\git\\dist\\main.js:7:570)",
+                "\tat wi.<anonymous> (<sandbox>\\AppData\\Local\\Programs\\cursor\\resources\\app\\extensions\\git\\dist\\main.js:4:93)",
+                "\tat <sandbox>\\AppData\\Local\\Programs\\cursor\\resources\\app\\extensions\\git\\dist\\main.js:3:7876"
+              ]
+            },
+            {
+              "log": "user-data/logs/20260924T180449/window1/exthost/exthost.log",
+              "line": "2026-09-24 18:05:09.416 [error] Error: read ENOTCONN",
+              "originStack": [
+                "\tat ChildProcess.spawn (node:internal/child_process:475:23)",
+                "\tat wi.spawn (<sandbox>\\AppData\\Local\\Programs\\cursor\\resources\\app\\extensions\\git\\dist\\main.js:7:570)",
+                "\tat wi.<anonymous> (<sandbox>\\AppData\\Local\\Programs\\cursor\\resources\\app\\extensions\\git\\dist\\main.js:4:93)",
+                "\tat <sandbox>\\AppData\\Local\\Programs\\cursor\\resources\\app\\extensions\\git\\dist\\main.js:3:7876"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "optional-ssh-config",
+          "impact": "Empty isolated home has no optional SSH config; configured SFTP and saved credentials still passed.",
+          "count": 1,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T180449/window1/exthost/output_logging_20260924T180453_9edf65f6/1-sftp.log",
+              "line": "[09-24 18:04:56] [warn] ENOENT: no such file or directory, open '<sandbox>\\home\\.ssh\\config' load <sandbox>\\home\\.ssh\\config failed",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "fixture-protocol-failure",
+          "impact": "Product diagnostic includes the deterministic loopback fixture failure text; distinct from editor Git errors. The corresponding transfer/failure scenario verifies the result and recovery.",
+          "count": 4,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T180449/window1/exthost/output_logging_20260924T180453_9edf65f6/1-sftp.log",
+              "line": "[09-24 18:05:31] [error] Error: Connection lost by fixture",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T180449/window1/exthost/output_logging_20260924T180453_9edf65f6/1-sftp.log",
+              "line": "[09-24 18:05:31] [error] Error: Connection lost by fixture",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "cursor-fresh-state",
+          "impact": "Cursor initializes its own fresh-profile application settings; no personal profile was used.",
+          "count": 81,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T180449/window1/renderer.log",
+              "line": "2026-09-24 18:04:51.591 [warning] Missing property \"alwaysKeepComposerInBound\" in oldValue. Filling with value from initValue. Please add a migration if necessary.",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T180449/window1/renderer.log",
+              "line": "2026-09-24 18:04:51.591 [warning] Missing property \"defaultCapabilities\" in oldValue. Filling with value from initValue. Please add a migration if necessary.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "generic-editor-error",
+          "impact": "Generic renderer log entry: origin is not assigned from this message alone. Independent review observed no matching generic text in UI during two sampled existing clean journeys. This does not waive the separately reproduced raw Remote Explorer permission toast.",
+          "count": 4,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T180449/window1/renderer.log",
+              "line": "2026-09-24 18:05:00.583 [error] An unknown error occurred. Please consult the log for more details. {}",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T180449/window1/renderer.log",
+              "line": "2026-09-24 18:05:09.473 [error] An unknown error occurred. Please consult the log for more details. {\"errno\":-4053,\"code\":\"ENOTCONN\",\"syscall\":\"read\"}",
+              "originStack": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "row": "cursor-sftp-update",
+      "groups": [
+        {
+          "id": "editor-deprecation",
+          "impact": "Editor/CLI dependency deprecation; installations and all assertions passed.",
+          "count": 4,
+          "samples": [
+            {
+              "log": "install.log",
+              "line": "(node:15560) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            },
+            {
+              "log": "install.log",
+              "line": "(node:348) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "windows-jump-list",
+          "impact": "Editor integration with Windows jump list; no observed effect on tested extension behavior.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T180541/main.log",
+              "line": "2026-09-24 18:05:44.668 [warning] updateWindowsJumpList#setJumpList unexpected result: error",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T180603/main.log",
+              "line": "2026-09-24 18:06:05.938 [warning] updateWindowsJumpList#setJumpList unexpected result: error",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "extension-root-lifecycle",
+          "impact": "Extension Remote Explorer root lookup failed. A root may be lazy/uninitialized or retired; this message alone does not prove config replacement. Independent review reproduced both lifecycle paths as log-only, and separately reproduced a visible raw permission toast.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T180541/window1/exthost/exthost.log",
+              "line": "2026-09-24 18:05:54.482 [error] Error: Can't find config for remote resource remote://127.0.0.1:50724/restore.txt?remoteId%3D3%26fsPath%3D%252Frestore.txt.",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T180603/window1/exthost/exthost.log",
+              "line": "2026-09-24 18:06:07.999 [error] Error: Can't find config for remote resource remote://127.0.0.1:50724/after-update.txt?remoteId%3D1%26fsPath%3D%252Fafter-update.txt.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "optional-ssh-config",
+          "impact": "Empty isolated home has no optional SSH config; configured SFTP and saved credentials still passed.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T180541/window1/exthost/output_logging_20260924T180546_0441e69a/1-sftp.log",
+              "line": "[09-24 18:05:48] [warn] ENOENT: no such file or directory, open '<sandbox>\\home\\.ssh\\config' load <sandbox>\\home\\.ssh\\config failed",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T180603/window1/exthost/output_logging_20260924T180605_fb14cbb1/1-sftp.log",
+              "line": "[09-24 18:06:06] [warn] ENOENT: no such file or directory, open '<sandbox>\\home\\.ssh\\config' load <sandbox>\\home\\.ssh\\config failed",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "cursor-fresh-state",
+          "impact": "Cursor initializes its own fresh-profile application settings; no personal profile was used.",
+          "count": 82,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T180541/window1/renderer.log",
+              "line": "2026-09-24 18:05:44.194 [warning] Missing property \"alwaysKeepComposerInBound\" in oldValue. Filling with value from initValue. Please add a migration if necessary.",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T180541/window1/renderer.log",
+              "line": "2026-09-24 18:05:44.194 [warning] Missing property \"defaultCapabilities\" in oldValue. Filling with value from initValue. Please add a migration if necessary.",
+              "originStack": []
+            }
+          ]
+        },
+        {
+          "id": "generic-editor-error",
+          "impact": "Generic renderer log entry: origin is not assigned from this message alone. Independent review observed no matching generic text in UI during two sampled existing clean journeys. This does not waive the separately reproduced raw Remote Explorer permission toast.",
+          "count": 2,
+          "samples": [
+            {
+              "log": "user-data/logs/20260924T180541/window1/renderer.log",
+              "line": "2026-09-24 18:05:54.484 [error] An unknown error occurred. Please consult the log for more details. {}",
+              "originStack": []
+            },
+            {
+              "log": "user-data/logs/20260924T180603/window1/renderer.log",
+              "line": "2026-09-24 18:06:08.000 [error] An unknown error occurred. Please consult the log for more details. {}",
+              "originStack": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

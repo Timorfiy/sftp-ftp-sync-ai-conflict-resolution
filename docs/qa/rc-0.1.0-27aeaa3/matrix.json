@@ -1,0 +1,241 @@
+{
+  "qualificationStatus": "historical-needs-changes",
+  "independentReview": {
+    "date": "2026-09-24",
+    "findings": ["F1: visible raw Remote Explorer permission toast", "F2: corrected warning causality"],
+    "note": "The original 116 assertion results remain historical evidence, not release acceptance. A runtime-reissued candidate and full matrix are required."
+  },
+  "candidate": {
+    "file": "sftp-sync-ai-0.1.0.vsix",
+    "bytes": 723358,
+    "sha256": "1256ba34302813c6d06caf694d2b8e80fc93e0bae7e8ad3005e55c348257e719",
+    "source": "27aeaa3ecb80c4766dacbfde75d72425522df738",
+    "run": "36000977616",
+    "artifact": "10808705885"
+  },
+  "predecessor": {
+    "file": "sftp-sync-ai-0.0.0.vsix",
+    "sha256": "a4137b570f30f130501ca709cc1fd95a8792595ae3dcfc1cdcbe61c2fde31e2c",
+    "bytes": 722892,
+    "changed": [
+      "extension.vsixmanifest",
+      "extension/package.json"
+    ]
+  },
+  "operator": "Kent (gpt-6-astra implementation agent)",
+  "signedAt": "2026-09-24T13:07:41.415Z",
+  "scope": "Windows installed editor / native UI / loopback FTP+SFTP / scripted MCP, no publication",
+  "humanUsability": "NOT RUN: owner deferred until before first publication (2026-09-24)",
+  "rows": [
+    {
+      "id": "vscode-ftp-clean",
+      "status": "PASS",
+      "scenarios": [
+        "installed",
+        "configuration",
+        "connection",
+        "first-transfer",
+        "primary-sync",
+        "bulk-warning",
+        "manual-conflict",
+        "mcp-registration",
+        "agent-stale-upload",
+        "agent-acknowledge-cancel",
+        "agent-upload-failure",
+        "backup-restore",
+        "error-configuration",
+        "error-authentication",
+        "error-network",
+        "error-path",
+        "error-permission",
+        "error-download",
+        "error-backup",
+        "state-isolation",
+        "bulk-partial-result",
+        "ftp-warning-cancel",
+        "ftp-timestamp-unavailable"
+      ],
+      "evidence": "vscode-ftp-clean.json",
+      "startedAt": "2026-09-24T12:58:13.313Z",
+      "endedAt": "2026-09-24T12:59:14.996Z",
+      "earlierAttempts": [
+        {
+          "status": "FAIL",
+          "startedAt": "2026-09-24T12:54:33.071Z",
+          "endedAt": "2026-09-24T12:56:30.778Z",
+          "error": "Scenario driver exited 1"
+        }
+      ]
+    },
+    {
+      "id": "vscode-ftp-update",
+      "status": "PASS",
+      "scenarios": [
+        "installed",
+        "configuration",
+        "connection",
+        "backup-restore",
+        "in-place-update",
+        "ftp-warning-cancel"
+      ],
+      "evidence": "vscode-ftp-update.json",
+      "startedAt": "2026-09-24T12:59:15.339Z",
+      "endedAt": "2026-09-24T12:59:40.283Z",
+      "earlierAttempts": []
+    },
+    {
+      "id": "vscode-sftp-clean",
+      "status": "PASS",
+      "scenarios": [
+        "installed",
+        "configuration",
+        "connection",
+        "first-transfer",
+        "primary-sync",
+        "bulk-warning",
+        "manual-conflict",
+        "mcp-registration",
+        "agent-stale-upload",
+        "agent-acknowledge-cancel",
+        "agent-upload-failure",
+        "backup-restore",
+        "error-configuration",
+        "error-authentication",
+        "error-network",
+        "error-path",
+        "error-permission",
+        "error-download",
+        "error-backup",
+        "state-isolation",
+        "bulk-partial-result",
+        "sftp-first-key",
+        "sftp-changed-key"
+      ],
+      "evidence": "vscode-sftp-clean.json",
+      "startedAt": "2026-09-24T12:59:40.612Z",
+      "endedAt": "2026-09-24T13:00:27.312Z",
+      "earlierAttempts": []
+    },
+    {
+      "id": "vscode-sftp-update",
+      "status": "PASS",
+      "scenarios": [
+        "installed",
+        "configuration",
+        "connection",
+        "backup-restore",
+        "in-place-update",
+        "sftp-first-key"
+      ],
+      "evidence": "vscode-sftp-update.json",
+      "startedAt": "2026-09-24T13:02:43.485Z",
+      "endedAt": "2026-09-24T13:03:05.220Z",
+      "earlierAttempts": [
+        {
+          "status": "FAIL",
+          "startedAt": "2026-09-24T13:00:27.795Z",
+          "endedAt": "2026-09-24T13:01:19.654Z",
+          "error": "Scenario driver exited 1"
+        }
+      ]
+    },
+    {
+      "id": "cursor-ftp-clean",
+      "status": "PASS",
+      "scenarios": [
+        "installed",
+        "configuration",
+        "connection",
+        "first-transfer",
+        "primary-sync",
+        "bulk-warning",
+        "manual-conflict",
+        "mcp-registration",
+        "agent-stale-upload",
+        "agent-acknowledge-cancel",
+        "agent-upload-failure",
+        "backup-restore",
+        "error-configuration",
+        "error-authentication",
+        "error-network",
+        "error-path",
+        "error-permission",
+        "error-download",
+        "error-backup",
+        "state-isolation",
+        "bulk-partial-result",
+        "ftp-warning-cancel",
+        "ftp-timestamp-unavailable"
+      ],
+      "evidence": "cursor-ftp-clean.json",
+      "startedAt": "2026-09-24T13:03:05.556Z",
+      "endedAt": "2026-09-24T13:04:11.383Z",
+      "earlierAttempts": []
+    },
+    {
+      "id": "cursor-ftp-update",
+      "status": "PASS",
+      "scenarios": [
+        "installed",
+        "configuration",
+        "connection",
+        "backup-restore",
+        "in-place-update",
+        "ftp-warning-cancel"
+      ],
+      "evidence": "cursor-ftp-update.json",
+      "startedAt": "2026-09-24T13:04:11.713Z",
+      "endedAt": "2026-09-24T13:04:46.695Z",
+      "earlierAttempts": []
+    },
+    {
+      "id": "cursor-sftp-clean",
+      "status": "PASS",
+      "scenarios": [
+        "installed",
+        "configuration",
+        "connection",
+        "first-transfer",
+        "primary-sync",
+        "bulk-warning",
+        "manual-conflict",
+        "mcp-registration",
+        "agent-stale-upload",
+        "agent-acknowledge-cancel",
+        "agent-upload-failure",
+        "backup-restore",
+        "error-configuration",
+        "error-authentication",
+        "error-network",
+        "error-path",
+        "error-permission",
+        "error-download",
+        "error-backup",
+        "state-isolation",
+        "bulk-partial-result",
+        "sftp-first-key",
+        "sftp-changed-key"
+      ],
+      "evidence": "cursor-sftp-clean.json",
+      "startedAt": "2026-09-24T13:04:47.022Z",
+      "endedAt": "2026-09-24T13:05:39.691Z",
+      "earlierAttempts": []
+    },
+    {
+      "id": "cursor-sftp-update",
+      "status": "PASS",
+      "scenarios": [
+        "installed",
+        "configuration",
+        "connection",
+        "backup-restore",
+        "in-place-update",
+        "sftp-first-key"
+      ],
+      "evidence": "cursor-sftp-update.json",
+      "startedAt": "2026-09-24T13:05:40.004Z",
+      "endedAt": "2026-09-24T13:06:11.193Z",
+      "earlierAttempts": []
+    }
+  ]
+}

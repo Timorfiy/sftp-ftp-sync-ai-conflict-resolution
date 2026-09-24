@@ -35,6 +35,7 @@ module.exports = async function startSFTPServer({
   sandbox: providedSandbox,
   hostKey: providedHostKey,
   onSandboxCreated,
+  port: requestedPort = 0,
 } = {}) {
   const sandbox = providedSandbox || await createProtocolSandbox();
   const clients = new Set();
@@ -225,7 +226,9 @@ module.exports = async function startSFTPServer({
                 sftp.status(reqid, STATUS_CODE.FAILURE, 'Connection lost by fixture');
                 return;
               }
-              const localPath = sandbox.assertAllowed(remotePath);
+              const localPath = flags & OPEN_MODE.WRITE
+                ? sandbox.assertWritable(remotePath)
+                : sandbox.assertAllowed(remotePath);
               if (flags & OPEN_MODE.CREAT) {
                 await fs.promises.mkdir(path.dirname(localPath), { recursive: true });
               }
@@ -357,7 +360,7 @@ module.exports = async function startSFTPServer({
     server.on('error', () => {});
     await new Promise((resolve, reject) => {
       server.once('error', reject);
-      server.listen(0, '127.0.0.1', resolve);
+      server.listen(requestedPort, '127.0.0.1', resolve);
     });
     listening = true;
 
