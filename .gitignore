@@ -15,6 +15,7 @@ INSTALL_DEBUG.md
 
 ### Extension packages ###
 *.vsix
+release-bundle/
 
 ### VS Code ###
 .vscode/**

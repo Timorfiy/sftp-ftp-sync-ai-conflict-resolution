@@ -60,13 +60,11 @@ describe('standalone extension identity', () => {
       author: 'Timorfiy',
     });
     expect(manifest.devDependencies['@vscode/vsce']).toBe('4.0.0');
-    expect(manifest.scripts.package).toBe(
-      'vsce package --out sftp-sync-ai-0.1.0.vsix && node scripts/inspect-vsix.js sftp-sync-ai-0.1.0.vsix'
-    );
+    expect(manifest.devDependencies.ovsx).toBe('1.2.0');
+    expect(manifest.scripts.package).toBe('node scripts/release.js package');
     expect(manifest.scripts['package:list']).toBe('vsce ls --tree');
-    expect(manifest.scripts['package:inspect']).toBe(
-      'node scripts/inspect-vsix.js sftp-sync-ai-0.1.0.vsix'
-    );
+    expect(manifest.scripts['package:inspect']).toBe('node scripts/release.js inspect');
+    expect(manifest.scripts['release:dry-run']).toBe('node scripts/release.js dry-run');
     expect(Object.values(manifest.scripts).join('\n')).not.toMatch(/\b(?:publish|push)\b/);
   });
 
