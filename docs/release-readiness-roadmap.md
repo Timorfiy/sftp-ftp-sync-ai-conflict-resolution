@@ -485,10 +485,12 @@ editor and protocol checks run against a reproducible candidate artifact.
 
 ### Remaining decisions
 
-Decide whether every publish tag requires manual GitHub Environment approval
-or a protected/signed version tag itself authorizes publishing before the
-dependent release-automation work. First publication remains separately
-authorized in either case.
+The remaining release-authorization choice was resolved on 2026-09-24:
+every publication requires manual GitHub Environment approval after the
+version-tag build and checks succeed. A protected or signed version tag alone
+does not authorize publishing to Marketplace, Open VSX, or GitHub Releases.
+Non-publishing dry-runs remain automatic. First publication still requires
+separate owner approval and completion of the pre-publication checklist.
 
 ### Owner-approved verification deferral — 2026-09-24
 
