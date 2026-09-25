@@ -1,3 +1,7 @@
+## 0.8.1 - 2026-09-25
+
+* Replace the extension icon with a new blue file-sync logo.
+
 ## 0.8.0 - 2026-09-25
 
 * Add 15 ignore templates for frontend, CMS and backend stacks, selectable when

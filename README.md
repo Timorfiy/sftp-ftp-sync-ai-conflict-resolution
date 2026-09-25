@@ -4,7 +4,7 @@ Standalone Windows file transfer and synchronization for VS Code and Cursor,
 with manual and editor-agent conflict resolution.
 
 - **Extension ID:** `Timorfiy.sftp-sync-ai`
-- **Version:** `0.8.0`
+- **Version:** `0.8.1`
 - **Supported:** Windows 10/11, VS Code Desktop 1.104.0+, Cursor Desktop 3.17.8+
 - **Protocols:** SFTP and plain FTP; FTPS is experimental
 
@@ -15,8 +15,8 @@ This is a new Timorfiy extension. It is not an update or migration path for
 
 Install the release VSIX in VS Code or Cursor:
 
-1. Download `sftp-sync-ai-0.8.0.vsix` from the matching
-   [GitHub Release](https://github.com/Timorfiy/sftp-ftp-sync-ai-conflict-resolution/releases/tag/v0.8.0).
+1. Download `sftp-sync-ai-0.8.1.vsix` from the matching
+   [GitHub Release](https://github.com/Timorfiy/sftp-ftp-sync-ai-conflict-resolution/releases/tag/v0.8.1).
 2. In VS Code or Cursor, open **Extensions**.
 3. Select **… → Install from VSIX…** and choose that file.
 4. Open a workspace folder and reload the editor if requested.
