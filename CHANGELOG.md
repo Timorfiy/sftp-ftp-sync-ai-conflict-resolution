@@ -1,3 +1,10 @@
+## 0.8.2 - 2026-09-25
+
+* Reorganize the README with a three-step quick start, complete collapsible
+  SFTP/FTP configurations, and tables for everyday commands and troubleshooting.
+* Add Marketplace and Open VSX installation links and clarify conflict
+  resolution, sync directions, and backup recovery limits.
+
 ## 0.8.1 - 2026-09-25
 
 * Replace the extension icon with a new blue file-sync logo.
