@@ -59,32 +59,23 @@ describe('release workflow security and build-once contract', () => {
     expect(validation.match(/needs\.build\.outputs\.artifact-hash/g)).toHaveLength(3);
   });
 
-  test('publish jobs are independent, protected, guarded, and never rebuild', () => {
-    const marketplace = job('publish-marketplace', 'publish-open-vsx');
-    const openVsx = job('publish-open-vsx', 'publish-github');
+  test('publishes only to GitHub with protection, a guard, and no rebuild', () => {
     const github = job('publish-github');
-    for (const publishJob of [marketplace, openVsx, github]) {
-      expect(publishJob).toContain('name: release');
-      expect(publishJob).toContain('RELEASE_ENABLED');
-      expect(publishJob).toContain('scripts/release.js verify');
-      expect(publishJob).not.toMatch(/npm (?:run )?(?:compile|package)|release\.js build/);
-    }
-    expect(marketplace).toContain('secrets.VSCE_PAT');
-    expect(marketplace).not.toMatch(/OVSX_PAT|GH_TOKEN|contents: write/);
-    expect(openVsx).toContain('secrets.OVSX_PAT');
-    expect(openVsx).not.toMatch(/VSCE_PAT|GH_TOKEN|contents: write/);
+    expect(jobNames().filter(name => name.startsWith('publish-'))).toEqual(['publish-github']);
+    expect(workflow).not.toMatch(/VSCE_PAT|OVSX_PAT|vsce publish|ovsx publish/);
+    expect(github).toContain('name: release');
+    expect(github).toContain('RELEASE_ENABLED');
+    expect(github).toContain('scripts/release.js verify');
+    expect(github).not.toMatch(/npm (?:run )?(?:compile|package)|release\.js build/);
     expect(github).toContain('GH_TOKEN');
     expect(github).toContain('contents: write');
     expect(workflow.slice(0, workflow.indexOf('\njobs:'))).toContain('contents: read');
   });
 
-  test('blocks every publisher until all validators pass without coupling publishers', () => {
+  test('blocks GitHub publication until all channel validators pass', () => {
     const validators = ['validate-marketplace', 'validate-open-vsx', 'validate-github'];
-    const publishers = ['publish-marketplace', 'publish-open-vsx', 'publish-github'];
     expect(jobNeeds('validation-barrier')).toEqual(['build', ...validators]);
-    for (const publisher of publishers) {
-      expect(jobNeeds(publisher)).toEqual(['build', 'validation-barrier']);
-    }
+    expect(jobNeeds('publish-github')).toEqual(['build', 'validation-barrier']);
 
     const failedValidation = {
       build: 'success',
@@ -93,22 +84,13 @@ describe('release workflow security and build-once contract', () => {
       'validate-github': 'success',
     };
     expect(canStart('validation-barrier', failedValidation)).toBe(false);
-    for (const publisher of publishers) {
-      expect(canStart(publisher, { ...failedValidation, 'validation-barrier': 'skipped' })).toBe(
-        false
-      );
-    }
+    expect(canStart('publish-github', { ...failedValidation, 'validation-barrier': 'skipped' })).toBe(false);
 
     const validated = {
       build: 'success',
       'validation-barrier': 'success',
     };
-    expect(publishers.every(publisher => canStart(publisher, validated))).toBe(true);
-    expect(
-      publishers.every(
-        publisher => jobNeeds(publisher).filter(dependency => publishers.includes(dependency)).length === 0
-      )
-    ).toBe(true);
+    expect(canStart('publish-github', validated)).toBe(true);
   });
 
   test('delegates GitHub retry recovery to the tested release publisher', () => {

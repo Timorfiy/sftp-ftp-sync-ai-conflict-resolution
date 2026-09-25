@@ -1,6 +1,6 @@
 # Configuration options
 
-Version 0.8.2 reads one configuration object, an array of configuration
+Version 0.8.3 reads one configuration object, an array of configuration
 objects, and optional profiles from `.vscode/sftp.json`. SFTP and FTP are the
 supported protocols. Runtime-only protocol values are not part of the
 first-release contract.

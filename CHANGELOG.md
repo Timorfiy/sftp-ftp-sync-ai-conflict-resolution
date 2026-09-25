@@ -1,3 +1,10 @@
+## 0.8.3 - 2026-09-25
+
+* Enlarge the folder-and-arrows icon on a single square background for better
+  readability in extension lists.
+* Use manual Marketplace and Open VSX uploads, removing unused automatic
+  publishing jobs while retaining package validation and GitHub Releases.
+
 ## 0.8.2 - 2026-09-25
 
 * Reorganize the README with a three-step quick start, complete collapsible

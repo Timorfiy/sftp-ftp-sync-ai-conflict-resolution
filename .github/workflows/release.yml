@@ -200,98 +200,6 @@ jobs:
       - name: Confirm common immutable artifact
         run: echo "All channels validated SHA-256 ${{ needs.build.outputs.artifact-hash }}"
 
-  publish-marketplace:
-    name: Publish Visual Studio Marketplace
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-    needs:
-      - build
-      - validation-barrier
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    environment:
-      name: release
-
-    steps:
-      - name: Require enabled protected environment
-        env:
-          RELEASE_ENABLED: ${{ vars.RELEASE_ENABLED }}
-        run: test "$RELEASE_ENABLED" = "true"
-
-      - name: Checkout release source
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-
-      - name: Set up Node.js 24
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
-        with:
-          node-version: 24
-          cache: npm
-
-      - name: Install pinned dependencies
-        run: npm ci --no-audit --no-fund
-
-      - name: Download build-once bundle
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-        with:
-          name: ${{ needs.build.outputs.bundle-name }}
-          path: release-bundle
-
-      - name: Re-verify immutable bundle
-        run: node scripts/release.js verify --tag "$GITHUB_REF_NAME" --source-sha "$GITHUB_SHA" --output-dir release-bundle
-
-      - name: Publish prebuilt VSIX to Visual Studio Marketplace
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        run: |
-          test -n "$VSCE_PAT"
-          VSIX="$(node -p "'release-bundle/' + require('./release-bundle/provenance.json').artifact.name")"
-          npx --no-install vsce publish --packagePath "$VSIX" --skip-duplicate
-
-  publish-open-vsx:
-    name: Publish Open VSX
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-    needs:
-      - build
-      - validation-barrier
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    environment:
-      name: release
-
-    steps:
-      - name: Require enabled protected environment
-        env:
-          RELEASE_ENABLED: ${{ vars.RELEASE_ENABLED }}
-        run: test "$RELEASE_ENABLED" = "true"
-
-      - name: Checkout release source
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-
-      - name: Set up Node.js 24
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
-        with:
-          node-version: 24
-          cache: npm
-
-      - name: Install pinned dependencies
-        run: npm ci --no-audit --no-fund
-
-      - name: Download build-once bundle
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-        with:
-          name: ${{ needs.build.outputs.bundle-name }}
-          path: release-bundle
-
-      - name: Re-verify immutable bundle
-        run: node scripts/release.js verify --tag "$GITHUB_REF_NAME" --source-sha "$GITHUB_SHA" --output-dir release-bundle
-
-      - name: Publish prebuilt VSIX to Open VSX
-        env:
-          OVSX_PAT: ${{ secrets.OVSX_PAT }}
-        run: |
-          test -n "$OVSX_PAT"
-          VSIX="$(node -p "'release-bundle/' + require('./release-bundle/provenance.json').artifact.name")"
-          npx --no-install ovsx publish "$VSIX" --skip-duplicate
-
   publish-github:
     name: Publish GitHub Release
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
@@ -336,3 +244,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/publish-github-release.js release-bundle "$GITHUB_REF_NAME"
+
+      - name: Link manual marketplace uploads
+        run: |
+          echo "### Manual marketplace uploads" >> "$GITHUB_STEP_SUMMARY"
+          echo "GitHub Release is ready. Marketplace and Open VSX uploads are manual; this workflow does not publish to either store." >> "$GITHUB_STEP_SUMMARY"
+          echo "Upload the same VSIX from [GitHub Release](https://github.com/$GITHUB_REPOSITORY/releases/tag/$GITHUB_REF_NAME) to both stores." >> "$GITHUB_STEP_SUMMARY"
+          echo "SHA-256: ${{ needs.build.outputs.artifact-hash }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- [Visual Studio Marketplace](https://marketplace.visualstudio.com/manage/publishers/Timorfiy)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- [Open VSX](https://open-vsx.org/user-settings/extensions)" >> "$GITHUB_STEP_SUMMARY"
