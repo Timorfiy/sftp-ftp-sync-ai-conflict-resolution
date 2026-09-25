@@ -1,3 +1,15 @@
+## 0.8.0 - 2026-09-25
+
+* Add 15 ignore templates for frontend, CMS and backend stacks, selectable when
+  creating a config or through **SFTP: Apply Ignore Template** for existing
+  connections and profiles. Existing rules and unrelated settings are preserved.
+* Use an installed-site Bitrix template that excludes core, uploaded media,
+  dumps and local tooling while keeping custom code and frontend builds.
+* Keep `src` transferable in newly generated configurations. Existing configs
+  retain their rules until explicitly edited.
+* Prevent downloaded files from triggering automatic uploads through the file
+  watcher, including bulk downloads and cancellation cleanup.
+
 ## 0.1.0 - 2026-09-24
 
 First standalone release of `Timorfiy.sftp-sync-ai` for Windows 10/11,

@@ -1,6 +1,6 @@
 # Configuration options
 
-Version 0.1.0 reads one configuration object, an array of configuration
+Version 0.8.0 reads one configuration object, an array of configuration
 objects, and optional profiles from `.vscode/sftp.json`. SFTP and FTP are the
 supported protocols. Runtime-only protocol values are not part of the
 first-release contract.
@@ -38,6 +38,9 @@ rewrites an existing configuration.
 The generated ignore list is a template choice, not the runtime default.
 `.vscode` and private conflict state are excluded internally even when
 `ignore` is empty.
+
+New configurations let you choose a [stack-specific ignore template](ignore-templates.md).
+Use **SFTP: Apply Ignore Template** to add rules to an existing configuration.
 
 ## Common connection fields
 

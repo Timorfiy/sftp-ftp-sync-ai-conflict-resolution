@@ -55,7 +55,7 @@ describe('standalone extension identity', () => {
     }).toEqual({
       name: 'sftp-sync-ai',
       displayName: 'SFTP/FTP Sync + AI Conflict Resolution',
-      version: '0.1.0',
+      version: '0.8.0',
       publisher: 'Timorfiy',
       author: 'Timorfiy',
     });

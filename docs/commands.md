@@ -6,8 +6,10 @@ either protocol unless explicitly SFTP-only.
 
 ## Setup and connection
 
-- **Config** — Create the safe `.vscode/sftp.json` template, or open an
+- **Config** — Choose a stack's ignore template and create the safe `.vscode/sftp.json`, or open an
   existing file without changing it.
+- **Apply Ignore Template** — Add a stack's ignore rules to a selected
+  connection or profile, preserving existing rules. See [templates](ignore-templates.md).
 - **Test Connection** — Read-only validation of configuration, credentials,
   connection, `remotePath`, and list/read permission. Plain FTP requires a
   transport warning confirmation.

@@ -4,7 +4,7 @@ Standalone Windows file transfer and synchronization for VS Code and Cursor,
 with manual and editor-agent conflict resolution.
 
 - **Extension ID:** `Timorfiy.sftp-sync-ai`
-- **Version:** `0.1.0`
+- **Version:** `0.8.0`
 - **Supported:** Windows 10/11, VS Code Desktop 1.104.0+, Cursor Desktop 3.17.8+
 - **Protocols:** SFTP and plain FTP; FTPS is experimental
 
@@ -13,16 +13,15 @@ This is a new Timorfiy extension. It is not an update or migration path for
 
 ## Install or update
 
-Version 0.1.0 is documented for VSIX installation before first publication.
-Do not assume that a Marketplace or Open VSX listing exists.
+Install the release VSIX in VS Code or Cursor:
 
-1. Obtain `sftp-sync-ai-0.1.0.vsix` from the matching product GitHub Release or
-   from your release/test coordinator.
+1. Download `sftp-sync-ai-0.8.0.vsix` from the matching
+   [GitHub Release](https://github.com/Timorfiy/sftp-ftp-sync-ai-conflict-resolution/releases/tag/v0.8.0).
 2. In VS Code or Cursor, open **Extensions**.
 3. Select **… → Install from VSIX…** and choose that file.
 4. Open a workspace folder and reload the editor if requested.
 
-To update before registry publication, repeat these steps with the newer VSIX.
+To update manually, repeat these steps with the newer VSIX.
 The editor replaces the installed extension while leaving your workspace
 configuration and Secret Storage values in place. After a registry listing is
 actually published, normal editor install/update controls may be used for that
@@ -32,9 +31,14 @@ same extension ID.
 
 ### 1. Create `.vscode/sftp.json`
 
-Run **SFTP: Config** from the Command Palette. New generated configurations
+Run **SFTP: Config** from the Command Palette and choose an ignore template
+for your stack (or **Basic**). New generated configurations
 explicitly enable conflict checking and local text backups, while leaving
 watcher deletion, sync deletion, upload-on-save, and other automation off.
+
+For an existing configuration, run **SFTP: Apply Ignore Template** to add
+stack-specific exclusions without removing your current rules. See the
+[available templates](docs/ignore-templates.md).
 
 Use one of these strict-JSON examples. They intentionally contain no password,
 passphrase, private key, or other secret. The extension prompts when a
@@ -279,10 +283,10 @@ partial-result recovery.
 ## Limitations
 
 - Only Windows 10/11 and the editor versions listed above are qualified for
-  0.1.0. macOS, Linux, browser editors, remote-only editor variants, and older
+  this release. macOS, Linux, browser editors, remote-only editor variants, and older
   editor versions are outside the release promise.
 - SFTP and plain FTP are supported. FTPS is experimental.
-- Bulk sync has no preview/dry-run mode in 0.1.0.
+- Bulk sync has no preview/dry-run mode.
 - Conflict-agent mutation is text-only and requires an already-running editor
   agent. Manual resolution remains available.
 - Backups are not a universal undo system; observe the exact boundaries in

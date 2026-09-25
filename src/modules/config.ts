@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { CONFIG_PATH } from '../constants';
 import { reportError } from '../helper';
 import { showTextDocument } from '../host';
+import { BASE_IGNORE_PATTERNS, IGNORE_PRESETS } from './ignorePresets';
 
 const nullableString = z.string().optional().nullable();
 
@@ -260,7 +261,7 @@ export function tryLoadConfigs(workspace): Promise<any[]> {
 //   return normalizeConfig(config);
 // }
 
-export function createNewConfigTemplate() {
+export function createNewConfigTemplate(ignore: string[] = BASE_IGNORE_PATTERNS) {
   return {
     name: 'My Server',
     host: 'localhost',
@@ -285,26 +286,7 @@ export function createNewConfigTemplate() {
       ignoreExisting: false,
       update: false,
     },
-    ignore: [
-      '.vscode',
-      '.git',
-      '.github',
-      '.DS_Store',
-      'Thumbs.db',
-
-      'src',
-      '.env',
-      '.env.*',
-
-      'AGENTS.md',
-      'CLAUDE.md',
-      '.claude',
-      '.cursor',
-
-      '*.log',
-      '*.tmp',
-      '*.bak',
-    ],
+    ignore: [...ignore],
     backup: {
       enabled: true,
       location: 'local',
@@ -320,16 +302,25 @@ export function newConfig(basePath) {
 
   return fse
     .pathExists(configPath)
-    .then(exist => {
+    .then(async exist => {
       if (exist) {
         return showTextDocument(vscode.Uri.file(configPath));
       }
 
+      const preset = await vscode.window.showQuickPick(IGNORE_PRESETS.map(item => ({
+        ...item, detail: item.patterns.join(', '),
+      })), { placeHolder: 'Choose an ignore template for the new configuration', matchOnDescription: true });
+      if (!preset) return;
+
+      // A config created while the picker was open must not be overwritten.
+      if (await fse.pathExists(configPath)) {
+        return showTextDocument(vscode.Uri.file(configPath));
+      }
       return fse
         .outputJson(
           configPath,
-          createNewConfigTemplate(),
-          { spaces: 4 }
+          createNewConfigTemplate(preset.patterns),
+          { spaces: 4, flag: 'wx' }
         )
         .then(() => showTextDocument(vscode.Uri.file(configPath)));
     })

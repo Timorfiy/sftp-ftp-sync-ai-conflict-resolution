@@ -2,7 +2,7 @@
   "name": "sftp-sync-ai",
   "displayName": "SFTP/FTP Sync + AI Conflict Resolution",
   "description": "SFTP/FTP synchronization with AI-assisted conflict resolution for VS Code and Cursor",
-  "version": "0.1.0",
+  "version": "0.8.0",
   "publisher": "Timorfiy",
   "author": "Timorfiy",
   "engines": {
@@ -115,6 +115,11 @@
       {
         "command": "sftpSyncAI.config",
         "title": "Config",
+        "category": "SFTP"
+      },
+      {
+        "command": "sftpSyncAI.applyIgnorePreset",
+        "title": "Apply Ignore Template",
         "category": "SFTP"
       },
       {
@@ -399,6 +404,10 @@
     ],
     "menus": {
       "commandPalette": [
+        {
+          "command": "sftpSyncAI.applyIgnorePreset",
+          "when": "sftpSyncAI.enabled"
+        },
         {
           "command": "sftpSyncAI.testConnection"
         },

@@ -7,9 +7,12 @@ const reportError = jest.fn();
 
 jest.mock('vscode', () => ({
   Uri: { file: value => ({ fsPath: value }) },
+  window: { showQuickPick: jest.fn() },
 }));
 jest.mock('../src/host', () => ({ showTextDocument }));
 jest.mock('../src/helper', () => ({ reportError }));
+const { window } = require('vscode');
+const { IGNORE_PRESETS } = require('../src/modules/ignorePresets');
 
 const {
   ConfigDocumentError,
@@ -24,6 +27,7 @@ describe('safe generated configuration', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    window.showQuickPick.mockImplementation(async choices => choices[0]);
     workspace = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'sftp-config-'));
   });
 
@@ -75,6 +79,36 @@ describe('safe generated configuration', () => {
 
     expect(await fs.promises.readFile(configPath, 'utf8')).toBe(original);
     expect(showTextDocument).toHaveBeenCalledWith({ fsPath: configPath });
+    expect(window.showQuickPick).not.toHaveBeenCalled();
+  });
+
+  test('uses the chosen stack and keeps application source transferable', async () => {
+    const preset = IGNORE_PRESETS.find(item => item.label === 'Bitrix');
+    window.showQuickPick.mockResolvedValue(preset);
+    await newConfig(workspace);
+    const config = JSON.parse(await fs.promises.readFile(getConfigPath(workspace), 'utf8'));
+    expect(config.ignore).toEqual(preset.patterns);
+    expect(config.ignore).not.toContain('src');
+    expect(config.uploadOnSave).toBe(false);
+  });
+
+  test('cancelling template selection creates no file', async () => {
+    window.showQuickPick.mockResolvedValue(undefined);
+    await newConfig(workspace);
+    expect(fs.existsSync(getConfigPath(workspace))).toBe(false);
+    expect(showTextDocument).not.toHaveBeenCalled();
+  });
+
+  test('preserves a configuration created while template selection is open', async () => {
+    const configPath = getConfigPath(workspace);
+    const original = '{"name":"Created elsewhere"}';
+    window.showQuickPick.mockImplementation(async choices => {
+      await fs.promises.mkdir(path.dirname(configPath), { recursive: true });
+      await fs.promises.writeFile(configPath, original);
+      return choices[0];
+    });
+    await newConfig(workspace);
+    expect(await fs.promises.readFile(configPath, 'utf8')).toBe(original);
   });
 
   test('keeps existing omission behavior while validating through one loader', async () => {
