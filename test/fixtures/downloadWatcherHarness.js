@@ -52,7 +52,10 @@ const { FileType } = require('../../src/core/fs');
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 async function sandbox() {
-  const root = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'download-watcher-'));
+  // Expand Windows 8.3 temp paths before fs.watch (libuv/libuv#5010).
+  const root = await fs.promises.realpath(
+    await fs.promises.mkdtemp(path.join(os.tmpdir(), 'download-watcher-'))
+  );
   const roots = [];
   const nativeWatchers = [];
   const observed = new Set();
