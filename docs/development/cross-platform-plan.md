@@ -14,6 +14,10 @@ Activity must import `localPathKey` and `localPathContains` from the existing
 `src/helper/localPaths.ts` module. Runtime operation/conflict grouping uses
 these helpers; Activity must not add case folding, separator replacement,
 string-prefix membership checks, or another path-normalization implementation.
+Normalization belongs to the extension-host model. If Activity uses a webview,
+send it the host-computed keys; do not import Node filesystem code into its renderer.
+Keep original path spelling for display and filesystem I/O; runtime keys are
+only for matching, indexing and grouping.
 Register roots with `registerLocalPathRoot` and release registrations when the
 owning scope closes. Existing extension/workspace registrations already cover
 normal Activity operation. Do not persist runtime keys as replacements for
