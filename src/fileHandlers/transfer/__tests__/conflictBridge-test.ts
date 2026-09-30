@@ -68,6 +68,7 @@ jest.mock('../../../logger', () => ({
 import { randomUUID } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 import * as vscode from 'vscode';
 import * as fileOperations from '../../../core/fileBaseOperations';
 import { FileType } from '../../../core/fs/fileSystem';
@@ -88,7 +89,7 @@ import {
   waitForConflictDecision,
 } from '../conflictBridge';
 
-const testRoot = path.join(process.cwd(), '.jest-conflict-data');
+const testRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'sftpsync-bridge-'));
 
 function delay(milliseconds: number) {
   return new Promise(resolve => setTimeout(resolve, milliseconds));

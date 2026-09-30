@@ -16,7 +16,7 @@ const mount = path.join(root, 'mount');
 let mounted = false;
 try {
   fs.mkdirSync(mount);
-  execFileSync('hdiutil', ['create', '-size', '1g', '-type', 'SPARSE', '-fs', 'APFSX', '-volname', 'SFTPSyncCaseTest', image], { stdio: 'inherit' });
+  execFileSync('hdiutil', ['create', '-size', '1g', '-type', 'SPARSE', '-fs', 'Case-sensitive APFS', '-volname', 'SFTPSyncCaseTest', image], { stdio: 'inherit' });
   execFileSync('hdiutil', ['attach', '-nobrowse', '-mountpoint', mount, image], { stdio: 'inherit' });
   mounted = true;
   fs.writeFileSync(path.join(mount, 'CaseProbe'), 'upper', { flag: 'wx' });

@@ -7,12 +7,16 @@ jest.mock('../../logger', () => ({
 }));
 
 import { Readable } from 'stream';
+import * as path from 'path';
+import * as os from 'os';
 import { FileType } from '../fs';
 import TransferTask, { TransferDirection } from '../transferTask';
 import {
   clearConflictStateIsolation,
   configureConflictStateIsolation,
 } from '../../fileHandlers/transfer/conflictStateIsolation';
+
+const workspace = path.join(os.tmpdir(), 'transfer-task-workspace');
 
 function taskWithCallbacks(onTransferSuccess: jest.Mock, onTransferError: jest.Mock) {
   const srcFs = {
@@ -24,7 +28,7 @@ function taskWithCallbacks(onTransferSuccess: jest.Mock, onTransferError: jest.M
     close: jest.fn(async () => undefined),
   } as any;
   const task = new TransferTask(
-    { fsPath: 'C:\\workspace\\local.txt', fileSystem: srcFs },
+    { fsPath: path.join(workspace, 'local.txt'), fileSystem: srcFs },
     { fsPath: '/remote/local.txt', fileSystem: targetFs },
     {
       fileType: FileType.File,
@@ -76,8 +80,8 @@ describe('TransferTask completion callbacks', () => {
   });
 
   test('final task invariant refuses direct access to conflict state', async () => {
-    configureConflictStateIsolation('C:\\global\\conflict-state-v2', [
-      'C:\\workspace',
+    configureConflictStateIsolation(path.join(os.tmpdir(), 'transfer-task-global', 'conflict-state-v2'), [
+      workspace,
     ]);
     const success = jest.fn(async () => undefined);
     const failure = jest.fn(async () => undefined);
@@ -91,7 +95,7 @@ describe('TransferTask completion callbacks', () => {
     } as any;
     const task = new TransferTask(
       {
-        fsPath: 'C:\\workspace\\.kent-tmp\\sftp-conflicts\\record\\conflict.json',
+        fsPath: path.join(workspace, '.kent-tmp', 'sftp-conflicts', 'record', 'conflict.json'),
         fileSystem: srcFs,
       },
       { fsPath: '/remote/conflict.json', fileSystem: targetFs },

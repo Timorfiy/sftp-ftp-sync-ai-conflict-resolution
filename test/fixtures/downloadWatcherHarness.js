@@ -67,6 +67,10 @@ async function sandbox() {
       const handle = fs.watch(base, { recursive: true }, (_event, filename) => {
         if (!filename) return;
         const file = path.join(base, filename.toString());
+        // FSEvents also reports the watched directory's own basename. This
+        // sandbox never creates a child with that name, and VS Code's **/*
+        // RelativePattern excludes the base directory itself.
+        if (process.platform === 'darwin' && filename.toString() === path.basename(base) && !fs.existsSync(file)) return;
         observed.add(file);
         // fs.watch has rename/change, while VS Code exposes create/change/delete.
         // Deliberately send duplicate create + change for existing entries.

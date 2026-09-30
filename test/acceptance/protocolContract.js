@@ -580,9 +580,15 @@ module.exports = function protocolContract({
       )).toBe(false);
 
       removeRemoteFs(option);
-      await createRemoteIfNoneExist(option);
+      const previousConnection = await createRemoteIfNoneExist(option);
       const before = server.sandbox.connectionCount;
       await server.disconnectClients();
+      // Server-side close is not proof that the client has observed EOF/close.
+      const deadline = Date.now() + 2000;
+      while (!previousConnection.getClient().isClosed() && Date.now() < deadline) {
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+      expect(previousConnection.getClient().isClosed()).toBe(true);
       const next = await createRemoteIfNoneExist(option);
       expect((await next.list('/')).map(entry => entry.name)).toContain('retry.txt');
       expect(server.sandbox.connectionCount).toBe(before + 1);

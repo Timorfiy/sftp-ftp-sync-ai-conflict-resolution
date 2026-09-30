@@ -82,6 +82,11 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
+      - name: Add isolated macOS loopback alias for binding tests
+        id: loopback
+        if: runner.os == 'macOS'
+        run: sudo ifconfig lo0 alias 127.0.0.2
+
       - name: Run tests
         run: npm test -- --runInBand
 
@@ -96,6 +101,10 @@ jobs:
 
       - name: Package and inspect universal VSIX
         run: npm run package
+
+      - name: Remove macOS test loopback alias
+        if: always() && steps.loopback.outcome == 'success'
+        run: sudo ifconfig lo0 -alias 127.0.0.2
 
   case-sensitive-apfs:
     name: macOS case-sensitive APFS

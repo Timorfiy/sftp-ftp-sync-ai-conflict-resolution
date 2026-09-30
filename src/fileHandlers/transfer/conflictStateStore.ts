@@ -114,16 +114,16 @@ function defaultProcessIsAlive(pid: number): boolean {
   }
 }
 
-function normalizeForIdentity(workspace: string): string {
-  let canonical = path.resolve(workspace).replace(/[\\/]+$/, '');
+function normalizeForIdentity(workspace: string, paths: typeof path = path): string {
+  let canonical = paths.resolve(workspace).replace(/[\\/]+$/, '');
   if (process.platform === 'win32' || /^[a-zA-Z]:[\\/]/.test(canonical)) {
     canonical = canonical.replace(/\//g, '\\').toLocaleLowerCase('en-US');
   }
   return canonical;
 }
 
-export function workspaceBucketId(workspace: string): string {
-  return createHash('sha256').update(normalizeForIdentity(workspace)).digest('hex');
+export function workspaceBucketId(workspace: string, paths: typeof path = path): string {
+  return createHash('sha256').update(normalizeForIdentity(workspace, paths)).digest('hex');
 }
 
 export function legacyConflictRoot(workspace: string): string {

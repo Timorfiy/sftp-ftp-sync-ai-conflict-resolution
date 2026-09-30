@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 import {
   ConflictStateStoreOptions,
   ConflictStateStatus,
@@ -10,7 +11,7 @@ import {
   workspaceBucketId,
 } from '../conflictStateStore';
 
-const testRoot = path.join(process.cwd(), '.jest-conflict-data');
+const testRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'sftpsync-store-'));
 
 function makeStore(
   globalStorageRoot: string,
@@ -64,8 +65,8 @@ describe('ConflictStateStore', () => {
   });
 
   test('Windows workspace identity folds drive-letter case and separators', () => {
-    expect(workspaceBucketId('C:\\Users\\Owner\\Project')).toBe(
-      workspaceBucketId('c:/users/owner/project')
+    expect(workspaceBucketId('C:\\Users\\Owner\\Project', path.win32)).toBe(
+      workspaceBucketId('c:/users/owner/project', path.win32)
     );
   });
 
@@ -138,7 +139,7 @@ describe('ConflictStateStore', () => {
       workspaces: [workspace],
       extensionVersion: 'test',
       policy: {
-        maxTotalBytes: 1024,
+        maxTotalBytes: 8192,
         maxSnapshotBytes: 128,
         maxInactivePerWorkspace: 10,
       },
@@ -150,7 +151,7 @@ describe('ConflictStateStore', () => {
       'uploaded',
       new Date().toISOString()
     );
-    await fs.promises.writeFile(path.join(inactive.directory, 'payload.bin'), Buffer.alloc(2048));
+    await fs.promises.writeFile(path.join(inactive.directory, 'payload.bin'), Buffer.alloc(16384));
     const active = await writeRecord(
       store,
       workspace,
@@ -158,7 +159,7 @@ describe('ConflictStateStore', () => {
       'pending',
       new Date().toISOString()
     );
-    await fs.promises.writeFile(path.join(active.directory, 'payload.bin'), Buffer.alloc(2048));
+    await fs.promises.writeFile(path.join(active.directory, 'payload.bin'), Buffer.alloc(16384));
 
     await store.enforceRetention();
 

@@ -373,7 +373,7 @@ module.exports = async function startSFTPServer({
       async disconnectClients() {
         await Promise.all([...clients].map(client => new Promise(resolve => {
           client.once('close', resolve);
-          client.end();
+          disconnectClient(client);
         })));
       },
       close: cleanup,
