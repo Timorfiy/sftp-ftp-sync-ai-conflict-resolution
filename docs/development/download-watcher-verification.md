@@ -67,7 +67,7 @@ suppression, ignored paths, grouped directory events, disposal and missed-delete
 cleanup.
 
 The scale suite runs four cases, each scheduling **10,000** real staged writes:
-simulated events and native recursive Windows `fs.watch`, each with completion
+simulated events and native recursive `fs.watch` on each CI platform, each with completion
 and halfway cancellation. Concurrency is 16. Cancellation completes 5,008 files
 and cancels the remaining 4,992. Every case verifies zero reverse-upload
 attempts, no staging leftovers, an independent edit during the run, a same-file

@@ -523,7 +523,7 @@ class Journey {
     await this.command('sftpSyncAI.remoteExplorer.refresh');
     await this.command('notifications.showList');
     const denied = await this.expectText('Permission was denied');
-    assert(denied.includes('Check server ownership/mode or Windows file access'));
+    assert(denied.includes('Check server ownership/mode or local file access'));
     for (const action of ['Copy Diagnostics', 'Troubleshoot', 'Show Output', 'Retry']) assert(denied.includes(action));
     await this.expectText('Read failed: Permission was denied');
     assert(!await this.ui.evaluate(`!![...document.querySelectorAll('.notification-list-item')]

@@ -1,4 +1,4 @@
-import * as path from 'path';
+import { localPathKey } from '../helper/localPaths';
 import * as vscode from 'vscode';
 import { getConflictMcpConfiguration } from '../fileHandlers/transfer/conflictBridge';
 import {
@@ -26,8 +26,7 @@ type VscodeWithCursor = typeof vscode & {
 };
 
 function pathKey(file: string): string {
-  const resolved = path.resolve(file);
-  return process.platform === 'win32' ? resolved.toLocaleLowerCase('en-US') : resolved;
+  return localPathKey(file);
 }
 
 export function registerConflictMcpProvider(

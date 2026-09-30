@@ -4,6 +4,10 @@ Command IDs use the private `sftpSyncAI` namespace. Commands currently appear
 under the **SFTP** Command Palette category for compatibility, but operate on
 either protocol unless explicitly SFTP-only.
 
+Open the Command Palette with `Ctrl+Shift+P` on Windows/Linux or `Cmd+Shift+P`
+on macOS. The Upload Changed Files binding remains `Ctrl+Alt+U` (Control+Option+U
+on macOS); it can be changed in Keyboard Shortcuts.
+
 ## Setup and connection
 
 - **Config** — Choose a stack's ignore template and create the safe `.vscode/sftp.json`, or open an
@@ -18,6 +22,8 @@ either protocol unless explicitly SFTP-only.
   a selectable legacy value.
 - **Select Network Interface** — Select a named IPv4 adapter for FTP only.
 - **Open SSH in Terminal** — SFTP-only interactive SSH terminal command.
+  Uses the installed `ssh` command. POSIX paths and shell arguments are quoted
+  for bash/zsh; configured custom shell parameters remain user shell commands.
 
 ## Transfer
 

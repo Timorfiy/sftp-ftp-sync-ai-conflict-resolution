@@ -284,6 +284,16 @@ describe('first-release documentation surface', () => {
     );
   });
 
+  test('discloses preliminary AI-assisted compatibility and unverified editor surfaces', () => {
+    for (const file of ['README.md', 'docs/platform-compatibility.md']) {
+      const text = fs.readFileSync(path.join(root, file), 'utf8');
+      expect(text).toContain('implemented with AI assistance');
+      expect(text).toMatch(/has not been manually tested in installed VS Code or Cursor/);
+      expect(text).toContain('Editor UI, credential storage, and editor MCP integration');
+      expect(text).not.toContain('Desktop notifications');
+    }
+  });
+
   test('keeps active manifest and conflict notification copy in English', () => {
     const manifest = fs.readFileSync(path.join(root, 'package.json'), 'utf8');
     const conflictBridge = fs.readFileSync(

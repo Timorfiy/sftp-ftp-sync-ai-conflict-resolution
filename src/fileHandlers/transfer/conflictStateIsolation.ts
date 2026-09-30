@@ -1,31 +1,28 @@
 import * as path from 'path';
 import { legacyConflictRoot } from './conflictStateStore';
+import { localPathContains, registerLocalPathRoot } from '../../helper/localPaths';
 
 let globalStateRoot: string | undefined;
 let workspaceRoots: string[] = [];
-
-function normalize(candidate: string): string {
-  let normalized = path.resolve(candidate);
-  if (process.platform === 'win32' || /^[a-zA-Z]:[\\/]/.test(normalized)) {
-    normalized = normalized.replace(/\//g, '\\').toLocaleLowerCase('en-US');
-  }
-  return normalized;
-}
+let releasePathRoots: (() => void)[] = [];
 
 function isSameOrDescendant(candidate: string, root: string): boolean {
-  const relative = path.relative(normalize(root), normalize(candidate));
-  return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
+  return localPathContains(root, candidate);
 }
 
 export function configureConflictStateIsolation(
   stateRoot: string,
   workspaces: readonly string[]
 ): void {
+  clearConflictStateIsolation();
   globalStateRoot = path.resolve(stateRoot);
   workspaceRoots = workspaces.map(workspace => path.resolve(workspace));
+  releasePathRoots = [globalStateRoot, ...workspaceRoots].map(registerLocalPathRoot);
 }
 
 export function clearConflictStateIsolation(): void {
+  releasePathRoots.forEach(release => release());
+  releasePathRoots = [];
   globalStateRoot = undefined;
   workspaceRoots = [];
 }

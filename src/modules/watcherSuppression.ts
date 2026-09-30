@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { createHash } from 'crypto';
 import { isLocalPathAtOrUnder } from '../helper/paths';
+import { localPathKey, registerLocalPathRoot } from '../helper/localPaths';
 
 /**
  * Paths the file watcher should ignore because something else is handling them.
@@ -55,7 +56,7 @@ function sweep(now: number) {
 export function suppressWatcherFor(fsPath: string, ttl: number = SUPPRESSION_TTL) {
   const now = Date.now();
   sweep(now);
-  suppressed.set(fsPath, now + ttl);
+  suppressed.set(localPathKey(fsPath), now + ttl);
 }
 
 export function isWatcherSuppressed(fsPath: string): boolean {
@@ -76,12 +77,14 @@ export function isWatcherSuppressed(fsPath: string): boolean {
  * remote rename fails and the normal upload path has to pick up the slack.
  */
 export function releaseWatcherSuppression(fsPath: string) {
-  suppressed.delete(fsPath);
+  suppressed.delete(localPathKey(fsPath));
 }
 
 // Testing seam.
 export function _reset() {
   suppressed.clear();
+  for (const release of watcherPathPolicies.values()) release();
+  watcherPathPolicies.clear();
   downloadWatchers.clear();
   downloaded.clear();
   clearInterval(downloadSweep);
@@ -93,14 +96,14 @@ export function _reset() {
 // downloads replace it; edits, deletion and watcher disposal release it. Do
 // not expire/evict unchanged versions: late OS events have no upper time bound.
 const downloadWatchers = new Set<string>();
+const watcherPathPolicies = new Map<string, () => void>();
 const downloaded = new Map<string, Promise<string | undefined>>();
 let downloadSweep: ReturnType<typeof setInterval>;
 let sweepIterator = downloaded.keys();
 let sweeping = false;
 
 function downloadKey(fsPath: string) {
-  const normalized = path.resolve(fsPath);
-  return process.platform === 'linux' ? normalized : normalized.toLowerCase();
+  return localPathKey(fsPath);
 }
 
 function isDownloadWatched(fsPath: string) {
@@ -108,7 +111,11 @@ function isDownloadWatched(fsPath: string) {
 }
 
 export function registerDownloadWatcher(root: string) {
-  downloadWatchers.add(downloadKey(root));
+  const release = registerLocalPathRoot(root);
+  const key = downloadKey(root);
+  if (watcherPathPolicies.has(key)) release();
+  else watcherPathPolicies.set(key, release);
+  downloadWatchers.add(key);
   if (downloadWatchers.size === 1) {
     // One bounded sweep for all watchers, including deletes excluded by globs.
     downloadSweep = setInterval(() => void sweepDownloadedPaths(), 1000);
@@ -117,7 +124,8 @@ export function registerDownloadWatcher(root: string) {
 }
 
 export function releaseDownloadWatcher(root: string) {
-  downloadWatchers.delete(downloadKey(root));
+  const key = downloadKey(root);
+  downloadWatchers.delete(key);
   for (const key of downloaded.keys()) {
     if (!isDownloadWatched(key)) {
       downloaded.delete(key);
@@ -126,6 +134,8 @@ export function releaseDownloadWatcher(root: string) {
   if (!downloadWatchers.size) {
     clearInterval(downloadSweep);
   }
+  watcherPathPolicies.get(key)?.();
+  watcherPathPolicies.delete(key);
 }
 
 async function sweepDownloadedPaths() {

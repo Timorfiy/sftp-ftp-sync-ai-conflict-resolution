@@ -33,6 +33,19 @@ function canStart(name, statuses) {
 }
 
 describe('release workflow security and build-once contract', () => {
+  test('quality requires every target runner and case-sensitive APFS before release', () => {
+    const runners = ['windows-latest', 'ubuntu-22.04', 'ubuntu-24.04', 'ubuntu-26.04',
+      'macos-14', 'macos-15', 'macos-26', 'macos-15-intel', 'macos-26-intel'];
+    for (const runner of runners) {
+      expect(quality.split(`          - ${runner}\n`).length - 1).toBe(2);
+    }
+    expect(quality).toContain('case-sensitive-apfs:');
+    expect(quality).toContain('node scripts/test-case-sensitive-apfs.js');
+    expect(quality).toContain('npm run package');
+    expect(quality).not.toMatch(/npm\.cmd|tsc\.cmd/);
+    expect(job('build', 'validate-marketplace')).toContain('needs: quality');
+  });
+
   test('manual dispatch is secretless and cannot enable publication', () => {
     const trigger = workflow.slice(0, workflow.indexOf('\njobs:'));
     expect(trigger).toContain('workflow_dispatch:');

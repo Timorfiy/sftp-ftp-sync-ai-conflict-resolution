@@ -16,6 +16,7 @@ import {
   releaseDownloadWatcher,
 } from './watcherSuppression';
 import { isLocalPathAtOrUnder } from '../helper/paths';
+import { localPathKey } from '../helper/localPaths';
 import { isConflictPathActive } from '../fileHandlers/transfer/conflictBridge';
 
 const watchers: {
@@ -156,16 +157,16 @@ function uploadHandler(uri: vscode.Uri, ignore?: (fsPath: string) => boolean) {
     return;
   }
 
-  uploadQueue.set(uri.fsPath, { uri, ignore });
+  uploadQueue.set(localPathKey(uri.fsPath), { uri, ignore });
   debouncedUpload();
 }
 
 function addWatcher(id, watcher) {
-  watchers[id] = watcher;
+  watchers[localPathKey(id)] = watcher;
 }
 
 function getWatcher(id) {
-  return watchers[id];
+  return watchers[localPathKey(id)];
 }
 
 function createWatcher(
@@ -194,8 +195,8 @@ function createWatcher(
     false,
     false
   );
-  addWatcher(watcherBase, watcher);
   registerDownloadWatcher(watcherBase);
+  addWatcher(watcherBase, watcher);
 
   if (watcherConfig.autoUpload) {
     watcher.onDidCreate(uri => uploadHandler(uri, ignore));
@@ -223,7 +224,7 @@ function createWatcher(
         return;
       }
 
-      deleteQueue.set(uri.fsPath, uri);
+      deleteQueue.set(localPathKey(uri.fsPath), uri);
       debouncedDelete();
     });
   }
@@ -233,7 +234,7 @@ function removeWatcher(watcherBase: string) {
   const watcher = getWatcher(watcherBase);
   if (watcher) {
     watcher.dispose();
-    delete watchers[watcherBase];
+    delete watchers[localPathKey(watcherBase)];
     releaseDownloadWatcher(watcherBase);
     for (const queue of [uploadQueue, deleteQueue]) {
       for (const fsPath of queue.keys()) {

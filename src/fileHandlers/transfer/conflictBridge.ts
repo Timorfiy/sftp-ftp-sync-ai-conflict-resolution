@@ -7,6 +7,7 @@ import { COMMAND_OPEN_TROUBLESHOOTING } from '../../constants';
 import * as fileOperations from '../../core/fileBaseOperations';
 import type { FileStats } from '../../core/fs/fileSystem';
 import localFs from '../../core/localFs';
+import { localPathKey } from '../../helper/localPaths';
 import {
   requireSafeLocalPath,
   SafeLocalPathError,
@@ -151,8 +152,7 @@ function isTerminal(status: unknown): boolean {
 }
 
 function pathKey(file: string): string {
-  const resolved = path.resolve(file);
-  return process.platform === 'win32' ? resolved.toLocaleLowerCase('en-US') : resolved;
+  return localPathKey(file);
 }
 
 export function isConflictPathActive(file: string): boolean {

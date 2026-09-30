@@ -332,7 +332,7 @@ export default class TransferTask implements Task {
       if (mode === undefined && perserveTargetMode) {
         if (useStagingFile) {
           [targetFd, uploadFd] = await Promise.all([
-            this._target(() => targetFs.open(target, 'r')).catch(() => null),
+            this._target(() => targetFs.open(target, 'r')).catch(() => undefined),
             this._target(() => targetFs.open(uploadTarget, 'w')),
           ]);
         } else {
@@ -341,7 +341,7 @@ export default class TransferTask implements Task {
           );
         }
 
-        if (targetFd) {
+        if (targetFd !== undefined) {
           [this._handle, mode] = await Promise.all([
             this._source(() => srcFs.get(src)),
             this._target(() => targetFs.fstat(targetFd))

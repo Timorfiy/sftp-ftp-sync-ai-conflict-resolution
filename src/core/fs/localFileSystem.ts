@@ -86,12 +86,25 @@ export default class LocalFileSystem extends FileSystem {
     });
   }
 
-  put(input: fs.ReadStream, path, option?: FileOption): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      if (option && option.fd && typeof option.fd !== 'number') {
-        return reject(new Error('fd is not a number'));
+  async put(input: fs.ReadStream, path, option?: FileOption): Promise<void> {
+    if (option?.fd !== undefined && typeof option.fd !== 'number') {
+      throw new Error('fd is not a number');
+    }
+    if (process.platform !== 'win32' && typeof option?.fd === 'number' && option.mode !== undefined) {
+      let sourceError: Error | undefined;
+      const captureSourceError = (error: Error) => { sourceError = error; };
+      input.once('error', captureSourceError);
+      try {
+        await fse.fchmod(option.fd, option.mode);
+        if (sourceError) throw sourceError;
+      } catch (error) {
+        input.destroy();
+        throw error;
+      } finally {
+        input.removeListener('error', captureSourceError);
       }
-
+    }
+    return new Promise<void>((resolve, reject) => {
       const writer = fs.createWriteStream(path, option as any);
       writer.once('error', reject).once('finish', resolve); // transffered
 

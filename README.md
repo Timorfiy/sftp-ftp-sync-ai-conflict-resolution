@@ -47,6 +47,16 @@ install the newer VSIX the same way; your workspace configuration and saved
 credentials are retained. Release versions can differ between channels.
 
 **Supported:** Windows 10/11 · VS Code Desktop 1.104.0+ · Cursor Desktop 3.17.8+.
+**Preliminary compatibility:** Ubuntu Desktop 22.04/24.04/26.04 LTS x64 and
+macOS 14/15/26 on supported Intel and Apple Silicon hardware. One VSIX is used
+on all platforms. See [platform coverage and verification limits](docs/platform-compatibility.md).
+
+Linux and macOS compatibility was implemented with AI assistance. Automated
+checks cover the operating systems and architectures listed in the test report.
+The extension has not been manually tested in installed VS Code or Cursor on
+Linux/macOS. Editor UI, credential storage, and editor MCP integration remain
+unverified in those environments.
+
 SFTP and plain FTP are supported; FTPS is experimental. See [limitations](#limitations).
 
 ## Quick start
@@ -56,7 +66,7 @@ SFTP and plain FTP are supported; FTPS is experimental. See [limitations](#limit
 Open your local project folder in the editor. If the project is already on the
 server, start with an empty local folder.
 
-Press **Ctrl+Shift+P**, run **SFTP: Config**, and choose your stack's ignore
+Press **Ctrl+Shift+P** (**Cmd+Shift+P** on macOS), run **SFTP: Config**, and choose your stack's ignore
 template, or **Basic**. Edit the generated `.vscode/sftp.json`:
 
 | Field | SFTP example | FTP example |
@@ -239,7 +249,7 @@ See the [generated values and omission defaults](docs/options.md#generated-value
 
 ## Everyday workflows
 
-Open the Command Palette with **Ctrl+Shift+P**. File and folder actions are also
+Open the Command Palette with **Ctrl+Shift+P** (**Cmd+Shift+P** on macOS). File and folder actions are also
 available from Explorer context menus.
 
 | I want to… | Use |
@@ -365,7 +375,7 @@ are preserved.
 ### Secure password storage
 
 Keep passwords and passphrases out of `.vscode/sftp.json`. The extension can
-save them in the editor's Secret Storage with Windows credential protection,
+save them in the editor's Secret Storage backed by the editor's OS credential store,
 scoped to the workspace and connection. Use **SFTP: Delete Saved Password** to
 remove a saved credential. Secret Storage does not encrypt plain FTP traffic.
 
@@ -395,15 +405,16 @@ open the bundled guide.
 | Agent cannot resolve a conflict | Confirm tool access in the same editor, save local edits, and inspect [conflict status](docs/troubleshooting.md#conflicts) |
 
 Need help? [Open an issue](https://github.com/Timorfiy/sftp-ftp-sync-ai-conflict-resolution/issues)
-with extension/editor/Windows versions, protocol, reproduction steps, and
+with extension/editor/OS versions, architecture, protocol, reproduction steps, and
 redacted diagnostics. Leave out credentials, private keys, tokens, and
 confidential file content.
 
 ## Limitations
 
-- Windows 10/11 desktop editors are the supported target. macOS, Linux,
-  browser editors, remote-only editor variants, and older editor versions are
-  outside the current support scope.
+- Windows 10/11 desktop editors retain the existing support scope. Linux/macOS
+  desktop compatibility is preliminary pending manual editor verification.
+  Linux ARM64, other Linux distributions, browser editors, Remote SSH, WSL,
+  Dev Containers, and older editor versions are outside this compatibility stage.
 - FTPS is experimental; SFTP and plain FTP are supported.
 - Bulk sync has no preview/dry-run and does not merge file contents.
 - AI conflict resolution requires an available editor agent with tool access

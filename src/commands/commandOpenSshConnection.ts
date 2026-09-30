@@ -4,6 +4,7 @@ import { getAllFileService } from '../modules/serviceManager';
 import { ExplorerRoot } from '../modules/remoteExplorer';
 import { interpolate } from '../utils';
 import { checkCommand } from './abstract/createCommand';
+import { replaceHomePath } from '../helper/paths';
 
 const isWindows = process.platform === 'win32';
 
@@ -15,13 +16,20 @@ function shouldUseKey(config) {
   return typeof config.privateKeyPath === 'string' && config.privateKeyPath.length > 0;
 }
 
-function adaptPath(filepath) {
-  if (isWindows) {
-    return filepath.replace(/\\\\/g, '\\');
-  }
+export function quotePosixArgument(value: string): string {
+  return `'${value.replace(/'/g, `'"'"'`)}'`;
+}
 
-  // convert to unix style
-  return filepath.replace(/\\\\/g, '/').replace(/\\/g, '/');
+export function buildSshCommand(config, windows = isWindows): string {
+  let command = windows
+    ? getSshCommand(config)
+    : `ssh -t ${quotePosixArgument(`${config.username}@${config.host}`)} -p ${quotePosixArgument(String(config.port))}`;
+  if (!shouldUseAgent(config) && shouldUseKey(config)) {
+    const key = windows ? config.privateKeyPath.replace(/\\\\/g, '\\') : replaceHomePath(config.privateKeyPath);
+    command += ` -i ${windows ? `"${key}"` : quotePosixArgument(key)}`;
+  }
+  if (config.sshCustomParams) command += ' ' + interpolate(config.sshCustomParams, { remotePath: config.remotePath });
+  return command;
 }
 
 function getSshCommand(
@@ -74,31 +82,8 @@ export default checkCommand({
       remoteConfig = item.config;
     }
 
-    const sshConfig = {
-      host: remoteConfig.host,
-      port: remoteConfig.port,
-      username: remoteConfig.username,
-    };
     const terminal = vscode.window.createTerminal(remoteConfig.name);
-    let sshCommand;
-    if (shouldUseAgent(remoteConfig)) {
-      sshCommand = getSshCommand(sshConfig);
-    } else if (shouldUseKey(remoteConfig)) {
-      sshCommand = getSshCommand(sshConfig, `-i "${adaptPath(remoteConfig.privateKeyPath)}"`);
-    } else {
-      sshCommand = getSshCommand(sshConfig);
-    }
-
-    if (remoteConfig.sshCustomParams) {
-      sshCommand =
-        sshCommand +
-        ' ' +
-        interpolate(remoteConfig.sshCustomParams, {
-          remotePath: remoteConfig.remotePath,
-        });
-    }
-
-    terminal.sendText(sshCommand);
+    terminal.sendText(buildSshCommand(remoteConfig));
     terminal.show();
   },
 });

@@ -1,3 +1,21 @@
+## 0.9.0 - 2026-09-30
+
+* Add preliminary Ubuntu Desktop x64 and macOS Intel/Apple Silicon compatibility
+  using shared local path/case rules, portable SSH quoting and staged download
+  permission handling. Configuration, credential identities and MCP contracts
+  are retained, with one universal VSIX.
+* Extend automated core, filesystem, watcher, loopback FTP/SFTP and packaging
+  checks to Linux/macOS, including a case-sensitive APFS job. Exact completed
+  runner coverage is recorded in the cross-platform QA report.
+* Keep notification/conflict UI changes in the separate Activity UX task; the
+  current Windows notification implementation is retained until integration.
+
+Linux and macOS compatibility was implemented with AI assistance. Automated
+checks cover the operating systems and architectures listed in the test report.
+The extension has not been manually tested in installed VS Code or Cursor on
+Linux/macOS. Editor UI, credential storage, and editor MCP integration remain
+unverified in those environments.
+
 ## 0.8.3 - 2026-09-25
 
 * Enlarge the folder-and-arrows icon on a single square background for better

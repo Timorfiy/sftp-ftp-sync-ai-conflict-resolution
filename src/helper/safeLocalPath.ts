@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { localPathContains } from './localPaths';
 
 export type SafeLocalPathFailure =
   | 'outside_root'
@@ -13,19 +14,8 @@ export class SafeLocalPathError extends Error {
   }
 }
 
-function pathKey(file: string): string {
-  const resolved = path.resolve(file);
-  return process.platform === 'win32' ? resolved.toLocaleLowerCase('en-US') : resolved;
-}
-
 function isSameOrDescendant(candidate: string, root: string): boolean {
-  const relative = path.relative(pathKey(root), pathKey(candidate));
-  return (
-    relative === '' ||
-    (relative !== '..' &&
-      !relative.startsWith(`..${path.sep}`) &&
-      !path.isAbsolute(relative))
-  );
+  return localPathContains(root, candidate);
 }
 
 async function lstat(file: string): Promise<fs.Stats> {

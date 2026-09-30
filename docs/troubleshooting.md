@@ -32,9 +32,20 @@ Verify the username and the configured credential source. Re-enter prompted pass
 
 Repeated authentication failures are not fixed by transfer retry. Correct the credential or server-side account policy first.
 
+Saved passwords use the editor's SecretStorage API. On Linux, check that the
+desktop keyring is available and unlocked; see the editor's
+[credential-store troubleshooting](https://code.visualstudio.com/docs/configure/settings-sync#_troubleshoot-credential-store-issues).
+On macOS, check Keychain access for the editor. This extension does not replace
+the editor's credential store or fall back to writing passwords into the config.
+
+For SSH keys, `~/` expands to the local user's home. On Linux/macOS use local
+POSIX paths, for example `~/.ssh/id_ed25519`. Set `agent` to the SSH agent socket
+path exposed by `SSH_AUTH_SOCK` when using an agent; the setting takes the actual
+socket path, not a shell expression. Terminal SSH uses the shell's inherited agent.
+
 ## Network
 
-Check the host, port, DNS, VPN, proxy, Windows Firewall, and server availability. FTP requires both control and data connections; passive-mode data ports can be blocked even when login succeeds. SFTP uses the SSH connection, normally on port 22.
+Check the host, port, DNS, VPN, proxy, local firewall, and server availability. FTP requires both control and data connections; passive-mode data ports can be blocked even when login succeeds. SFTP uses the SSH connection, normally on port 22.
 
 Retry is safe only when no write could have been committed, such as connect, list, read, or staged download. Do not blindly replay an upload after a connection loss.
 
@@ -44,11 +55,21 @@ Verify `remotePath`, slash direction, letter case, chroot/home-directory behavio
 
 ## Local paths
 
-Verify the workspace folder, Windows path, free disk space, and antivirus/Controlled Folder Access rules. Downloads are staged before replacing the local destination, so a failed staged download should leave the previous local file intact.
+Verify the workspace folder, native local path, free disk space, and OS access
+rules. On Windows check antivirus/Controlled Folder Access; on macOS check file
+access permissions. Linux and case-sensitive macOS volumes distinguish letter
+case. Local paths use the local OS format; server paths use `/` separators.
+Downloads are staged before replacing the local destination, so a failed staged
+download should leave the previous local file intact.
 
 ## Permissions
 
-Confirm server ownership and file/directory modes for FTP or SFTP. On Windows, confirm that the editor process can read and write the local path. A permission failure during a write is not automatically retryable because the server may have accepted part of the operation.
+Confirm server ownership and file/directory modes for FTP or SFTP, and that the
+editor can read and write the local path. On Linux/macOS a staged download applies
+the selected mode, including executable bits, before replacement. A mode failure
+leaves the existing destination intact. A permission failure during a remote
+write is not automatically retryable because the server may have accepted part
+of the operation.
 
 ## Host keys
 

@@ -14,6 +14,7 @@ import {
   migrateLegacyCredentials,
 } from '../secrets';
 import Trie from './trie';
+import { localPathKey, registerLocalPathRoot } from '../../helper/localPaths';
 
 const WIN_DRIVE_REGEX = /^([a-zA-Z]):/;
 const isWindows = process.platform === 'win32';
@@ -26,16 +27,10 @@ const serviceManager = new Trie<FileService>(
 );
 
 function normalizePathForTrie(pathname) {
-  if (isWindows) {
-    const device = pathname.substr(0, 2);
-    if (device.charAt(1) === ':') {
-      // lowercase drive letter
-      pathname = pathname[0].toLowerCase() + pathname.substr(1);
-    }
-  }
-
-  return path.normalize(pathname);
+  return localPathKey(pathname);
 }
+
+const servicePathPolicies = new WeakMap<FileService, () => void>();
 
 export function getBasePath(context: string, workspace: string) {
   let dirpath;
@@ -64,7 +59,9 @@ export function getBasePath(context: string, workspace: string) {
     dirpath = workspace;
   }
 
-  return normalizePathForTrie(dirpath);
+  // Preserve the actual spelling for filesystem I/O; folding is for trie keys.
+  const normalized = path.normalize(dirpath);
+  return isWindows ? normalized.replace(/^([A-Z]):/, (_match, drive) => `${drive.toLowerCase()}:`) : normalized;
 }
 
 let _progressActive = false;
@@ -107,16 +104,19 @@ function updateProgress() {
 }
 
 export function createFileService(config: any, workspace: string) {
+  const releasePathPolicy = registerLocalPathRoot(workspace);
   if (config.defaultProfile) {
     app.state.profile = config.defaultProfile;
   }
 
   const normalizedBasePath = getBasePath(config.context, workspace);
+  const releaseBasePathPolicy = registerLocalPathRoot(normalizedBasePath);
   const service = new FileService(normalizedBasePath, workspace, config);
+  servicePathPolicies.set(service, () => { releaseBasePathPolicy(); releasePathPolicy(); });
 
   logger.info(`config at ${normalizedBasePath}`, redact(config));
 
-  serviceManager.add(normalizedBasePath, service);
+  serviceManager.add(normalizePathForTrie(normalizedBasePath), service);
   service.name = config.name;
   service.setConfigValidator(validateConfig);
   service.setWatcherService(watcherService);
@@ -172,8 +172,10 @@ export function getFileService(uri: Uri): FileService {
 }
 
 export function disposeFileService(fileService: FileService) {
-  serviceManager.remove(fileService.baseDir);
+  serviceManager.remove(normalizePathForTrie(fileService.baseDir));
   fileService.dispose();
+  servicePathPolicies.get(fileService)?.();
+  servicePathPolicies.delete(fileService);
 }
 
 export function findAllFileService(predictor: (x: FileService) => boolean): FileService[] {

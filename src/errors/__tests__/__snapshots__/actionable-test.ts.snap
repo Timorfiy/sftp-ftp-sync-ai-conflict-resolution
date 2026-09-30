@@ -75,7 +75,7 @@ exports[`actionable error taxonomy keeps the stable messages and recovery anchor
       "show-output",
     ],
     "id": "permission.denied",
-    "nextStep": "Check server ownership/mode or Windows file access before trying again.",
+    "nextStep": "Check server ownership/mode or local file access before trying again.",
     "retrySafety": "unsafe",
     "section": "permissions",
     "severity": "error",

@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { TextDecoder } from 'util';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerLocalPathRoot } from '../helper/localPaths';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { redactedErrorMessage } from '../security/redaction';
 import {
@@ -645,6 +646,9 @@ export function createConflictMcpServer(
     { name: MCP_SERVER_NAME, version: config.extensionVersion },
     { instructions }
   );
+  const releasePathRoots = [config.stateRoot, ...config.workspaces.map(workspace => workspace.root)]
+    .map(registerLocalPathRoot);
+  server.server.onclose = () => releasePathRoots.forEach(release => release());
 
   server.registerTool(
     'conflicts_list',

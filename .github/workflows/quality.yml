@@ -15,12 +15,22 @@ permissions:
 
 jobs:
   protocol-acceptance:
-    name: Windows ${{ matrix.protocol }} acceptance
-    runs-on: windows-latest
+    name: ${{ matrix.os }} ${{ matrix.protocol }} acceptance
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
+        os:
+          - windows-latest
+          - ubuntu-22.04
+          - ubuntu-24.04
+          - ubuntu-26.04
+          - macos-14
+          - macos-15
+          - macos-26
+          - macos-15-intel
+          - macos-26-intel
         protocol:
           - ftp
           - sftp
@@ -36,15 +46,28 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm.cmd ci --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Run ${{ matrix.protocol }} loopback acceptance
-        run: npm.cmd run test:acceptance:${{ matrix.protocol }}
+        run: npm run test:acceptance:${{ matrix.protocol }}
 
   quality:
-    name: Windows quality gate
-    runs-on: windows-latest
+    name: ${{ matrix.os }} quality gate
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - windows-latest
+          - ubuntu-22.04
+          - ubuntu-24.04
+          - ubuntu-26.04
+          - macos-14
+          - macos-15
+          - macos-26
+          - macos-15-intel
+          - macos-26-intel
 
     steps:
       - name: Checkout repository
@@ -57,16 +80,39 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm.cmd ci --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Run tests
-        run: npm.cmd test -- --runInBand
+        run: npm test -- --runInBand
 
       - name: Lint
-        run: npm.cmd run lint
+        run: npm run lint
 
       - name: Typecheck
-        run: .\node_modules\.bin\tsc.cmd --noEmit
+        run: node node_modules/typescript/bin/tsc --noEmit
 
       - name: Compile
-        run: npm.cmd run compile
+        run: npm run compile
+
+      - name: Package and inspect universal VSIX
+        run: npm run package
+
+  case-sensitive-apfs:
+    name: macOS case-sensitive APFS
+    runs-on: macos-26
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Verify paths, permissions and watcher on case-sensitive APFS
+        run: node scripts/test-case-sensitive-apfs.js

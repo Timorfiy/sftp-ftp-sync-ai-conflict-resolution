@@ -1,6 +1,7 @@
 import * as os from 'os';
 import * as path from 'path';
 import { pathRelativeToWorkspace, getWorkspaceFolders } from '../host';
+import { localPathContains } from './localPaths';
 
 export function simplifyPath(absolutePath: string) {
   return pathRelativeToWorkspace(absolutePath);
@@ -41,23 +42,11 @@ export function isRemotePathAtOrUnder(base: string, candidate: string) {
  * default.
  */
 export function isLocalPathAtOrUnder(base: string, candidate: string) {
-  const fold = (p: string) => {
-    const normalized = path.normalize(p).replace(new RegExp(`\\${path.sep}+$`), '');
-    return process.platform === 'linux' ? normalized : normalized.toLowerCase();
-  };
-
-  const normalizedBase = fold(base);
-  const normalizedCandidate = fold(candidate);
-
-  if (normalizedBase === normalizedCandidate) {
-    return true;
-  }
-
-  return normalizedCandidate.startsWith(`${normalizedBase}${path.sep}`);
+  return localPathContains(base, candidate);
 }
 
 export function isSubpathOf(possiableParentPath: string, pathname: string) {
-  return path.normalize(pathname).indexOf(path.normalize(possiableParentPath)) === 0;
+  return localPathContains(possiableParentPath, pathname);
 }
 
 export function replaceHomePath(pathname: string) {
@@ -73,8 +62,7 @@ export function isInWorkspace(filepath: string) {
   return (
     workspaceFolders &&
     workspaceFolders.some(
-      // vscode can't keep filepath's stable, covert them to toLowerCase before check
-      folder => filepath.toLowerCase().indexOf(folder.uri.fsPath.toLowerCase()) === 0
+      folder => localPathContains(folder.uri.fsPath, filepath)
     )
   );
 }

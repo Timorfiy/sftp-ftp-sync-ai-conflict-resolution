@@ -30,6 +30,7 @@ import {
 } from './constants';
 import { registerConflictMcpProvider } from './mcp/registration';
 import { initializeErrorReporter } from './errors';
+import { registerLocalPathRoot } from './helper/localPaths';
 
 async function setupWorkspaceFolder(dir) {
   const configs = await tryLoadConfigs(dir);
@@ -62,6 +63,23 @@ export async function activate(context: vscode.ExtensionContext) {
   if (!workspaceFolders) {
     return;
   }
+
+  const pathRoots = new Map<string, () => void>();
+  const addPathRoot = (folder: vscode.WorkspaceFolder) => {
+    if (!pathRoots.has(folder.uri.fsPath)) pathRoots.set(folder.uri.fsPath, registerLocalPathRoot(folder.uri.fsPath));
+  };
+  workspaceFolders.forEach(addPathRoot);
+  context.subscriptions.push({ dispose: () => {
+    for (const release of pathRoots.values()) release();
+    pathRoots.clear();
+  } });
+  context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(event => {
+    for (const folder of event.removed) {
+      pathRoots.get(folder.uri.fsPath)?.();
+      pathRoots.delete(folder.uri.fsPath);
+    }
+    event.added.forEach(addPathRoot);
+  }));
 
   await initializeConflictBridge(
     workspaceFolders.map(folder => folder.uri.fsPath),

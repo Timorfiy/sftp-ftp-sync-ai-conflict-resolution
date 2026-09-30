@@ -137,7 +137,7 @@ const DEFINITIONS: Record<FailureId, FailureDefinition> = {
   'permission.denied': {
     title: 'Permission was denied',
     summary: 'The account or local process is not allowed to perform this operation.',
-    nextStep: 'Check server ownership/mode or Windows file access before trying again.',
+    nextStep: 'Check server ownership/mode or local file access before trying again.',
     section: 'permissions',
     retrySafety: 'unsafe',
   },
