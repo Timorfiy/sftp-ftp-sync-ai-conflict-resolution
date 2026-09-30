@@ -10,14 +10,17 @@ jest.setTimeout(240_000);
 describe.each(['simulated events', 'native fs.watch'])('10,000 files: %s', mode => {
   let box;
   const native = mode === 'native fs.watch';
-  beforeEach(async () => { reset(); box = await sandbox(); box.watch(box.root, native); });
+  // Both workloads are flat. A direct native directory watch avoids Linux
+  // Node.js's emulated recursive watcher opening a handle per file. Nested
+  // paths remain covered by the recursive protocol tests.
+  beforeEach(async () => { reset(); box = await sandbox(); box.watch(box.root, native, undefined, false); });
   afterEach(async () => { await box.close(); });
 
   test.each([false, true])('download, parallel local edit, cancel halfway=%s, cleanup', async cancel => {
     const started = Date.now();
     const otherRoot = path.join(box.root, 'other-project');
     await fs.promises.mkdir(otherRoot);
-    box.watch(otherRoot, native);
+    box.watch(otherRoot, native, undefined, false);
     // Avoid observing the setup itself; the second watcher is still genuinely
     // concurrent, and the root watcher intentionally overlaps it.
     await pause(native ? 150 : 0);

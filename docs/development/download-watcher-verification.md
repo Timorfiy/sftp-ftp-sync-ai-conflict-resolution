@@ -67,7 +67,7 @@ suppression, ignored paths, grouped directory events, disposal and missed-delete
 cleanup.
 
 The scale suite runs four cases, each scheduling **10,000** real staged writes:
-simulated events and native recursive `fs.watch` on each CI platform, each with completion
+simulated events and native `fs.watch` on each CI platform, each with completion
 and halfway cancellation. Concurrency is 16. Cancellation completes 5,008 files
 and cancels the remaining 4,992. Every case verifies zero reverse-upload
 attempts, no staging leftovers, an independent edit during the run, a same-file
@@ -86,3 +86,8 @@ test of VS Code's extension host, its exact event batching, other operating
 systems, network mounts, very large files, or OS event-buffer overflow. No
 watcher can upload an edit for which the OS delivers no usable event. Loopback
 protocol tests cover small trees, separately from the scale test.
+The 10,000-file workloads are flat and use direct directory watches for both
+projects. This avoids Node.js's emulated Linux recursive watcher creating a
+watcher for every file and rescanning growing directories. The native nested
+FTP/SFTP regression tests retain recursive watches. Transfer counts, cancellation,
+independent edits, zero reverse uploads, and cleanup assertions are unchanged.

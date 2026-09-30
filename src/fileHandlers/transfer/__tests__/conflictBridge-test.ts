@@ -90,6 +90,7 @@ import {
 } from '../conflictBridge';
 
 const testRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'sftpsync-bridge-'));
+afterAll(() => fs.promises.rm(testRoot, { recursive: true, force: true }));
 
 function delay(milliseconds: number) {
   return new Promise(resolve => setTimeout(resolve, milliseconds));

@@ -60,11 +60,11 @@ async function sandbox() {
   const nativeWatchers = [];
   const observed = new Set();
   const nativeErrors = [];
-  function watch(base = root, native = false, ignore) {
+  function watch(base = root, native = false, ignore, nativeRecursive = true) {
     watcher.create(base, { files: '**/*', autoUpload: true, autoDelete: true }, ignore);
     roots.push(base);
     if (native) {
-      const handle = fs.watch(base, { recursive: true }, (_event, filename) => {
+      const handle = fs.watch(base, { recursive: nativeRecursive }, (_event, filename) => {
         if (!filename) return;
         const file = path.join(base, filename.toString());
         // FSEvents also reports the watched directory's own basename. This

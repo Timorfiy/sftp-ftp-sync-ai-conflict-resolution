@@ -12,6 +12,7 @@ import {
 } from '../conflictStateStore';
 
 const testRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'sftpsync-store-'));
+afterAll(() => fs.promises.rm(testRoot, { recursive: true, force: true }));
 
 function makeStore(
   globalStorageRoot: string,
@@ -139,7 +140,8 @@ describe('ConflictStateStore', () => {
       workspaces: [workspace],
       extensionVersion: 'test',
       policy: {
-        maxTotalBytes: 8192,
+        // Leave room for native directory metadata before adding payloads.
+        maxTotalBytes: 1024 * 1024,
         maxSnapshotBytes: 128,
         maxInactivePerWorkspace: 10,
       },
@@ -151,7 +153,7 @@ describe('ConflictStateStore', () => {
       'uploaded',
       new Date().toISOString()
     );
-    await fs.promises.writeFile(path.join(inactive.directory, 'payload.bin'), Buffer.alloc(16384));
+    await fs.promises.writeFile(path.join(inactive.directory, 'payload.bin'), Buffer.alloc(2 * 1024 * 1024));
     const active = await writeRecord(
       store,
       workspace,
@@ -159,7 +161,7 @@ describe('ConflictStateStore', () => {
       'pending',
       new Date().toISOString()
     );
-    await fs.promises.writeFile(path.join(active.directory, 'payload.bin'), Buffer.alloc(16384));
+    await fs.promises.writeFile(path.join(active.directory, 'payload.bin'), Buffer.alloc(2 * 1024 * 1024));
 
     await store.enforceRetention();
 
