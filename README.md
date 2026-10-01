@@ -44,6 +44,8 @@ Regular transfers and manual conflict resolution work without AI.
 | Either editor, using a file | Download the `.vsix` from [GitHub Releases](https://github.com/Timorfiy/sftp-ftp-sync-ai-conflict-resolution/releases/latest), then use **Extensions → … → Install from VSIX…** |
 
 Check the publisher is **Timorfiy** and the extension ID is `Timorfiy.sftp-sync-ai`.
+Version-tag releases publish the same verified VSIX to GitHub and Open VSX;
+Visual Studio Marketplace uploads are handled separately.
 Registry installations use the editor's update controls. For a manual update,
 install the newer VSIX the same way; your workspace configuration and saved
 credentials are retained. Release versions can differ between channels.

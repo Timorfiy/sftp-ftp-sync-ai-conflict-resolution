@@ -7,6 +7,11 @@ on:
         description: Strict version tag matching package.json (for example v0.1.0)
         required: true
         type: string
+      publish_open_vsx:
+        description: Publish the matching existing GitHub Release to Open VSX using OIDC (no rebuild)
+        required: false
+        default: false
+        type: boolean
   push:
     tags:
       - "v*"
@@ -21,6 +26,7 @@ concurrency:
 jobs:
   quality:
     name: Reusable quality gate
+    if: github.event_name != 'workflow_dispatch' || !inputs.publish_open_vsx
     uses: ./.github/workflows/quality.yml
 
   build:
@@ -248,8 +254,70 @@ jobs:
       - name: Link manual marketplace uploads
         run: |
           echo "### Manual marketplace uploads" >> "$GITHUB_STEP_SUMMARY"
-          echo "GitHub Release is ready. Marketplace and Open VSX uploads are manual; this workflow does not publish to either store." >> "$GITHUB_STEP_SUMMARY"
-          echo "Upload the same VSIX from [GitHub Release](https://github.com/$GITHUB_REPOSITORY/releases/tag/$GITHUB_REF_NAME) to both stores." >> "$GITHUB_STEP_SUMMARY"
+          echo "GitHub Release is ready. Open VSX uses the separate OIDC publishing job; Visual Studio Marketplace upload remains manual." >> "$GITHUB_STEP_SUMMARY"
+          echo "Upload the same VSIX from [GitHub Release](https://github.com/$GITHUB_REPOSITORY/releases/tag/$GITHUB_REF_NAME) to Visual Studio Marketplace." >> "$GITHUB_STEP_SUMMARY"
           echo "SHA-256: ${{ needs.build.outputs.artifact-hash }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- [Visual Studio Marketplace](https://marketplace.visualstudio.com/manage/publishers/Timorfiy)" >> "$GITHUB_STEP_SUMMARY"
           echo "- [Open VSX](https://open-vsx.org/user-settings/extensions)" >> "$GITHUB_STEP_SUMMARY"
+
+  publish-open-vsx:
+    name: Publish Open VSX with trusted publisher
+    if: >-
+      !cancelled() && (
+        (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && needs.validation-barrier.result == 'success') ||
+        (github.event_name == 'workflow_dispatch' && inputs.publish_open_vsx == true)
+      )
+    needs:
+      - build
+      - validation-barrier
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Require enabled release environment
+        env:
+          RELEASE_ENABLED: ${{ vars.RELEASE_ENABLED }}
+        run: test "$RELEASE_ENABLED" = "true"
+
+      - name: Checkout publisher code and release tags
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install pinned publishing dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Download the validated build-once bundle
+        if: github.event_name == 'push'
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53
+        with:
+          name: ${{ needs.build.outputs.bundle-name }}
+          path: release-bundle
+
+      - name: Publish validated tag bundle through OIDC
+        if: github.event_name == 'push'
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: node scripts/publish-open-vsx.js bundle release-bundle "$RELEASE_TAG" "$GITHUB_SHA"
+
+      - name: Publish the matching existing GitHub Release through OIDC
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/publish-open-vsx.js existing existing-release-bundle "$RELEASE_TAG"
+
+      - name: Record Open VSX publication
+        run: |
+          echo "### Open VSX trusted publication" >> "$GITHUB_STEP_SUMMARY"
+          echo "The public VSIX bytes were compared with the immutable release checksum. No persistent Open VSX credential was used." >> "$GITHUB_STEP_SUMMARY"

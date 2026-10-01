@@ -46,11 +46,14 @@ describe('release workflow security and build-once contract', () => {
     expect(job('build', 'validate-marketplace')).toContain('needs: quality');
   });
 
-  test('manual dispatch is secretless and cannot enable publication', () => {
+  test('manual dispatch defaults to dry-run and explicitly retries only existing Open VSX releases', () => {
     const trigger = workflow.slice(0, workflow.indexOf('\njobs:'));
     expect(trigger).toContain('workflow_dispatch:');
     expect(trigger).toContain('tag:');
-    expect(trigger).not.toMatch(/publish|release.enabled/i);
+    expect(trigger).toContain('publish_open_vsx:');
+    expect(trigger).toContain('default: false');
+    expect(job('quality', 'build')).toContain("!inputs.publish_open_vsx");
+    expect(job('publish-open-vsx')).toContain("inputs.publish_open_vsx == true");
     expect(workflow).toContain("if: github.event_name == 'push'");
   });
 
@@ -72,10 +75,19 @@ describe('release workflow security and build-once contract', () => {
     expect(validation.match(/needs\.build\.outputs\.artifact-hash/g)).toHaveLength(3);
   });
 
-  test('publishes only to GitHub with protection, a guard, and no rebuild', () => {
-    const github = job('publish-github');
-    expect(jobNames().filter(name => name.startsWith('publish-'))).toEqual(['publish-github']);
-    expect(workflow).not.toMatch(/VSCE_PAT|OVSX_PAT|vsce publish|ovsx publish/);
+  test('publishes GitHub and Open VSX with scoped permissions and no rebuild', () => {
+    const github = job('publish-github', 'publish-open-vsx');
+    expect(jobNames().filter(name => name.startsWith('publish-'))).toEqual(['publish-github', 'publish-open-vsx']);
+    expect(workflow).not.toMatch(/VSCE_PAT|OVSX_PAT|vsce publish/);
+    const open = job('publish-open-vsx');
+    expect(open).toContain('!cancelled() && (');
+    expect(open).toContain('id-token: write');
+    expect(open).toContain('contents: read');
+    expect(open).toContain('name: release');
+    expect(open).toContain('RELEASE_ENABLED');
+    expect(open).not.toMatch(/contents: write|npm (?:run )?(?:compile|package)|release\.js build/);
+    expect(github).not.toContain('id-token: write');
+    expect(workflow.match(/id-token: write/g)).toHaveLength(1);
     expect(github).toContain('name: release');
     expect(github).toContain('RELEASE_ENABLED');
     expect(github).toContain('scripts/release.js verify');
@@ -89,6 +101,8 @@ describe('release workflow security and build-once contract', () => {
     const validators = ['validate-marketplace', 'validate-open-vsx', 'validate-github'];
     expect(jobNeeds('validation-barrier')).toEqual(['build', ...validators]);
     expect(jobNeeds('publish-github')).toEqual(['build', 'validation-barrier']);
+    expect(jobNeeds('publish-open-vsx')).toEqual(['build', 'validation-barrier']);
+    expect(job('publish-open-vsx')).toContain("needs.validation-barrier.result == 'success'");
 
     const failedValidation = {
       build: 'success',
@@ -107,7 +121,7 @@ describe('release workflow security and build-once contract', () => {
   });
 
   test('delegates GitHub retry recovery to the tested release publisher', () => {
-    const github = job('publish-github');
+    const github = job('publish-github', 'publish-open-vsx');
     expect(github).toContain(
       'node scripts/publish-github-release.js release-bundle "$GITHUB_REF_NAME"'
     );

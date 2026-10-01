@@ -249,7 +249,7 @@ describe('release bundle automation', () => {
     delete process.env.OVSX_PAT;
 
     expect(JSON.stringify(plans)).not.toContain(canary);
-    expect(plans.map(plan => plan.credential)).toEqual(['VSCE_PAT', 'OVSX_PAT', 'GH_TOKEN']);
+    expect(plans.map(plan => plan.credential)).toEqual(['VSCE_PAT', 'GitHub Actions OIDC', 'GH_TOKEN']);
     expect(fs.readFileSync(path.join(__dirname, '../scripts/release.js'), 'utf8')).not.toContain(
       'process.env'
     );

@@ -267,8 +267,8 @@ function channelPlan(channel, verification) {
     },
     'open-vsx': {
       executable: 'ovsx',
-      args: ['publish', vsix, '--skip-duplicate'],
-      credential: 'OVSX_PAT',
+      args: ['publish', vsix, '--trusted-publishing', '--skip-duplicate'],
+      credential: 'GitHub Actions OIDC',
     },
     github: {
       executable: 'gh',

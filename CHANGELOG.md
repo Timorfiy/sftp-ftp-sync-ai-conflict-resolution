@@ -1,3 +1,12 @@
+## Unreleased
+
+* Publish Open VSX automatically from version-tag Release runs using a scoped
+  GitHub OIDC trusted publisher, without a stored Open VSX access token.
+* Add an explicit existing-GitHub-release publication/retry mode that reuses
+  the original VSIX/checksum and verifies the public Open VSX bytes.
+* Keep Visual Studio Marketplace uploads manual and default workflow dispatch
+  non-publishing. All automatic publications retain the build-once quality gates.
+
 ## 0.9.0 - 2026-10-01
 
 Native transfer Activity, quieter editor notifications, and preliminary Linux/macOS compatibility.
