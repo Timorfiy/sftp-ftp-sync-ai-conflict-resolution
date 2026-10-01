@@ -67,6 +67,17 @@ describe('Open VSX build-once OIDC publication', () => {
     await expect(publishOpenVsx({ ...data.options, runner: () => ({ status: 0 }), fetchImpl: async () => ({ status: 404 }),
       maxChecks: 2, pause: async () => {} })).rejects.toThrow('not yet available');
   });
+  test('waits for delayed registry visibility and then verifies the original bytes', async () => {
+    let queries = 0;
+    const fetchImpl = jest.fn(async url => url.endsWith('test.vsix')
+      ? { ok: true, arrayBuffer: async () => fs.readFileSync(data.vsix) }
+      : ++queries < 4 ? { status: 404 } : response(metadata));
+    const pause = jest.fn(async () => {});
+    await expect(publishOpenVsx({ ...data.options, runner: () => ({ status: 0 }), fetchImpl, pause }))
+      .resolves.toMatchObject({ sha256: data.provenance.artifact.sha256 });
+    expect(pause).toHaveBeenCalledTimes(2);
+    expect(pause).toHaveBeenCalledWith(5000);
+  });
   test('existing-release recovery downloads the published assets and never rebuilds', async () => {
     const directory = path.join(data.root, 'existing'); const calls = [];
     const gh = args => {

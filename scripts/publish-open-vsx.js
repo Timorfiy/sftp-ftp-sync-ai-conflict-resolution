@@ -63,7 +63,7 @@ async function verifyRegistryBytes(metadata, expectedHash, fetchImpl) {
 
 async function publishOpenVsx({ root = process.cwd(), bundleDir, tag, sourceSha, fetchImpl = fetch,
   runner = (executable, args) => childProcess.spawnSync(executable, args, { cwd: root, stdio: 'inherit' }),
-  pause = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds)), maxChecks = 15 }) {
+  pause = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds)), maxChecks = 61 }) {
   if (process.env.OVSX_PAT) throw new Error('OIDC publishing must not use OVSX_PAT. Remove the static credential.');
   const verification = await verifyReleaseBundle({ root, bundleDir, tag, sourceSha });
   const manifest = readManifest(root);
@@ -81,9 +81,9 @@ async function publishOpenVsx({ root = process.cwd(), bundleDir, tag, sourceSha,
       return { version: manifest.version, sha256: verification.hash, alreadyPresent: Boolean(existing),
         url: `${REGISTRY}/extension/${manifest.publisher}/${manifest.name}/${manifest.version}` };
     }
-    if (check + 1 < maxChecks) await pause(2000);
+    if (check + 1 < maxChecks) await pause(5000);
   }
-  throw new Error('Open VSX accepted the command but the matching public version is not yet available.');
+  throw new Error('Open VSX accepted the command but the matching public version is not yet available. Check registry status before retrying the same release.');
 }
 
 module.exports = { prepareExistingBundle, publishOpenVsx };

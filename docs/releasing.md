@@ -157,6 +157,11 @@ VSX download with its immutable SHA-256. An existing version with different
 bytes fails closed; an identical version is authenticated through OIDC and
 skipped without replacement.
 
+Registry acceptance can precede public availability. The publishing job waits
+up to five minutes for the public version and verifies its downloaded bytes.
+If availability is still delayed, inspect the registry status before retrying
+the same existing release; do not create another version or rebuild the VSIX.
+
 ### Publish/retry an existing GitHub Release
 
 Run **Release** from the current publisher branch, enter the strict matching
