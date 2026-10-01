@@ -301,7 +301,10 @@ describe('first-release documentation surface', () => {
       'utf8'
     );
     expect(`${manifest}\n${conflictBridge}`).not.toMatch(/[\u0400-\u04ff]/);
-    expect(conflictBridge).toContain('was paused because the remote file changed');
+    const activityUi = fs.readFileSync(path.join(root, 'src/ui/activity.ts'), 'utf8');
+    expect(activityUi).not.toMatch(/[\u0400-\u04ff]/);
+    expect(activityUi).toContain('Upload paused:');
+    expect(conflictBridge).not.toContain('powershell.exe');
   });
 
   test('resolves displayed Command Palette labels to manifest contributions', () => {

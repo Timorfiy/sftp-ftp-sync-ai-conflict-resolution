@@ -24,6 +24,7 @@ export default class StatusBarItem {
   private curFrameOfSpinner: number = 0;
   private text: string;
   private status: Status = Status.ok;
+  private activityManaged = false;
   private spinner: {
     interval: number;
     frames: string[];
@@ -44,6 +45,7 @@ export default class StatusBarItem {
   }
 
   updateStatus(status: Status) {
+    if (this.activityManaged) return;
     this.status = status;
     this._render();
   }
@@ -61,6 +63,7 @@ export default class StatusBarItem {
   }
 
   startSpinner() {
+    if (this.activityManaged) return;
     if (this.spinnerTimer) {
       return;
     }
@@ -83,6 +86,7 @@ export default class StatusBarItem {
   showMsg(text: string, hideAfterTimeout?: number);
   showMsg(text: string, tooltip: string, hideAfterTimeout?: number);
   showMsg(text: string, tooltip?: string | number, hideAfterTimeout?: number) {
+    if (this.activityManaged) return;
     if (typeof tooltip === 'number') {
       hideAfterTimeout = tooltip;
       tooltip = text;
@@ -124,8 +128,24 @@ export default class StatusBarItem {
   }
 
   reset() {
+    if (this.activityManaged) return;
     this.text = this.name;
     this.statusBarItem.tooltip = this.tooltip;
     this._render();
+  }
+
+  showActivityState(text: string, tooltip: string, command: string): void {
+    this.stopSpinner();
+    if (this.resetTimer) clearTimeout(this.resetTimer);
+    this.activityManaged = true;
+    this.statusBarItem.text = text;
+    this.statusBarItem.tooltip = tooltip;
+    this.statusBarItem.command = command;
+  }
+
+  dispose(): void {
+    if (this.spinnerTimer) clearInterval(this.spinnerTimer);
+    if (this.resetTimer) clearTimeout(this.resetTimer);
+    this.statusBarItem.dispose();
   }
 }

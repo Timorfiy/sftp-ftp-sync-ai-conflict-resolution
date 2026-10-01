@@ -75,11 +75,12 @@ class Cell {
     assert.equal(process.platform, 'win32', 'Real editor runner is Windows-only');
     assert(['ftp', 'sftp'].includes(this.protocol));
     assert(['vscode', 'cursor'].includes(this.editor));
-    this.candidate = await verifyCandidate(this.bundle, pin);
+    const candidatePin = this.candidatePin || pin;
+    this.candidate = await verifyCandidate(this.bundle, candidatePin);
     const { verifyReleaseBundle } = require('../../scripts/release');
     await verifyReleaseBundle({
       root: path.resolve(__dirname, '../..'), bundleDir: this.bundle,
-      tag: 'v0.1.0', sourceSha: pin.source,
+      tag: `v${candidatePin.version || '0.1.0'}`, sourceSha: candidatePin.source,
     });
     // Refuse to reuse a profile accidentally. Update reuses this same Cell explicitly.
     await fs.mkdir(this.root, { recursive: false });
@@ -155,7 +156,7 @@ class Cell {
     assert.equal(this.info.language, 'en');
     assert.equal(path.resolve(this.info.workspace).toLowerCase(), this.workspace.toLowerCase());
     assert(this.info.extensionPath.toLowerCase().startsWith((this.extensions + path.sep).toLowerCase()));
-    if (this.info.productVersion === '0.1.0') {
+    if (this.info.productVersion === this.candidate.manifest.version) {
       this.verifiedEntries = await verifyInstalled(this.candidate, this.info.extensionPath);
     } else {
       assert(this.update, 'Unexpected product version in clean install row');

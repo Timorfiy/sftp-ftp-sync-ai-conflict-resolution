@@ -4,6 +4,7 @@ const showInformationMessage = jest.fn();
 const executeCommand = jest.fn(async () => undefined);
 const registerCommand = jest.fn(() => ({ dispose: jest.fn() }));
 const writeText = jest.fn(async () => undefined);
+const showQuickPick = jest.fn();
 
 jest.mock('vscode', () => ({
   EventEmitter: class EventEmitter {
@@ -26,6 +27,7 @@ jest.mock('vscode', () => ({
       hide: jest.fn(),
     })),
     showErrorMessage,
+    showQuickPick,
     showWarningMessage,
     showInformationMessage,
   },
@@ -65,12 +67,14 @@ describe('actionable error reporter', () => {
     executeCommand.mockClear();
     registerCommand.mockClear();
     writeText.mockClear();
+    showQuickPick.mockReset();
   });
 
   test('copies only redacted allowlisted diagnostics', async () => {
     const scope = new RedactionScope();
     scope.register('copy-password-canary');
-    showErrorMessage.mockResolvedValue('Copy Diagnostics');
+    showErrorMessage.mockResolvedValue('Details');
+    showQuickPick.mockResolvedValue({ action: 'copy-diagnostics' });
 
     await reportActionableError(
       Object.assign(new Error('Login incorrect copy-password-canary'), {
@@ -117,7 +121,8 @@ describe('actionable error reporter', () => {
       subscriptions: [],
     } as any;
     initializeErrorReporter(context);
-    showErrorMessage.mockResolvedValue('Troubleshoot');
+    showErrorMessage.mockResolvedValue('Details');
+    showQuickPick.mockResolvedValue({ action: 'troubleshoot' });
 
     await reportActionableError(
       Object.assign(new Error('Login incorrect'), { code: 530 }),

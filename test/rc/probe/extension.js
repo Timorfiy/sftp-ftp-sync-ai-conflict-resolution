@@ -40,6 +40,24 @@ async function activate(context) {
   };
   async function operation(request) {
     if (request.op === 'info') return info();
+    if (request.op === 'activityThemes') return vscode.extensions.all.flatMap(extension =>
+      (extension.packageJSON.contributes?.themes || []).map(theme => ({ name: theme.id || theme.label, uiTheme: theme.uiTheme })));
+    if (request.op === 'activityThemeKind') return vscode.window.activeColorTheme.kind;
+    if (request.op === 'activitySettings') {
+      const known = vscode.extensions.all.some(extension => (extension.packageJSON.contributes?.themes || [])
+        .some(theme => (theme.id || theme.label) === request.theme));
+      if (!known) throw new Error('Unsupported QA theme');
+      await vscode.workspace.getConfiguration('window').update('autoDetectColorScheme', false, vscode.ConfigurationTarget.Global);
+      await vscode.workspace.getConfiguration('window').update('autoDetectHighContrast', false, vscode.ConfigurationTarget.Global);
+      await vscode.workspace.getConfiguration('workbench').update('colorTheme', request.theme, vscode.ConfigurationTarget.Global);
+      await vscode.workspace.getConfiguration('sftp').update('suppressPlaintextPasswordWarning', true, vscode.ConfigurationTarget.Global);
+      return { theme: vscode.window.activeColorTheme.kind };
+    }
+    if (request.op === 'agentPrompt') {
+      const text = await vscode.env.clipboard.readText();
+      if (!/^Resolve SFTP\/FTP upload conflict [a-zA-Z0-9._-]+\./.test(text)) throw new Error('Clipboard is not a product agent prompt');
+      return { conflictId: text.match(/^Resolve SFTP\/FTP upload conflict ([a-zA-Z0-9._-]+)\./)[1], waitsForUploaded: text.includes('terminal status uploaded') };
+    }
     if (request.op === 'captureClipboard') {
       if (clipboardBefore !== undefined) throw new Error('Clipboard is already captured');
       clipboardBefore = await vscode.env.clipboard.readText();

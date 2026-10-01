@@ -2,6 +2,7 @@ import { exec } from 'child_process';
 import logger from '../logger';
 import { showErrorMessage } from '../host';
 import { redactedErrorMessage } from '../security/redaction';
+import { captureActivityError } from './activity';
 
 export type HookType = 'preUpload' | 'postUpload' | 'preDownload' | 'postDownload' | 'preSync' | 'postSync';
 
@@ -66,7 +67,7 @@ export async function runHook(
   try {
     await runShellCommand(command, ctx, workspacePath);
   } catch (error) {
-    showErrorMessage(
+    if (!captureActivityError(error, { operation: hookType })) showErrorMessage(
       `Hook "${hookType}" failed: ${redactedErrorMessage(error)}`
     );
     throw error;

@@ -5,6 +5,9 @@ import logger from '../logger';
 import { getFileService } from '../modules/serviceManager';
 import { COMMAND_SYNC_REMOTE_TO_LOCAL } from '../constants';
 import { isConflictStatePath } from './transfer/conflictStateIsolation';
+import { withActivityOperation, recordActivityAction } from '../modules/activity';
+import { localPathKey } from '../helper/localPaths';
+import * as path from 'path';
 
 const REMOTE_TO_LOCAL_COMMAND_URI = `file:///\${command:${COMMAND_SYNC_REMOTE_TO_LOCAL}}`;
 
@@ -17,6 +20,7 @@ export interface FileHandlerContext {
   fileService: FileService;
   config: ServiceConfig;
   connectionLabel: string;
+  profile?: string | null;
 }
 
 type FileHandlerContextMethod<R = void> = (this: FileHandlerContext) => R;
@@ -56,6 +60,7 @@ export function handleCtxFromUri(uri: Uri): FileHandlerContext {
     config,
     target,
     connectionLabel: fileService.getConnectionLabel(),
+    profile: app.state.profile,
   };
 }
 
@@ -86,6 +91,7 @@ export function allHandleCtxFromUri(uri: Uri): Array<FileHandlerContext> {
       config,
       target,
       connectionLabel: fileService.getConnectionLabel(profile),
+      profile,
     };
   });
 }
@@ -121,9 +127,16 @@ export default function createFileHandler<T>(
 
     logger.trace(`handle ${handlerOption.name} for`, target.localFsPath);
 
-    app.sftpBarItem.startSpinner();
-    try {
-      await handlerOption.handle.call(handleCtx, invokeOption);
+    const tracked = /^(upload|download|sync|removeRemote|rename|create)/.test(handlerOption.name);
+    const execute = async () => {
+      const action = handlerOption.name === 'removeRemote' ? 'delete' : handlerOption.name === 'rename' ? 'rename'
+        : handlerOption.name.startsWith('create') ? 'mkdir' : undefined;
+      if (action) {
+        await recordActivityAction(action, target.localFsPath, target.remoteFsPath,
+          () => handlerOption.handle.call(handleCtx, invokeOption));
+      } else {
+        await handlerOption.handle.call(handleCtx, invokeOption);
+      }
     // } catch (error) {
     //   reportError(error, `when ${handlerOption.name} ${target.localFsPath}`);
     //   Object.defineProperty(error, 'reported', {
@@ -132,8 +145,19 @@ export default function createFileHandler<T>(
     //     value: true,
     //   });
     //   throw error;
-    } finally {
-      app.sftpBarItem.stopSpinner();
+    };
+    if (tracked) {
+      const config = handleCtx.config;
+      await withActivityOperation(handlerOption.name, {
+        key: JSON.stringify([localPathKey(handleCtx.fileService.workspace), localPathKey(handleCtx.fileService.baseDir),
+          config.protocol, config.host, config.port, config.username, config.remotePath, handleCtx.connectionLabel]),
+        label: handleCtx.profile || handleCtx.fileService.name || path.basename(handleCtx.fileService.workspace),
+        description: handleCtx.connectionLabel, workspace: handleCtx.fileService.workspace,
+        basePath: handleCtx.fileService.baseDir, remotePath: config.remotePath, protocol: config.protocol,
+      }, execute);
+    } else {
+      app.sftpBarItem.startSpinner();
+      try { await execute(); } finally { app.sftpBarItem.stopSpinner(); }
     }
     if (handlerOption.afterHandle) {
       handlerOption.afterHandle.call(handleCtx);

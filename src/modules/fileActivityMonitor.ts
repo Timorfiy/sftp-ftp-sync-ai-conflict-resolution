@@ -27,6 +27,7 @@ import {
   suppressWatcherFor,
 } from './watcherSuppression';
 import { isConflictPathActive } from '../fileHandlers/transfer/conflictBridge';
+import { withActivityOrigin } from './activity';
 
 let workspaceWatcher: vscode.Disposable;
 let willRenameWatcher: vscode.Disposable;
@@ -77,7 +78,7 @@ async function handleFileSave(uri: vscode.Uri) {
     uri = vscode.Uri.file(fspath);
     logger.info(`[file-save] ${fspath}`);
     try {
-      await uploadFile(uri);
+      await withActivityOrigin('save', () => uploadFile(uri));
     } catch (error) {
       logger.error(error, `download ${fspath}`);
       app.sftpBarItem.updateStatus(StatusBarItem.Status.error);
@@ -162,7 +163,7 @@ async function downloadOnOpen(uri: vscode.Uri) {
     const fspath = uri.fsPath;
     logger.info(`[file-open] ${fspath}`);
     try {
-      await downloadFile(uri);
+      await withActivityOrigin('open', () => downloadFile(uri));
     } catch (error) {
       logger.error(error, `download ${fspath}`);
       app.sftpBarItem.updateStatus(StatusBarItem.Status.error);
@@ -229,7 +230,7 @@ async function handleFileRename(e: vscode.FileRenameEvent) {
 
     logger.info(`[file-rename] ${oldUri.fsPath} ➞ ${newUri.fsPath}`);
     try {
-      await renameRemote(oldUri, { newLocalPath: newUri.fsPath });
+      await withActivityOrigin('watcher', () => renameRemote(oldUri, { newLocalPath: newUri.fsPath }));
     } catch (error) {
       logger.error(error, `rename ${oldUri.fsPath}`);
 
@@ -239,7 +240,7 @@ async function handleFileRename(e: vscode.FileRenameEvent) {
       releaseWatcherSuppression(newUri.fsPath);
       if (config.watcher && config.watcher.autoUpload) {
         try {
-          await upload(newUri);
+          await withActivityOrigin('watcher', () => upload(newUri));
         } catch (uploadError) {
           logger.error(uploadError, `upload ${newUri.fsPath}`);
           app.sftpBarItem.updateStatus(StatusBarItem.Status.error);

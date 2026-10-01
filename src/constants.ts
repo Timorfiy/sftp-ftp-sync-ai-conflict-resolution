@@ -19,6 +19,10 @@ const command = (name: string) => `${COMMAND_NAMESPACE}.${name}`;
 // command not in package.json
 export const COMMAND_TOGGLE_OUTPUT = command('toggleOutput');
 export const COMMAND_OPEN_TROUBLESHOOTING = command('openTroubleshooting');
+export const COMMAND_ACTIVITY_OPEN = command('activity.open');
+export const COMMAND_ACTIVITY_DETAILS = command('activity.details');
+export const COMMAND_ACTIVITY_FILTER = command('activity.filter');
+export const COMMAND_ACTIVITY_CANCEL = command('activity.cancelOperation');
 
 // commands in package.json
 export const COMMAND_CONFIG = command('config');

@@ -253,3 +253,11 @@ Profiles inherit the top-level connection, then override specified values.
 - The extension sends no telemetry.
 - Conflict state is private from transfer and bounded as documented in
   [Recovery](../README.md#recovery).
+
+## Editor notifications
+
+`sftp.notifications.showSuccess` is an editor setting, not a field in
+`.vscode/sftp.json`. Its default is `true`. Set it to `false` to hide successful
+manual-operation summaries. Automatic success is shown in Activity and the
+status bar; errors and conflicts are still reported. All notifications use the
+editor UI on Windows, Linux and macOS, without OS notification helper processes.

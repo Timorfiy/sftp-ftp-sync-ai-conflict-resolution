@@ -1,12 +1,10 @@
-import { Uri, window, ProgressLocation } from 'vscode';
+import { Uri } from 'vscode';
 import * as path from 'path';
 import app from '../../app';
 import logger from '../../logger';
-import { simplifyPath } from '../../helper';
 import { UResource, FileService, TransferTask } from '../../core';
 import { validateConfig } from '../config';
 import watcherService from '../fileWatcher';
-import { transferQueueProvider } from '../transferQueue';
 import { redact } from '../../security/redaction';
 import {
   CredentialMigrationCandidate,
@@ -64,45 +62,6 @@ export function getBasePath(context: string, workspace: string) {
   return isWindows ? normalized.replace(/^([A-Z]):/, (_match, drive) => `${drive.toLowerCase()}:`) : normalized;
 }
 
-let _progressActive = false;
-let _totalTransfers = 0;
-let _completedTransfers = 0;
-
-function updateProgress() {
-  if (_progressActive) {
-    return;
-  }
-  const total = getRunningTransformTasks().length;
-  if (total === 0) {
-    return;
-  }
-  _progressActive = true;
-  _totalTransfers = total;
-  _completedTransfers = 0;
-  window.withProgress(
-    {
-      location: ProgressLocation.Window,
-      title: 'SFTP transfers in progress...',
-      cancellable: true,
-    },
-    async progress => {
-      return new Promise<void>(resolve => {
-        const interval = setInterval(() => {
-          const pending = getRunningTransformTasks().length;
-          _completedTransfers = _totalTransfers - pending;
-          const percent = Math.round((_completedTransfers / _totalTransfers) * 100);
-          progress.report({ increment: percent, message: `${_completedTransfers}/${_totalTransfers}` });
-          if (pending === 0) {
-            clearInterval(interval);
-            _progressActive = false;
-            resolve();
-          }
-        }, 500);
-      });
-    }
-  );
-}
-
 export function createFileService(config: any, workspace: string) {
   const releasePathPolicy = registerLocalPathRoot(workspace);
   if (config.defaultProfile) {
@@ -120,38 +79,9 @@ export function createFileService(config: any, workspace: string) {
   service.name = config.name;
   service.setConfigValidator(validateConfig);
   service.setWatcherService(watcherService);
-  service.queuedTransfer(task => {
-    (task as any)._queueId = transferQueueProvider.add(task);
-  });
-  service.beforeTransfer(task => {
-    const { localFsPath, transferType } = task;
-    app.sftpBarItem.showMsg(
-      `${transferType} ${path.basename(localFsPath)}`,
-      simplifyPath(localFsPath)
-    );
-    updateProgress();
-    transferQueueProvider.start((task as any)._queueId);
-  });
   service.afterTransfer((error, task) => {
-    const { localFsPath, transferType } = task;
-    const filename = path.basename(localFsPath);
-    const filepath = simplifyPath(localFsPath);
-    const queueId = (task as any)._queueId;
-    if (queueId) {
-      transferQueueProvider.done(queueId, error || undefined);
-    }
-    if (task.isCancelled()) {
-      logger.info(`cancel transfer ${localFsPath}`);
-      app.sftpBarItem.showMsg(`cancelled ${filename}`, filepath, 2000 * 2);
-    } else if (error) {
-      // if ((error as any).reported !== true) {
-      logger.error(error, `when ${transferType} ${localFsPath}`);
-      // }
-      app.sftpBarItem.showMsg(`failed ${filename}`, filepath, 2000 * 2);
-    } else {
-      logger.info(`${transferType} ${localFsPath}`);
-      app.sftpBarItem.showMsg(`done ${filename}`, filepath, 2000 * 2);
-    }
+    if (error) logger.error(error, `when ${task.transferType} ${task.localFsPath}`);
+    else logger.info(`${task.isCancelled() ? 'cancel transfer' : task.transferType} ${task.localFsPath}`);
   });
 
   return service;

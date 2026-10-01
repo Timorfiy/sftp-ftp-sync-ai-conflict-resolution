@@ -21,13 +21,15 @@ upload conflicts yourself or with your editor's AI agent.
 - **Transfer files and folders.** Upload a single change, download an existing
   site, or sync a whole project in either direction.
 - **Work from the sidebar.** Browse remote files, compare them with local
-  copies, and follow progress in the Transfer Queue.
+  copies, and follow progress in Activity.
 - **Catch remote changes.** With conflict checking enabled, uploads pause when
   the server copy has changed or cannot be verified against a known version.
 - **Use your existing AI agent.** Give it the conflict's local and remote
   versions through the extension's MCP tools, then let it merge and upload.
 - **Choose what gets transferred.** Use 15 ignore templates for common stacks,
   switch connection profiles, or upload only Git changes.
+- **Follow one clear result.** Activity groups transfers and conflicts; manual
+  operations get one summary, while successful automatic saves stay quiet.
 - **Keep previous remote text versions.** New configurations enable local
   overwrite backups with up to 100 versions per file. See [recovery limits](#recovery).
 
@@ -111,7 +113,7 @@ download it into your local folder. Start here before editing an existing site.
 Right-click it in the local Explorer and choose **SFTP: Upload File**. Check it
 in the **SFTP/FTP** sidebar before uploading a whole project.
 
-Keep the sidebar's **Transfer Queue** open until the operation finishes. A saved
+Keep the sidebar's **Activity** open until the operation finishes. A saved
 file is not proof of a completed upload. Cancelling does not undo completed transfers.
 
 ## Configuration examples
@@ -258,10 +260,29 @@ available from Explorer context menus.
 | Download the server copy of a file | **SFTP: Download File** — replaces the local copy |
 | Compare before uploading | **SFTP: Diff Active File with Remote** |
 | Upload Git working-tree/index changes | **SFTP: Upload Changed Files** · **Ctrl+Alt+U** |
-| Browse the server and track transfers | **SFTP/FTP** sidebar → **Explorer** / **Transfer Queue** |
+| Browse the server and track transfers | **SFTP/FTP** sidebar → **Explorer** / **Activity** |
 | Switch a configured environment | **SFTP: Set Profile** |
 | Add exclusions for my stack | **SFTP: Apply Ignore Template** |
 | Stop queued or active transfers | **SFTP: Cancel All Transfers** |
+
+### Follow transfers in Activity
+
+Activity groups files by operation and connection. Use **Filter Activity** to
+show **All**, **Active**, or **Needs Attention**. Select a file for details,
+conflict actions, or recovery options. Relative paths keep the list readable;
+full local and remote paths are available in tooltips.
+
+The status bar shows preparation, completed-file counts, parallel operations,
+and pending conflicts. Clicking it opens Activity. One summary follows each
+manual operation; successful automatic saves stay quiet. Repeated background
+connection errors are grouped. Notifications appear inside the editor on every
+platform, without separate Windows popups or sounds.
+
+Set **Notifications: Show Success** in the SFTP settings (`sftp.notifications.showSuccess`) to
+`false` in editor settings to hide successful manual summaries. Errors and
+conflict review remain visible. Activity keeps up to 100 completed operation
+groups for the current editor session; active operations and pending conflicts
+are retained. **Clear Completed** does not delete private conflict snapshots.
 
 ### Upload automatically
 
@@ -311,13 +332,16 @@ There is no sync preview or dry-run mode. See [sync options](docs/options.md#syn
 
 With `conflictCheck: true`, an upload pauses if the remote file changed since
 the last known version, no baseline exists, or an FTP server cannot provide
-an exact timestamp. Choose how to handle that file:
+an exact timestamp. Open **SFTP/FTP → Activity** or choose **Review Conflicts**
+in the notification, then select a file to choose an action. Closing the menu
+keeps the upload pending; cancellation requires **Cancel upload**:
 
 ### Resolve manually
 
 | Action | Result |
 | --- | --- |
 | **Open Diff** | Compare the captured remote version with your local file. |
+| **Copy Agent Prompt** | Copy a request for your existing editor agent, including the conflict ID. |
 | **Overwrite** | Replace this remote file with the local version. |
 | **Overwrite All** | Apply overwrite to the remaining conflicts in this transfer batch. |
 | **Cancel upload** | Leave the remote file unchanged. |
@@ -401,7 +425,7 @@ open the bundled guide.
 | Connected, but files are missing | [`remotePath`](docs/troubleshooting.md#remote-paths), selected profile, and [ignore rules](docs/ignore-templates.md) |
 | Save does not upload | `uploadOnSave`, ignore rules, and pending conflicts in the editor |
 | FTP reports a conflict without a visible change | [Exact FTP timestamps](docs/troubleshooting.md#ftp-timestamps) may be unavailable; compare the captured content |
-| Transfer failed or was cancelled halfway | Inspect the Transfer Queue and [partial results](docs/troubleshooting.md#partial-results) before retrying |
+| Transfer failed or was cancelled halfway | Inspect the Activity and [partial results](docs/troubleshooting.md#partial-results) before retrying |
 | Agent cannot resolve a conflict | Confirm tool access in the same editor, save local edits, and inspect [conflict status](docs/troubleshooting.md#conflicts) |
 
 Need help? [Open an issue](https://github.com/Timorfiy/sftp-ftp-sync-ai-conflict-resolution/issues)

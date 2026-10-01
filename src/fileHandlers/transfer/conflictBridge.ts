@@ -1,4 +1,3 @@
-import { spawn } from 'child_process';
 import { createHash, randomUUID } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -8,6 +7,7 @@ import * as fileOperations from '../../core/fileBaseOperations';
 import type { FileStats } from '../../core/fs/fileSystem';
 import localFs from '../../core/localFs';
 import { localPathKey } from '../../helper/localPaths';
+import { activityStore, currentActivity } from '../../modules/activity';
 import {
   requireSafeLocalPath,
   SafeLocalPathError,
@@ -111,13 +111,13 @@ interface RequestEnvelope {
 const REQUEST_POLL_MS = 200;
 const resolvedSessions = new Set<string>();
 const activeQuickPicks = new Map<string, vscode.QuickPick<vscode.QuickPickItem>>();
-let manualUiQueue: Promise<void> = Promise.resolve();
+const liveConflictUi = new Map<string, { session: ConflictSession; context: FileTransferContext }>();
+const manualChoices = new Map<string, { action: ConflictDecisionAction; revision: number }>();
 let conflictSequence = 0;
 let stateStore: ConflictStateStore | undefined;
 let bridgeGeneration = 0;
 let bridgeCapability = '';
 let bridgeWorkspaces: readonly string[] = [];
-let notificationsEnabled = true;
 const activeConflictPaths = new Set<string>();
 
 function now(): string {
@@ -180,6 +180,8 @@ function requireStateStore(): ConflictStateStore {
 
 async function writeConflictRecord(root: string, record: ConflictRecord): Promise<void> {
   await requireStateStore().writeRecord(root, record);
+  activityStore.registerConflict({ id: record.id, status: record.status, revision: record.revision,
+    reason: record.reason, staleReason: record.staleReason }, record.localFile, record.remoteFile, record.workspaceRoot);
 }
 
 async function updateSession(
@@ -272,30 +274,6 @@ function metadataMatches(
   return Math.floor(a.mtime / 1000) === Math.floor(b.mtime / 1000) && a.size === b.size;
 }
 
-function encodePowerShell(value: string): string {
-  return Buffer.from(value, 'utf16le').toString('base64');
-}
-
-function notifyWindows(title: string, message: string): void {
-  if (process.platform !== 'win32' || !notificationsEnabled) {
-    return;
-  }
-  try {
-    const script = `Add-Type -AssemblyName System.Windows.Forms\nAdd-Type -AssemblyName System.Drawing\n$sftpTitle=[Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('${encodePowerShell(title)}'))\n$sftpText=[Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('${encodePowerShell(message.slice(0, 220))}'))\n$sftpNotify=New-Object System.Windows.Forms.NotifyIcon\n$sftpNotify.Icon=[System.Drawing.SystemIcons]::Warning\n$sftpNotify.BalloonTipIcon=[System.Windows.Forms.ToolTipIcon]::Warning\n$sftpNotify.BalloonTipTitle=$sftpTitle\n$sftpNotify.BalloonTipText=$sftpText\n$sftpNotify.Visible=$true\n[System.Media.SystemSounds]::Exclamation.Play()\n$sftpNotify.ShowBalloonTip(10000)\nStart-Sleep -Seconds 12\n$sftpNotify.Dispose()`;
-    const child = spawn(
-      'powershell.exe',
-      ['-NoProfile', '-NonInteractive', '-EncodedCommand', encodePowerShell(script)],
-      { detached: true, windowsHide: true, stdio: 'ignore' }
-    );
-    child.on('error', error => {
-      logger.warn(`Could not show Windows conflict notification: ${cleanError(error)}`);
-    });
-    child.unref();
-  } catch (error) {
-    logger.warn(`Could not start Windows conflict notification: ${cleanError(error)}`);
-  }
-}
-
 export interface ConflictBridgeInitializationOptions {
   globalStorageRoot: string;
   policy?: Partial<ConflictRetentionPolicy>;
@@ -324,7 +302,6 @@ export async function initializeConflictBridge(
   });
   bridgeWorkspaces = workspaces.map(workspace => path.resolve(workspace));
   bridgeCapability = `${randomUUID()}${randomUUID()}`;
-  notificationsEnabled = options.notifications !== false;
   activeConflictPaths.clear();
   configureConflictStateIsolation(stateStore.stateRoot, workspaces);
   try {
@@ -345,12 +322,12 @@ export async function disposeConflictBridge(): Promise<void> {
   }
   activeQuickPicks.clear();
   resolvedSessions.clear();
-  manualUiQueue = Promise.resolve();
+  liveConflictUi.clear();
+  manualChoices.clear();
   const store = stateStore;
   stateStore = undefined;
   bridgeWorkspaces = [];
   bridgeCapability = '';
-  notificationsEnabled = true;
   activeConflictPaths.clear();
   clearConflictStateIsolation();
   await store?.dispose();
@@ -443,10 +420,7 @@ export async function captureConflict(
   holdConflictPath(context.srcFsPath);
   await writeConflictRecord(root, record);
   await captureLocalRecovery(session, context.srcFsPath);
-  notifyWindows(
-    'SFTP/FTP Sync + AI Conflict Resolution — conflict',
-    `Upload of ${path.basename(context.srcFsPath)} was paused because the remote file changed.`
-  );
+  liveConflictUi.set(record.id, { session, context });
 
   const admission = await store.reserveSnapshot(remote.size);
   if (!admission.allowed) {
@@ -772,14 +746,16 @@ function conflictDetail(reason: UploadConflictReason): string {
 function showQuickPickOnce(
   session: ConflictSession,
   context: FileTransferContext
-): Promise<ConflictDecisionAction | 'open_diff' | 'troubleshoot' | undefined> {
+): Promise<ConflictDecisionAction | 'open_diff' | 'troubleshoot' | 'copy_agent_prompt' | undefined> {
   return new Promise(resolve => {
+    activeQuickPicks.get(session.record.id)?.hide();
     const quickPick = vscode.window.createQuickPick();
     quickPick.title = `SFTP/FTP Sync + AI Conflict Resolution blocked upload of ${path.basename(context.srcFsPath)}`;
     quickPick.placeholder = conflictDetail(session.record.reason);
     quickPick.ignoreFocusOut = true;
     quickPick.items = [
       { label: 'Open Diff', description: 'Compare the captured remote file with local content' },
+      { label: 'Copy Agent Prompt', description: 'Copy a request for your editor agent' },
       { label: 'Troubleshoot', description: 'Open the bundled recovery guide' },
       { label: 'Overwrite', description: 'Upload this file' },
       { label: 'Overwrite All', description: 'Upload every remaining conflict in this batch' },
@@ -788,7 +764,7 @@ function showQuickPickOnce(
     activeQuickPicks.set(session.record.id, quickPick);
     let finished = false;
     const finish = (
-      value: ConflictDecisionAction | 'open_diff' | 'troubleshoot' | undefined
+      value: ConflictDecisionAction | 'open_diff' | 'troubleshoot' | 'copy_agent_prompt' | undefined
     ) => {
       if (finished) {
         return;
@@ -802,7 +778,9 @@ function showQuickPickOnce(
     };
     const accepted = quickPick.onDidAccept(() => {
       const label = quickPick.selectedItems[0]?.label;
-      if (label === 'Open Diff') {
+      if (label === 'Copy Agent Prompt') {
+        finish('copy_agent_prompt');
+      } else if (label === 'Open Diff') {
         finish('open_diff');
       } else if (label === 'Troubleshoot') {
         finish('troubleshoot');
@@ -815,52 +793,28 @@ function showQuickPickOnce(
       }
     });
     const hidden = quickPick.onDidHide(() => {
-      finish(resolvedSessions.has(session.record.id) ? undefined : 'cancel');
+      finish(undefined);
     });
     quickPick.show();
   });
 }
 
-async function showManualUi(
-  session: ConflictSession,
-  context: FileTransferContext
-): Promise<ConflictDecisionAction | undefined> {
-  while (
-    session.generation === bridgeGeneration &&
-    !resolvedSessions.has(session.record.id)
-  ) {
-    const choice = await showQuickPickOnce(session, context);
-    if (!choice) {
-      return undefined;
-    }
-    if (choice === 'open_diff') {
-      await openNativeDiff(session, context).catch(() => undefined);
-      continue;
-    }
-    if (choice === 'troubleshoot') {
-      await vscode.commands.executeCommand(
-        COMMAND_OPEN_TROUBLESHOOTING,
-        session.record.reason === 'timestamp-unavailable'
-          ? 'ftp-timestamps'
-          : 'conflicts'
-      );
-      continue;
-    }
-    return choice;
+export async function showConflictActions(id: string): Promise<void> {
+  const live = liveConflictUi.get(id);
+  if (!live || isTerminal(live.session.record.status)) {
+    const item = activityStore.conflictItem(id);
+    if (item) await vscode.window.showInformationMessage(`Conflict ${item.conflict?.status || 'unavailable'}. This upload cannot be resumed; start a new transfer after reviewing the file.`);
+    return;
   }
-  return undefined;
-}
-
-function enqueueManualUi(
-  session: ConflictSession,
-  context: FileTransferContext
-): Promise<ConflictDecisionAction | undefined> {
-  let result: ConflictDecisionAction | undefined;
-  const operation = manualUiQueue.then(async () => {
-    result = await showManualUi(session, context);
-  });
-  manualUiQueue = operation.then(() => undefined, () => undefined);
-  return operation.then(() => result);
+  const { session, context } = live;
+  const revision = session.record.revision;
+  const choice = await showQuickPickOnce(session, context);
+  if (choice === 'open_diff') await openNativeDiff(session, context);
+  else if (choice === 'troubleshoot') await vscode.commands.executeCommand(COMMAND_OPEN_TROUBLESHOOTING,
+    session.record.reason === 'timestamp-unavailable' ? 'ftp-timestamps' : 'conflicts');
+  else if (choice === 'copy_agent_prompt') {
+    await vscode.env.clipboard.writeText(`Resolve SFTP/FTP upload conflict ${session.record.id}. Read both versions and the diff through the conflict MCP tools, preserve the remote changes and my intended local edits, submit the merged local content, and wait for terminal status uploaded. Refresh stale revisions before making a decision.`);
+  } else if (choice) manualChoices.set(id, { action: choice, revision });
 }
 
 async function pendingRequests(session: ConflictSession): Promise<RequestEnvelope[]> {
@@ -1173,6 +1127,8 @@ async function acceptDecision(
 function closeManualUi(session: ConflictSession): void {
   resolvedSessions.add(session.record.id);
   activeQuickPicks.get(session.record.id)?.hide();
+  liveConflictUi.delete(session.record.id);
+  manualChoices.delete(session.record.id);
 }
 
 export async function waitForConflictDecision(
@@ -1182,24 +1138,27 @@ export async function waitForConflictDecision(
   if (session.generation !== bridgeGeneration) {
     return 'cancel';
   }
-  let manualDecision: ConflictDecisionAction | undefined;
-  void enqueueManualUi(session, context).then(choice => {
-    manualDecision = choice;
-  });
+  const activity = currentActivity();
 
   for (;;) {
     if (session.generation !== bridgeGeneration) {
       return 'cancel';
     }
-    if (manualDecision) {
-      const decision = manualDecision;
-      manualDecision = undefined;
+    if (activity?.group?.cancelRequested) {
+      await acceptDecision(session, context, 'cancel', 'cursor', session.record.revision);
+      closeManualUi(session);
+      return 'cancel';
+    }
+    const manual = manualChoices.get(session.record.id);
+    if (manual) {
+      const decision = manual.action;
+      manualChoices.delete(session.record.id);
       const accepted = await acceptDecision(
         session,
         context,
         decision,
         'cursor',
-        session.record.revision
+        manual.revision
       );
       if (accepted.accepted) {
         closeManualUi(session);
@@ -1213,6 +1172,7 @@ export async function waitForConflictDecision(
             })
           )
         );
+        if (decision === 'cancel' && activity?.group) activityStore.cancel(activity.group.id);
         return decision;
       }
     }
@@ -1326,6 +1286,7 @@ export async function waitForConflictDecision(
           })
         )
       );
+      if (request.action === 'cancel' && activity?.group) activityStore.cancel(activity.group.id);
       return request.action === 'upload' ? 'overwrite' : 'cancel';
     }
 

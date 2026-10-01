@@ -55,7 +55,7 @@
         },
         {
           "id": "transferQueue",
-          "name": "Transfer Queue"
+          "name": "Activity"
         },
         {
           "id": "remoteBackups",
@@ -108,6 +108,11 @@
           "type": "boolean",
           "default": false,
           "description": "Suppress the local plaintext-credential warning. This does not encrypt the configuration or plain FTP traffic."
+        },
+        "sftp.notifications.showSuccess": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show one summary after successful manual transfers. Automatic transfer successes stay in Activity and the status bar."
         }
       }
     },
@@ -400,6 +405,30 @@
         "command": "sftpSyncAI.clearConflictState",
         "title": "Clear Conflict State",
         "category": "SFTP/FTP Sync + AI Conflict Resolution"
+      },
+      {
+        "command": "sftpSyncAI.activity.open",
+        "title": "Open Activity",
+        "category": "SFTP",
+        "icon": "$(list-tree)"
+      },
+      {
+        "command": "sftpSyncAI.activity.details",
+        "title": "View Transfer Details",
+        "category": "SFTP",
+        "icon": "$(info)"
+      },
+      {
+        "command": "sftpSyncAI.activity.filter",
+        "title": "Filter Activity",
+        "category": "SFTP",
+        "icon": "$(filter)"
+      },
+      {
+        "command": "sftpSyncAI.activity.cancelOperation",
+        "title": "Cancel Operation",
+        "category": "SFTP",
+        "icon": "$(close)"
       }
     ],
     "menus": {
@@ -598,6 +627,14 @@
         {
           "command": "sftpSyncAI.remoteBackups.delete",
           "when": "false"
+        },
+        {
+          "command": "sftpSyncAI.activity.details",
+          "when": "false"
+        },
+        {
+          "command": "sftpSyncAI.activity.cancelOperation",
+          "when": "false"
         }
       ],
       "explorer/context": [
@@ -729,6 +766,11 @@
           "command": "sftpSyncAI.remoteBackups.refresh",
           "when": "view == remoteBackups",
           "group": "navigation"
+        },
+        {
+          "command": "sftpSyncAI.activity.filter",
+          "when": "view == transferQueue",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
@@ -829,6 +871,16 @@
           "command": "sftpSyncAI.remoteBackups.delete",
           "group": "7_modification@1",
           "when": "view == remoteBackups && viewItem == backupVersion"
+        },
+        {
+          "command": "sftpSyncAI.activity.cancelOperation",
+          "when": "view == transferQueue && viewItem == activeOperation",
+          "group": "inline"
+        },
+        {
+          "command": "sftpSyncAI.activity.details",
+          "when": "view == transferQueue && viewItem == activityConflict",
+          "group": "inline"
         }
       ],
       "scm/title": [

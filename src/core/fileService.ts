@@ -5,6 +5,7 @@ import * as sshConfig from 'ssh-config';
 import app from '../app';
 import logger from '../logger';
 import { getUserSetting, showWarningMessage } from '../host';
+import { registerActivityCancellation, currentActivity } from '../modules/activity';
 import { replaceHomePath, resolvePath } from '../helper';
 import {
   createCredentialEndpoint,
@@ -698,6 +699,7 @@ export default class FileService {
         scheduler.add(task);
       },
       run() {
+        if (currentActivity()?.group?.cancelRequested) transferScheduler.stop();
         if (isStopped) {
           const result = operation.result();
           return hasBlockingTransferOutcome(result)
@@ -732,6 +734,8 @@ export default class FileService {
       },
     };
     fileService._storeScheduler(transferScheduler);
+    const releaseCancellation = registerActivityCancellation(() => transferScheduler.stop());
+    scheduler.onIdle(releaseCancellation);
 
     return transferScheduler;
   }

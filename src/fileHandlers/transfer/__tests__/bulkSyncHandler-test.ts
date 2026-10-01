@@ -172,8 +172,8 @@ describe('bulk sync handler authorization boundary', () => {
     expect(state.scheduler.run).toHaveBeenCalledTimes(1);
     expect(remoteBackupsRefresh).toHaveBeenCalledTimes(1);
     expect(refreshRemoteExplorer).toHaveBeenCalledTimes(1);
-    expect(startSpinner).toHaveBeenCalledTimes(1);
-    expect(stopSpinner).toHaveBeenCalledTimes(1);
+    expect(startSpinner).not.toHaveBeenCalled();
+    expect(stopSpinner).not.toHaveBeenCalled();
   });
 
   test('confirmed Local → Remote preserves warning-only success and reports recovery risk', async () => {
@@ -222,8 +222,8 @@ describe('bulk sync handler authorization boundary', () => {
         retrySafety: 'unsafe',
       })
     );
-    expect(startSpinner).toHaveBeenCalledTimes(1);
-    expect(stopSpinner).toHaveBeenCalledTimes(1);
+    expect(startSpinner).not.toHaveBeenCalled();
+    expect(stopSpinner).not.toHaveBeenCalled();
   });
 
   test('confirmed Local → Remote preserves a partial result failure and stops success-only work', async () => {
@@ -255,8 +255,8 @@ describe('bulk sync handler authorization boundary', () => {
     expect(remoteBackupsRefresh).not.toHaveBeenCalled();
     expect(refreshRemoteExplorer).not.toHaveBeenCalled();
     expect(reportError).not.toHaveBeenCalled();
-    expect(startSpinner).toHaveBeenCalledTimes(1);
-    expect(stopSpinner).toHaveBeenCalledTimes(1);
+    expect(startSpinner).not.toHaveBeenCalled();
+    expect(stopSpinner).not.toHaveBeenCalled();
   });
 
   test('delete-enabled Local → Remote names remote deletion', async () => {

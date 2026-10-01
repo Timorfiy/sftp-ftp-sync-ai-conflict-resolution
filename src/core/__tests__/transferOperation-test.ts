@@ -89,8 +89,10 @@ describe('TransferOperation', () => {
     const result = operation.result();
     expect(result.operationId).toBe('retry-batch');
     expect(result.completed).toBe(1);
-    expect(result.failed).toBe(1);
-    expect(result.items).toHaveLength(2);
+    expect(result.failed).toBe(0);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].attempts).toBe(2);
+    expect(result.items[0].attemptErrors).toEqual(['connection lost']);
   });
 
   test('classifies warning-only, cancellation-only, and mixed batch results', () => {

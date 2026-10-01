@@ -1,117 +1,112 @@
 import * as vscode from 'vscode';
-import TransferTask from '../core/transferTask';
-import { redactedErrorMessage } from '../security/redaction';
+import * as path from 'path';
+import { activityStore, ActivityGroup, ActivityItem, activityCounts, groupAttentionCount,
+  groupIsActive, itemNeedsAttention, relativeActivityPath } from './activity';
+import { redactText } from '../security/redaction';
+import { COMMAND_ACTIVITY_OPEN, COMMAND_ACTIVITY_DETAILS, COMMAND_ACTIVITY_FILTER, COMMAND_ACTIVITY_CANCEL } from '../constants';
 
-export interface QueueItem {
-  id: string;
-  task: TransferTask;
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
-  error?: string;
-  warning?: string;
-  startTime?: number;
-  endTime?: number;
-}
+export const ACTIVITY_OPEN = COMMAND_ACTIVITY_OPEN;
+export const ACTIVITY_DETAILS = COMMAND_ACTIVITY_DETAILS;
+export const ACTIVITY_FILTER = COMMAND_ACTIVITY_FILTER;
+export const ACTIVITY_CANCEL = COMMAND_ACTIVITY_CANCEL;
+export type ActivityFilter = 'All' | 'Active' | 'Needs Attention';
+export type QueueItem = { id: string; type: 'group'; group: ActivityGroup }
+  | { id: string; type: 'connection'; group: ActivityGroup; connectionKey: string }
+  | { id: string; type: 'item'; item: ActivityItem }
+  | { id: string; type: 'issue'; group: ActivityGroup; index: number };
 
-let _idCounter = 0;
-
-export class TransferQueueProvider implements vscode.TreeDataProvider<QueueItem> {
-  private _items: QueueItem[] = [];
-  private _onDidChange: vscode.EventEmitter<QueueItem | undefined> = new vscode.EventEmitter<QueueItem | undefined>();
-  readonly onDidChangeTreeData: vscode.Event<QueueItem | undefined> = this._onDidChange.event;
-
-  add(task: TransferTask): string {
-    const id = `transfer-${++_idCounter}`;
-    this._items.push({ id, task, status: 'pending' });
-    this._onDidChange.fire(undefined);
-    return id;
-  }
-
-  start(id: string) {
-    const item = this._items.find(i => i.id === id);
-    if (item && item.status !== 'cancelled') {
-      item.status = 'running';
-      item.startTime = Date.now();
-      this._onDidChange.fire(item);
-    }
-  }
-
-  done(id: string, error?: Error) {
-    const item = this._items.find(i => i.id === id);
-    if (item) {
-      item.status = item.task.isCancelled?.()
-        ? 'cancelled'
-        : error
-          ? 'failed'
-          : 'completed';
-      item.endTime = Date.now();
-      if (error && item.status === 'failed') {
-        item.error = redactedErrorMessage(error);
-      } else {
-        item.error = undefined;
+export class TransferQueueProvider implements vscode.TreeDataProvider<QueueItem>, vscode.Disposable {
+  private readonly changed = new vscode.EventEmitter<QueueItem | undefined>();
+  readonly onDidChangeTreeData = this.changed.event;
+  filter: ActivityFilter = 'All';
+  private timer: ReturnType<typeof setTimeout> | undefined;
+  private readonly unsubscribe: () => void;
+  constructor() {
+    this.unsubscribe = activityStore.onChange(() => {
+      if (!this.timer) {
+        this.timer = setTimeout(() => { this.timer = undefined; this.changed.fire(undefined); }, 100);
+        this.timer.unref?.();
       }
-      const warnings = item.task.getWarnings?.() || [];
-      item.warning = warnings.length > 0
-        ? warnings.map(warning => warning.message).join('\n')
-        : undefined;
-      this._onDidChange.fire(item);
+    });
+  }
+  setFilter(filter: ActivityFilter): void { this.filter = filter; this.changed.fire(undefined); }
+  clearCompleted(): void { activityStore.clearCompleted(); }
+  cancel(id: string): void {
+    for (const group of activityStore.groups.values()) {
+      for (const item of group.items.values()) if (item.id === id) {
+        if (item.status === 'conflict') activityStore.cancel(group.id);
+        else {
+          item.cancel?.();
+          if (item.status === 'pending') activityStore.update(item, { status: 'cancelled' });
+        }
+        return;
+      }
     }
+    activityStore.cancel(id);
   }
-
-  cancel(id: string) {
-    const item = this._items.find(i => i.id === id);
-    if (item) {
-      item.status = 'cancelled';
-      item.endTime = Date.now();
-      item.task.cancel();
-      this._onDidChange.fire(item);
+  getParent(node: QueueItem): QueueItem | undefined {
+    if (node.type === 'group') return undefined;
+    const group = node.type === 'item' ? activityStore.groups.get(node.item.groupId) : node.group;
+    if (!group) return undefined;
+    if (node.type === 'item' && group.connections.size > 1) return { id: `${group.id}:${node.item.connection.key}`, type: 'connection', group, connectionKey: node.item.connection.key };
+    if (node.type === 'issue' && group.connections.size > 1) {
+      const connection = group.issueConnections.get(group.issues[node.index]);
+      if (connection) return { id: `${group.id}:${connection.key}`, type: 'connection', group, connectionKey: connection.key };
     }
+    return { id: group.id, type: 'group', group };
   }
-
-  remove(id: string) {
-    const index = this._items.findIndex(i => i.id === id);
-    if (index !== -1) {
-      this._items.splice(index, 1);
-      this._onDidChange.fire(undefined);
+  getChildren(node?: QueueItem): QueueItem[] {
+    if (!node) return [...activityStore.groups.values()]
+      .filter(group => group.entered && (this.filter === 'All' || (this.filter === 'Active' ? groupIsActive(group) : groupAttentionCount(group) > 0)))
+      .sort((a, b) => Number(groupIsActive(b) || groupAttentionCount(b) > 0) - Number(groupIsActive(a) || groupAttentionCount(a) > 0) || b.startedAt - a.startedAt)
+      .map(group => ({ id: group.id, type: 'group', group }));
+    if (node.type === 'item' || node.type === 'issue') return [];
+    const group = node.group;
+    const issues: QueueItem[] = group.issues.flatMap((issue, index) => {
+      const key = group.issueConnections.get(issue)?.key;
+      const matches = node.type === 'connection' ? key === node.connectionKey : group.connections.size <= 1 || !key;
+      return matches ? [{ type: 'issue' as const, id: `${group.id}:issue:${index}`, group, index }] : [];
+    });
+    if (node.type === 'group' && group.connections.size > 1) return [...issues, ...[...group.connections.keys()]
+      .filter(key => this.filter !== 'Needs Attention' || group.issues.some(issue => group.issueConnections.get(issue)?.key === key)
+        || [...group.items.values()].some(item => item.connection.key === key && itemNeedsAttention(item)))
+      .map(connectionKey => ({ type: 'connection' as const, id: `${group.id}:${connectionKey}`, group, connectionKey }))];
+    return [...issues, ...[...group.items.values()]
+      .filter(item => (node.type !== 'connection' || item.connection.key === node.connectionKey) && (this.filter !== 'Needs Attention' || itemNeedsAttention(item)))
+      .filter(item => item.kind !== 'mkdir' || item.status !== 'completed' || activityCounts(group).total === 0)
+      .map(item => ({ id: item.id, type: 'item' as const, item }))];
+  }
+  getTreeItem(node: QueueItem): vscode.TreeItem {
+    if (node.type === 'group') {
+      const group = node.group;
+      const count = activityCounts(group);
+      return { id: node.id, label: redactText(`${group.label} · ${[...group.connections.values()].map(connection => connection.label).join(', ')} · ${new Date(group.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`),
+        description: `${count.completed}/${count.total} files${count.issues ? ` · ${count.issues} issues` : ''}`,
+        iconPath: new vscode.ThemeIcon(count.conflicts || count.issues ? 'warning' : groupIsActive(group) ? 'sync~spin' : group.cancelRequested ? 'close' : 'check'),
+        contextValue: groupIsActive(group) ? 'activeOperation' : 'activityOperation',
+        collapsibleState: groupIsActive(group) || count.issues ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed };
     }
-  }
-
-  clearCompleted() {
-    this._items = this._items.filter(i => i.status === 'pending' || i.status === 'running');
-    this._onDidChange.fire(undefined);
-  }
-
-  getTreeItem(item: QueueItem): vscode.TreeItem {
-    const task = item.task;
-    const icon = this._getIcon(item.status);
-    const duration = item.endTime && item.startTime
-      ? ` (${((item.endTime - item.startTime) / 1000).toFixed(1)}s)`
-      : '';
-    const label = `${task.transferType} ${task.localFsPath}${duration}`;
-
-    return {
-      id: item.id,
-      label,
-      iconPath: new vscode.ThemeIcon(icon),
-      tooltip: item.error || item.warning || label,
-      contextValue: item.status === 'pending' || item.status === 'running' ? 'activeTransfer' : 'transfer',
+    if (node.type === 'connection') return { id: node.id, label: redactText(node.group.connections.get(node.connectionKey)?.label || ''),
+      collapsibleState: vscode.TreeItemCollapsibleState.Expanded };
+    if (node.type === 'issue') {
+      const issue = node.group.issues[node.index];
+      return { id: node.id, label: issue.title, description: issue.summary, iconPath: new vscode.ThemeIcon('warning'),
+        collapsibleState: vscode.TreeItemCollapsibleState.None, command: { command: ACTIVITY_DETAILS, title: 'View Details', arguments: [node] } };
+    }
+    const item = node.item;
+    const relative = relativeActivityPath(item);
+    const icon = item.status === 'conflict' || itemNeedsAttention(item) ? 'warning'
+      : item.status === 'running' ? 'sync~spin' : item.status === 'completed' ? 'check'
+        : item.status === 'cancelled' || item.status === 'not-started' ? 'close' : 'clock';
+    return { id: node.id, label: redactText(path.basename(item.localPath)),
+      description: redactText(`${path.dirname(relative) === '.' ? '' : `${path.dirname(relative)} · `}${item.conflict?.status || item.status}`),
+      tooltip: redactText([item.connection.description || item.connection.label, item.kind, item.localPath, item.remotePath,
+        item.error?.summary, ...item.warnings, item.conflict?.staleReason].filter(Boolean).join('\n')),
+      iconPath: new vscode.ThemeIcon(icon), contextValue: item.status === 'conflict' ? 'activityConflict'
+        : item.status === 'running' || item.status === 'pending' ? 'activeTransfer' : 'transfer',
       collapsibleState: vscode.TreeItemCollapsibleState.None,
-    };
+      command: { command: ACTIVITY_DETAILS, title: 'View Details', arguments: [node] } };
   }
-
-  getChildren(): QueueItem[] {
-    return [...this._items].reverse();
-  }
-
-  private _getIcon(status: QueueItem['status']): string {
-    switch (status) {
-      case 'pending': return 'clock';
-      case 'running': return 'sync~spin';
-      case 'completed': return 'check';
-      case 'failed': return 'error';
-      case 'cancelled': return 'close';
-      default: return 'file';
-    }
-  }
+  dispose(): void { this.unsubscribe(); if (this.timer) clearTimeout(this.timer); this.changed.dispose?.(); }
 }
-
 export const transferQueueProvider = new TransferQueueProvider();

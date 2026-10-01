@@ -1,5 +1,6 @@
 import { reportError } from '../../helper';
 import logger from '../../logger';
+import { withActivityInvocation } from '../../modules/activity';
 
 export interface ITarget {
   fsPath: string;
@@ -32,7 +33,11 @@ export default abstract class Command {
   async run(...args) {
     logger.trace(`run command '${this.name}'`);
     try {
-      await this.doCommandRun(...args);
+      if (/\.(upload|download|sync|forceUpload|forceDownload|rename|delete|create|remoteBackups\.restore)/.test(this.id)) {
+        await withActivityInvocation(this.name, () => this.doCommandRun(...args));
+      } else {
+        await this.doCommandRun(...args);
+      }
     } catch (error) {
       reportError(error);
     } finally {

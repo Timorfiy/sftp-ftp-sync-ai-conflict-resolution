@@ -24,16 +24,18 @@ not mean the two marketplace uploads have been completed.
 - [ ] Review the explicitly untested supported OS/editor versions and recorded
   warnings/limitations; do not describe them as executed tests.
 - [ ] Obtain separate owner consent for the first publication.
-- [ ] Require manual `release` Environment approval after successful checks for
-  **every** GitHub Release deployment, including later releases.
+- [ ] Obtain owner authorization for each publication and follow the configured
+  `release` Environment protection rules. When required reviewers are configured,
+  deployment waits for their approval after successful checks.
 
 No checkbox above authorizes creating a tag or publishing an extension by itself.
 
 ## One-time protected environment setup
 
 1. Create a GitHub Environment named `release`.
-2. Add required reviewers. Every version-tag deployment must wait for a manual
-   reviewer approval after the quality, build, and channel-validation jobs pass.
+2. Add required reviewers if manual deployment approval is desired. With
+   required reviewers configured, every version-tag deployment waits for their
+   approval after the quality, build, and channel-validation jobs pass.
 3. Restrict the environment to protected version tags matching the repository's
    release policy. A protected or signed tag alone does not authorize
    publication.
@@ -75,9 +77,9 @@ Publication requires all of the following:
 - a strict `v<semver>` tag exactly matching `v${package.json.version}`;
 - successful quality, build, and three channel-validation jobs;
 - the protected `release` environment with `RELEASE_ENABLED=true`; and
-- manual environment approval for the GitHub Release deployment.
+- owner authorization and any configured environment reviewer approval.
 
-Review the common artifact hash before approving. The GitHub publish job
+Review the common artifact hash before approving a protected deployment. The GitHub publish job
 downloads and re-verifies the existing bundle; it never compiles or packages
 another VSIX. Its summary links to the release and both manual upload pages.
 
@@ -106,3 +108,18 @@ If a manual upload fails, inspect the store's version status before retrying
 the same file. Completing a manual upload does not change a past Actions run.
 Older runs with removed automatic publishing jobs can remain red; new runs
 no longer attempt those token-based uploads.
+
+## 0.9.0 release configuration
+
+As checked on 2026-10-01, the repository's `release` Environment has
+`RELEASE_ENABLED=true` and no required-reviewer protection rule. The existing
+version-tag workflow therefore publishes the GitHub Release after its quality
+and validation jobs succeed. Only create/push a release tag after the owner has
+requested that publication. No environment protections are changed by the
+Activity release. Marketplace and Open VSX uploads remain manual.
+
+Version 0.9.0 combines preliminary Linux/macOS compatibility with native
+Activity, grouped notifications and explicit conflict actions. The pre-release
+Windows installed-editor evidence is in [Activity UX QA](qa/activity-ux-report.md).
+Do not present that older local candidate's checksum as the workflow-built
+release checksum, or automatic OS checks as manual Linux/macOS editor QA.

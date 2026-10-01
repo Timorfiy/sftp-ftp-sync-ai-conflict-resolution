@@ -68,7 +68,7 @@ async function verifyCandidate(bundle, pin) {
   const entries = await readArchive(file);
   const manifest = JSON.parse(entries.get('extension/package.json'));
   assert.equal(`${manifest.publisher}.${manifest.name}`, 'Timorfiy.sftp-sync-ai');
-  assert.equal(manifest.version, '0.1.0');
+  assert.equal(manifest.version, pin.version || '0.1.0');
   return { file, entries, manifest };
 }
 

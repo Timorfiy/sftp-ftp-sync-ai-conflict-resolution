@@ -14,8 +14,20 @@ import {
 } from '../../core/transferOperation';
 import { reportError } from '../../helper';
 import { TypedFailure } from '../../errors/actionable';
+import { activityPrepared } from '../../modules/activity';
 
 export { createTransferRetryOptions } from './retryOptions';
+
+async function collectAndRun(scheduler, collect: () => Promise<unknown>): Promise<TransferOperationResult> {
+  try {
+    await collect();
+    activityPrepared();
+    return await scheduler.run();
+  } catch (error) {
+    scheduler.stop?.();
+    throw error;
+  }
+}
 
 function reportTransferWarnings(
   result: TransferOperationResult,
@@ -97,8 +109,7 @@ function createTransferHandle(direction: TransferDirection) {
               transferDirection: TransferDirection.LOCAL_TO_REMOTE,
             };
           }
-          await transfer(transferConfig, task => scheduler.add(task));
-          const transferResult = await scheduler.run();
+          const transferResult = await collectAndRun(scheduler, () => transfer(transferConfig, task => scheduler.add(task)));
 
           if (isUpload) {
             remoteBackupsProvider.refresh();
@@ -177,7 +188,7 @@ export const sync2Remote = createFileHandler<SyncOption>({
             this.config.concurrency,
             operation
           );
-          await sync(
+          const transferResult = await collectAndRun(scheduler, () => sync(
             {
               srcFsPath: localFsPath,
               srcFs: localFs,
@@ -190,8 +201,7 @@ export const sync2Remote = createFileHandler<SyncOption>({
               transferDirection: TransferDirection.LOCAL_TO_REMOTE,
             },
             task => scheduler.add(task)
-          );
-          const transferResult = await scheduler.run();
+          ));
 
           remoteBackupsProvider.refresh();
           return transferResult;
@@ -268,7 +278,7 @@ export const sync2Local = createFileHandler<SyncOption>({
           this.config.concurrency,
           operation
         );
-        await sync(
+        await collectAndRun(scheduler, () => sync(
           {
             srcFsPath: remoteFsPath,
             srcFs: remoteFs,
@@ -281,8 +291,7 @@ export const sync2Local = createFileHandler<SyncOption>({
             transferDirection: TransferDirection.REMOTE_TO_LOCAL,
           },
           task => scheduler.add(task)
-        );
-        await scheduler.run();
+        ));
       },
       createTransferRetryOptions(this, TransferDirection.REMOTE_TO_LOCAL)
     );

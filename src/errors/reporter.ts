@@ -2,6 +2,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import logger from '../logger';
 import * as output from '../ui/output';
+import { captureActivityError } from '../modules/activity';
 import { COMMAND_CONFIG, COMMAND_OPEN_TROUBLESHOOTING } from '../constants';
 import {
   ActionableError,
@@ -70,15 +71,25 @@ async function performAction(
   }
 }
 
+export async function showErrorDetails(actionable: ActionableError, context: ErrorContext = {}): Promise<void> {
+  const actions = actionable.actions.filter(action => action !== 'retry' || (actionable.retrySafety === 'safe' && Boolean(context.retry)));
+  const choice = await vscode.window.showQuickPick(actions.map(action => ({ label: ACTION_LABELS[action],
+    description: action === 'show-output' ? actionable.summary : undefined, action })),
+  { title: context.operation ? `${actionable.title} · ${context.operation}` : actionable.title, placeHolder: actionableMessage(actionable) });
+  if (choice) await performAction(choice.action, actionable, context);
+}
+
 export async function reportActionableError(
   error: unknown,
   context: ErrorContext = {}
 ): Promise<ActionableError> {
   const actionable = classifyError(error, context);
   logger.error(actionable.diagnostics, context.operation);
+  if (captureActivityError(error, context)) return actionable;
 
-  const labels = actionable.actions.map(action => ACTION_LABELS[action]);
-  const message = actionableMessage(actionable);
+  const primary = actionable.actions.find(action => ['open-config', 'retry', 'review-conflict'].includes(action));
+  const labels = [...(primary ? [ACTION_LABELS[primary]] : []), 'Details'];
+  const message = `${actionable.title}: ${actionable.summary}`;
   let selected: string | undefined;
   if (actionable.severity === 'information') {
     selected = await vscode.window.showInformationMessage(message, ...labels);
@@ -88,7 +99,11 @@ export async function reportActionableError(
     selected = await vscode.window.showErrorMessage(message, ...labels);
   }
 
-  const action = actionable.actions.find(candidate => ACTION_LABELS[candidate] === selected);
+  if (selected === 'Details') {
+    await showErrorDetails(actionable, context);
+    return actionable;
+  }
+  const action = primary && ACTION_LABELS[primary] === selected ? primary : undefined;
   if (action) {
     await performAction(action, actionable, context);
   }

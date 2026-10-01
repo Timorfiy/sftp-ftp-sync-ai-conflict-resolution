@@ -98,3 +98,16 @@ preserved. Inactive state is bounded to 90 days, 250 records per workspace,
 
 **Open Troubleshooting** opens the bundled [recovery guide](troubleshooting.md)
 at the relevant section.
+
+## Activity
+
+- **Open Activity** — Open the grouped queue, prioritizing issues or active work.
+- **Filter Activity** — Choose All, Active, or Needs Attention.
+- **View Transfer Details** — Select a row for its result or explicit conflict actions.
+- **Cancel Operation** — Cancel a selected active group, including conflicts waiting before transfer.
+- **Cancel Transfer / Clear Completed** — Existing commands retain their IDs.
+
+Conflict menus provide Open Diff, Copy Agent Prompt, Troubleshoot, Overwrite,
+Overwrite All, and Cancel upload. Dismissing a menu leaves the conflict pending.
+Agent decisions use the existing MCP tools and revision checks; only uploaded
+confirms a completed upload. Completed groups are session-only UI history.

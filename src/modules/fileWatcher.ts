@@ -18,6 +18,7 @@ import {
 import { isLocalPathAtOrUnder } from '../helper/paths';
 import { localPathKey } from '../helper/localPaths';
 import { isConflictPathActive } from '../fileHandlers/transfer/conflictBridge';
+import { withActivityOrigin } from './activity';
 
 const watchers: {
   [x: string]: vscode.FileSystemWatcher;
@@ -89,7 +90,7 @@ async function drainUploads() {
       logger.info(`[watcher/updated] ${fspath}`);
       // Transfers have their own scheduler. A conflict waiting for a user in
       // one project must not stop watcher dispatch in every other project.
-      void upload(uri).catch(error => reportWatcherError(error, 'upload', fspath));
+      void withActivityOrigin('watcher', () => upload(uri)).catch(error => reportWatcherError(error, 'upload', fspath));
     } catch (error) {
       if (error.code === 'ENOENT') {
         continue;
@@ -124,7 +125,7 @@ async function drainDeletes() {
         continue;
       }
       logger.info(`[watcher/removed] ${fspath}`);
-      void removeRemote(uri).catch(error => reportWatcherError(error, 'remove', fspath));
+      void withActivityOrigin('watcher', () => removeRemote(uri)).catch(error => reportWatcherError(error, 'remove', fspath));
     } catch (error) {
       reportWatcherError(error, 'remove', fspath);
     }

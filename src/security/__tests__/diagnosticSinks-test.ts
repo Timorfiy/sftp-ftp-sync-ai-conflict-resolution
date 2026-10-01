@@ -38,6 +38,8 @@ jest.mock('vscode', () => {
 
 import { reportError } from '../../helper/error';
 import { transferQueueProvider } from '../../modules/transferQueue';
+import { activityStore } from '../../modules/activity';
+import { classifyError } from '../../errors/actionable';
 import * as output from '../../ui/output';
 import { RedactionScope } from '../redaction';
 
@@ -89,10 +91,8 @@ describe('diagnostic sink redaction', () => {
 
     expect(error.message).toContain(canary);
     expect(mockShowErrorMessage).toHaveBeenCalledWith(
-      'Authentication was rejected: The server did not accept the configured or prompted credentials. Verify the username and credential source, then reconnect.',
-      'Copy Diagnostics',
-      'Troubleshoot',
-      'Show Output'
+      'Authentication was rejected: The server did not accept the configured or prompted credentials.',
+      'Details'
     );
     expect(
       mockAppendLine.mock.calls.flat().join('\n')
@@ -105,24 +105,19 @@ describe('diagnostic sink redaction', () => {
     const scope = new RedactionScope();
     const canary = 'queue-passphrase-canary';
     scope.register(canary);
-    const task = {
-      transferType: 'upload',
-      localFsPath: 'C:\\workspace\\index.js',
-      cancel: jest.fn(),
-    };
-
-    const id = transferQueueProvider.add(task as any);
-    transferQueueProvider.start(id);
-    transferQueueProvider.done(id, new Error(`Upload failed: ${canary}`));
-    const item = transferQueueProvider.getChildren().find(value => value.id === id)!;
-    const treeItem = transferQueueProvider.getTreeItem(item);
-
-    expect(treeItem.tooltip).toBe('Upload failed: [REDACTED]');
+    const connection = { key: 'diagnostic-test', label: 'test', workspace: process.cwd(), basePath: process.cwd(), remotePath: '/site', protocol: 'sftp' };
+    const group = activityStore.begin('Upload', 'manual', connection);
+    group.entered = true;
+    const item = activityStore.discover(group, connection, 'upload', process.cwd() + '/index.js', '/site/index.js');
+    activityStore.update(item, { status: 'failed', error: classifyError(new Error(`Upload failed: ${canary}`)) });
+    const node = { id: item.id, type: 'item' as const, item };
+    const treeItem = transferQueueProvider.getTreeItem(node);
     expect(String(treeItem.tooltip)).not.toContain(canary);
+    expect(item.error?.diagnostics).not.toContain(canary);
     scope.dispose();
     jest.runOnlyPendingTimers();
     expect(
-      transferQueueProvider.getChildren().some(value => value.id === id)
+      transferQueueProvider.getChildren().some(value => value.id === group.id)
     ).toBe(true);
     transferQueueProvider.clearCompleted();
     jest.useRealTimers();

@@ -1,3 +1,4 @@
+import { activityStore, withActivityOperation, currentActivity } from '../../../modules/activity';
 const mockQuickPicks: any[] = [];
 const showErrorMessage = jest.fn(async () => undefined);
 
@@ -11,6 +12,7 @@ jest.mock('vscode', () => ({
   workspace: {
     textDocuments: [],
   },
+  env: { clipboard: { writeText: jest.fn(async () => undefined) } },
   window: {
     showErrorMessage,
     createQuickPick: jest.fn(() => {
@@ -76,6 +78,7 @@ import { TransferDirection } from '../../../core/transferTask';
 import { RedactionScope } from '../../../security/redaction';
 import {
   acceptBatchOverwrite,
+  showConflictActions,
   atomicWriteJson,
   captureConflict,
   disposeConflictBridge,
@@ -212,6 +215,8 @@ describe('Conflict bridge coordinator', () => {
     );
     const waiting = waitForConflictDecision(session, data.context);
     await delay(20);
+    expect(mockQuickPicks).toHaveLength(0);
+    void showConflictActions(session.record.id);
     expect(mockQuickPicks).toHaveLength(1);
 
     await disposeConflictBridge();
@@ -274,6 +279,7 @@ describe('Conflict bridge coordinator', () => {
     );
     expect(isConflictPathActive(data.localFile)).toBe(true);
     const decisionPromise = waitForConflictDecision(session, data.context);
+    void showConflictActions(session.record.id);
     await delay(20);
     const capability = getConflictMcpConfiguration(
       '3.5.0-test',
@@ -826,6 +832,7 @@ describe('Conflict bridge coordinator', () => {
       data.remote
     );
     const decisionPromise = waitForConflictDecision(session, data.context);
+    void showConflictActions(session.record.id);
     await delay(20);
     const requestId = randomUUID();
     const capability = getConflictMcpConfiguration(
@@ -866,6 +873,7 @@ describe('Conflict bridge coordinator', () => {
       data.remote
     );
     const decisionPromise = waitForConflictDecision(session, data.context);
+    void showConflictActions(session.record.id);
     await delay(20);
 
     mockQuickPicks[0].accept('Troubleshoot');
@@ -875,8 +883,59 @@ describe('Conflict bridge coordinator', () => {
       'sftpSyncAI.openTroubleshooting',
       'ftp-timestamps'
     );
+    void showConflictActions(session.record.id);
     mockQuickPicks[1].accept('Cancel upload');
     await expect(decisionPromise).resolves.toBe('cancel');
+  });
+
+  test('closing an explicitly opened action menu keeps the upload pending until a separate decision', async () => {
+    const data = await fixture();
+    const before = await fs.promises.readFile(data.remoteFile);
+    const session = await captureConflict(data.workspace, 'dismiss', data.context, 'remote-changed', data.remote);
+    const waiting = waitForConflictDecision(session, data.context);
+    await delay(20);
+    expect(mockQuickPicks).toHaveLength(0);
+    const menu = showConflictActions(session.record.id);
+    mockQuickPicks[0].hide();
+    await menu;
+    await delay(220);
+    expect(session.record.status).toBe('pending');
+    expect(isConflictPathActive(data.localFile)).toBe(true);
+    expect(await fs.promises.readFile(data.remoteFile)).toEqual(before);
+    const response = await sendRequest(session, getConflictMcpConfiguration('test', new Map()).capability,
+      { kind: 'resolve', expectedRevision: session.record.revision, action: 'cancel' });
+    expect(response.accepted).toBe(true);
+    await expect(waiting).resolves.toBe('cancel');
+  });
+
+  test('operation cancellation releases a pre-scheduler conflict without any overwrite', async () => {
+    const data = await fixture();
+    const before = await fs.promises.readFile(data.remoteFile);
+    let session: any;
+    const waiting = withActivityOperation('Upload', { key: 'cancel-operation', label: 'test', workspace: data.workspace,
+      basePath: data.workspace, remotePath: '/', protocol: 'sftp' }, async () => {
+      session = await captureConflict(data.workspace, 'cancel-group', data.context, 'remote-changed', data.remote);
+      return waitForConflictDecision(session, data.context);
+    });
+    for (let index = 0; index < 200 && !session; index++) await delay(10);
+    expect(session).toBeDefined();
+    const item = activityStore.conflictItem(session.record.id)!;
+    activityStore.cancel(item.groupId);
+    await expect(waiting).resolves.toBe('cancel');
+    expect(session.record.status).toBe('cancelled');
+    expect(isConflictPathActive(data.localFile)).toBe(false);
+    expect(await fs.promises.readFile(data.remoteFile)).toEqual(before);
+    expect(currentActivity()).toBeUndefined();
+  });
+
+  test('agent prompt copies only conflict context and leaves the transfer pending', async () => {
+    const data = await fixture();
+    const session = await captureConflict(data.workspace, 'prompt', data.context, 'remote-changed', data.remote);
+    const menu = showConflictActions(session.record.id);
+    mockQuickPicks[0].accept('Copy Agent Prompt'); await menu;
+    expect(vscode.env.clipboard.writeText).toHaveBeenCalledWith(expect.stringContaining(session.record.id));
+    expect(vscode.env.clipboard.writeText).toHaveBeenCalledWith(expect.stringContaining('terminal status uploaded'));
+    expect(session.record.status).toBe('pending');
   });
 
   test('old extension-session conflicts become orphaned on initialization', async () => {

@@ -1,3 +1,5 @@
+const queueCleanup = () => activityStore.reset();
+const { activityStore, withActivityOperation, currentActivity } = require('../../src/modules/activity');
 const settingStore = {
   sftp: {
     suppressPlaintextPasswordWarning: false,
@@ -481,16 +483,13 @@ describe('FileService transfer operation results', () => {
   });
 
   test('cancelling one pending queue row prevents every transfer side effect', async () => {
+    await withActivityOperation('Upload', { key: 'queue-test', label: 'test', workspace: process.cwd(), basePath: process.cwd(), remotePath: '/target', protocol: 'sftp' }, async () => {
     const service = new FileService('/tmp', '/tmp', createConfig());
     const queue = new TransferQueueProvider();
     const queueIds = new Map();
     service.queuedTransfer(task => {
-      queueIds.set(task, queue.add(task));
+      queueIds.set(task, [...currentActivity().group.items.values()].find(item => item.task === task).id);
     });
-    service.beforeTransfer(task => queue.start(queueIds.get(task)));
-    service.afterTransfer((error, task) =>
-      queue.done(queueIds.get(task), error || undefined)
-    );
 
     const gate = deferred();
     const active = transferTask('active.txt', gate);
@@ -546,11 +545,14 @@ describe('FileService transfer operation results', () => {
     expect(targetFs.open).not.toHaveBeenCalled();
     expect(targetFs.put).not.toHaveBeenCalled();
     expect(
-      queue.getChildren().find(item => item.id === pendingQueueId)
+      [...currentActivity().group.items.values()].find(item => item.id === pendingQueueId)
     ).toMatchObject({ status: 'cancelled', error: undefined });
+    });
+    queueCleanup();
   });
 
   test('warning-only completion resolves and retains a completed warning row', async () => {
+    await withActivityOperation('Upload', { key: 'queue-test', label: 'test', workspace: process.cwd(), basePath: process.cwd(), remotePath: '/target', protocol: 'sftp' }, async () => {
     const service = new FileService('/tmp', '/tmp', createConfig());
     const queue = new TransferQueueProvider();
     const warningTask = transferTask('warning.txt');
@@ -560,9 +562,6 @@ describe('FileService transfer operation results', () => {
         message: 'Previous remote text may not be recoverable.',
       },
     ];
-    const queueId = queue.add(warningTask);
-    service.beforeTransfer(() => queue.start(queueId));
-    service.afterTransfer((error, task) => queue.done(queueId, error || undefined));
     const scheduler = service.createTransferScheduler(1);
     scheduler.add(warningTask);
 
@@ -573,12 +572,14 @@ describe('FileService transfer operation results', () => {
       warnings: 1,
       isPartial: true,
     });
-    expect(queue.getChildren()).toEqual([
+    expect([...currentActivity().group.items.values()]).toEqual([
       expect.objectContaining({
         status: 'completed',
-        warning: 'Previous remote text may not be recoverable.',
+        warnings: ['Previous remote text may not be recoverable.'],
       }),
     ]);
+    });
+    queueCleanup();
   });
 });
 

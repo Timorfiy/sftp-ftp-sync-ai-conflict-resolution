@@ -98,7 +98,7 @@ test.each([
   tree.onDidChangeTreeData(value => events.push(value));
   await expect(tree.getChildren(folder)).resolves.toEqual([]);
   expect(showErrorMessage).toHaveBeenCalledWith(expect.stringContaining(title),
-    'Retry', 'Open Config', 'Copy Diagnostics', 'Troubleshoot', 'Show Output');
+    'Retry', 'Details');
   expect(tree.getTreeItem(folder)).toMatchObject({
     iconPath: { id: 'error' }, description: `Read failed: ${title}`,
     tooltip: expect.stringContaining('Refresh this folder'),
@@ -208,6 +208,6 @@ test('refresh command awaits selected refresh completion and observes rejection'
     reject(new Error('Permission denied'));
     await pending;
     expect(showErrorMessage).toHaveBeenCalledWith(expect.stringContaining('Permission was denied'),
-      'Open Config', 'Copy Diagnostics', 'Troubleshoot', 'Show Output');
+      'Open Config', 'Details');
   } finally { spy.mockRestore(); }
 });

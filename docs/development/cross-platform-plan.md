@@ -33,8 +33,8 @@ Closing an Activity action menu must not cancel a pending upload; cancellation
 requires an explicit action. This compatibility change does not implement that
 transition or a competing notification/conflict UI.
 
-Leave the current Windows notification mechanism and current UI behavior until
-UX integration. Cross-platform system-notification adapters, helper-process
+The Activity integration replaces the previous Windows notification mechanism
+with native editor notifications and explicit conflict actions. Cross-platform system-notification adapters, helper-process
 timeouts/fallbacks, Windows sound preservation work, associated process tests,
 and system-notification requirements are excluded.
 

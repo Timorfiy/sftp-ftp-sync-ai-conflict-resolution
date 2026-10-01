@@ -1,4 +1,20 @@
-## 0.9.0 - 2026-09-30
+## 0.9.0 - 2026-10-01
+
+Native transfer Activity, quieter editor notifications, and preliminary Linux/macOS compatibility.
+
+* Replace the flat Transfer Queue with native Activity groups, connection subgroups,
+  relative paths, filters, issue badges, and explicit operation cancellation.
+* Unify preparation/progress/results in the status bar and show one summary for
+  manual operations. Automatic successes stay quiet; repeated background errors
+  are grouped. Add the editor setting `sftp.notifications.showSuccess`.
+* Move conflict actions to Activity. Closing a menu keeps uploads pending; manual
+  and MCP decisions retain revision checks. Add Copy Agent Prompt.
+* Keep retry attempts in one logical file while retaining redacted attempt errors.
+  Distinguish post-transfer hook failure from file-transfer failure.
+* Remove Windows notification helper processes and sounds. All platforms use
+  native editor notifications and existing shared local-path identity helpers.
+* Linux/macOS editor UI and integration qualification remain preliminary; see
+  the Activity QA report for checks actually performed.
 
 * Add preliminary Ubuntu Desktop x64 and macOS Intel/Apple Silicon compatibility
   using shared local path/case rules, portable SSH quoting and staged download
@@ -7,14 +23,16 @@
 * Extend automated core, filesystem, watcher, loopback FTP/SFTP and packaging
   checks to Linux/macOS, including a case-sensitive APFS job. Exact completed
   runner coverage is recorded in the cross-platform QA report.
-* Keep notification/conflict UI changes in the separate Activity UX task; the
-  current Windows notification implementation is retained until integration.
 
 Linux and macOS compatibility was implemented with AI assistance. Automated
 checks cover the operating systems and architectures listed in the test report.
 The extension has not been manually tested in installed VS Code or Cursor on
 Linux/macOS. Editor UI, credential storage, and editor MCP integration remain
 unverified in those environments.
+
+Windows installed-editor Activity checks passed in VS Code 1.139.1 and Cursor
+3.22.7 with both FTP and SFTP. Linux/macOS manual editor qualification remains
+preliminary. One universal VSIX is used for all platforms.
 
 ## 0.8.3 - 2026-09-25
 

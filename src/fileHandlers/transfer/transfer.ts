@@ -18,6 +18,8 @@ import {
 } from './conflictStateIsolation';
 import { withPathFailure } from '../../errors/actionable';
 import { createDownloadDirectory } from '../../modules/watcherSuppression';
+import { assertActivityNotCancelled, discoverActivityItem, recordActivityAction, settleActivityChildren, currentActivity } from '../../modules/activity';
+import { toLocalPath } from '../../helper/paths';
 
 export interface FileTransferContext {
   srcFsPath: string;
@@ -126,11 +128,14 @@ function targetOperation<T>(
 }
 
 function ensureTargetDirectory(config: BaseTransferHandleConfig, dir: string) {
-  return targetOperation(config.transferDirection, () =>
+  const connection = currentActivity()?.connection;
+  const localPath = config.transferDirection === TransferDirection.REMOTE_TO_LOCAL ? dir
+    : connection ? toLocalPath(dir, connection.remotePath, connection.basePath) : config.srcFsPath;
+  return recordActivityAction('mkdir', localPath, config.transferDirection === TransferDirection.LOCAL_TO_REMOTE ? dir : '', () => targetOperation(config.transferDirection, () =>
     config.transferDirection === TransferDirection.REMOTE_TO_LOCAL
       ? createDownloadDirectory(dir, () => config.targetFs.ensureDir(dir))
       : config.targetFs.ensureDir(dir)
-  );
+  ));
 }
 
 function localPathForTransfer(
@@ -201,7 +206,7 @@ async function transferFolder(
   const fileEntries = await sourceOperation(config.transferDirection, () =>
     srcFs.list(srcFsPath)
   );
-  await Promise.all(
+  await settleActivityChildren(
     fileEntries.map(async file => {
       const accurateFile = await sourceOperation(
         config.transferDirection,
@@ -251,6 +256,11 @@ async function transferFile(
     sourceMtime: config.transferOption.mtime || 0,
     sourceSize: config.transferOption.sourceSize || 0,
   };
+
+  assertActivityNotCancelled();
+  discoverActivityItem(config.transferDirection === TransferDirection.LOCAL_TO_REMOTE ? 'upload' : 'download',
+    localPathForTransfer(config.transferDirection, config.srcFsPath, config.targetFsPath),
+    config.transferDirection === TransferDirection.LOCAL_TO_REMOTE ? config.targetFsPath : config.srcFsPath);
 
   if (config.transferOption.beforeFileTransfer) {
     await config.transferOption.beforeFileTransfer(lifecycleContext);
@@ -363,6 +373,10 @@ async function removeFile(
   const side =
     direction === TransferDirection.LOCAL_TO_REMOTE ? 'remote' : 'local';
 
+  const connection = currentActivity()?.connection;
+  const localPath = direction === TransferDirection.REMOTE_TO_LOCAL ? file
+    : connection ? toLocalPath(file, connection.remotePath, connection.basePath) : file;
+  await recordActivityAction('delete', localPath, direction === TransferDirection.LOCAL_TO_REMOTE ? file : '', async () => {
   switch (fileType) {
     case FileType.Directory:
       await targetOperation(direction, () =>
@@ -380,6 +394,7 @@ async function removeFile(
     default:
       break;
   }
+  });
 }
 
 async function _sync(
@@ -579,12 +594,12 @@ async function _sync(
     }
 
     // side-effect
-    await Promise.all(
+    await settleActivityChildren(
       fileMissed.map(file =>
         removeFile(file, targetFs, FileType.File, transferOption, transferDirection)
       )
     );
-    await Promise.all(
+    await settleActivityChildren(
       dirMissed.map(file =>
         removeFile(file, targetFs, FileType.Directory, transferOption, transferDirection)
       )
@@ -634,7 +649,7 @@ async function _sync(
       )
     );
 
-    return Promise.all([...transFilePromise, ...transDirPromise, ...syncPromise]).then(flatten);
+    return settleActivityChildren([...transFilePromise, ...transDirPromise, ...syncPromise]).then(flatten);
   };
 
   // create dir here so we don't have to ensure it for children files.

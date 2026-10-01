@@ -30,6 +30,9 @@ import {
 } from './constants';
 import { registerConflictMcpProvider } from './mcp/registration';
 import { initializeErrorReporter } from './errors';
+import { initializeActivityUi } from './ui/activity';
+import { activityStore } from './modules/activity';
+import { listConflictState } from './fileHandlers/transfer/conflictBridge';
 import { registerLocalPathRoot } from './helper/localPaths';
 
 async function setupWorkspaceFolder(dir) {
@@ -87,12 +90,19 @@ export async function activate(context: vscode.ExtensionContext) {
     { globalStorageRoot: context.globalStorageUri.fsPath }
   );
   context.subscriptions.push(registerConflictMcpProvider(context, workspaceFolders));
+  initializeActivityUi(context);
+  for (const record of await listConflictState(workspaceFolders.map(folder => folder.uri.fsPath))) {
+    if (record.status === 'uploaded' || record.status === 'cancelled') continue;
+    activityStore.registerConflict({ id: record.id, status: record.status, revision: record.revision, reason: record.reason },
+      record.localFile, record.remoteFile, record.workspaceRoot);
+  }
 
   setContextValue('enabled', true);
   app.sftpBarItem.show();
   // Note: AppState holds a single observer, so this must stay the only
   // subscribe call - a second one would silently replace this handler.
   app.state.subscribe(_ => {
+    activityStore.changed();
     const currentText = app.sftpBarItem.getText();
     // current is showing profile
     if (currentText.startsWith('SFTP')) {
@@ -117,10 +127,6 @@ export async function activate(context: vscode.ExtensionContext) {
     await migrateLoadedServiceCredentials();
     setContextValue('hasConfig', getAllFileService().length > 0);
     app.remoteExplorer = new RemoteExplorer(context);
-
-    context.subscriptions.push(
-      vscode.window.registerTreeDataProvider('transferQueue', transferQueueProvider)
-    );
 
     context.subscriptions.push(
       vscode.window.registerTreeDataProvider('remoteBackups', remoteBackupsProvider)
