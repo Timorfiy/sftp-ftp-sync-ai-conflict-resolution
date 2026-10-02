@@ -115,6 +115,7 @@ describe('conflict MCP server contract', () => {
       expect(data.client.getInstructions()).toContain('Inspect, prepare, resolve, and wait.');
       const listed = await data.client.listTools();
       expect(listed.tools.map(tool => tool.name)).toEqual([
+        'conflicts_workspaces',
         'conflicts_list',
         'conflicts_get',
         'conflicts_read',

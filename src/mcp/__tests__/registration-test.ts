@@ -1,8 +1,11 @@
 const registerMcpServerDefinitionProvider = jest.fn();
 const registerServer = jest.fn();
 const unregisterServer = jest.fn();
+const externalEnabled = jest.fn(() => false);
+const publishExternalConnection = jest.fn(() => ({ dispose: jest.fn() }));
 
 const mockVscodeApi = {
+  workspace: { getConfiguration: () => ({ get: externalEnabled }) },
   lm: { registerMcpServerDefinitionProvider },
   cursor: undefined,
   McpStdioServerDefinition: class {
@@ -18,6 +21,7 @@ const mockVscodeApi = {
 };
 
 jest.mock('vscode', () => mockVscodeApi);
+jest.mock('../externalConnection', () => ({ publishExternalConnection }));
 
 jest.mock('../../fileHandlers/transfer/conflictBridge', () => ({
   getConflictMcpConfiguration: jest.fn(() => ({
@@ -42,6 +46,25 @@ describe('editor MCP registration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockVscodeApi.cursor = undefined;
+    externalEnabled.mockReturnValue(false);
+  });
+
+  test('exports a live connection only after explicit opt-in', () => {
+    externalEnabled.mockReturnValue(true);
+    const context = {
+      extension: { packageJSON: { version: '0.8.3' } },
+      extensionUri: { fsPath: 'C:\\extension' },
+      globalStorageUri: { fsPath: 'C:\\private-global-storage' },
+      subscriptions: [],
+      asAbsolutePath: (relative: string) => `C:\\extension\\${relative.replace(/\//g, '\\')}`,
+    } as any;
+    registerConflictMcpProvider(context, [{ name: 'workspace', uri: { fsPath: 'C:\\workspace' } }] as any);
+    expect(publishExternalConnection).toHaveBeenCalledWith(
+      context.globalStorageUri.fsPath,
+      expect.objectContaining({ stateRoot: 'private-state' }),
+      'C:\\extension\\dist\\mcp-server.js'
+    );
+    expect(context.subscriptions).toHaveLength(1);
   });
 
   test('automatically provides the bundled stdio server through the supported API', () => {

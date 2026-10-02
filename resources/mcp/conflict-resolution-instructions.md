@@ -7,6 +7,14 @@ model, AI-provider account, or API key.
 
 Use these tools only for conflicts reported by this extension.
 
+First call `conflicts_workspaces` and select the absolute root matching the
+project in your current task. Pass its `bucket` as `workspace` to every conflict
+tool, including `conflicts_list`. Never select a different project just because
+it has a pending conflict. External MCP discovers all opted-in editor windows
+on each call; multiple projects require an explicit selection. If the intended
+project is missing, enable `sftp.externalMcp.enable` there and reload that editor
+window. A project can be available even when its conflict list is empty.
+
 1. Call `conflicts_list`, then `conflicts_get` for the selected conflict. If its status is `capturing`, wait and check again until snapshot preparation reaches `pending` or `reviewing` before reading or editing.
 2. Read both sides with `conflicts_read` and inspect `conflicts_diff`.
 3. Prepare text-only merged content. Either call `conflicts_submit_local`, or save the file in the editor and call `conflicts_acknowledge_local`.

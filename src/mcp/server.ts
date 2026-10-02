@@ -3,7 +3,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { TextDecoder } from 'util';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { registerLocalPathRoot } from '../helper/localPaths';
+import { version as extensionVersion } from '../../package.json';
+import { discoverExternalConnection, listExternalConnections } from './externalConnection';
+import { localPathKey, registerLocalPathRoot } from '../helper/localPaths';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { redactedErrorMessage } from '../security/redaction';
 import {
@@ -135,7 +137,7 @@ async function locateRecord(
 ): Promise<LocatedRecord> {
   conflictIdSchema.parse(conflictId);
   const workspaces = workspaceBucket
-    ? config.workspaces.filter(item => item.bucket === workspaceBucket)
+    ? config.workspaces.filter(item => item.bucket === workspaceBucket || localPathKey(item.root) === localPathKey(workspaceBucket))
     : config.workspaces;
   if (workspaceBucket && workspaces.length === 0) {
     throw new ToolFailure('wrong_workspace', 'The workspace is not open in this editor window.');
@@ -639,16 +641,35 @@ function toolHandler<T extends Record<string, unknown>>(
 }
 
 export function createConflictMcpServer(
-  config: McpLaunchConfiguration,
-  instructions: string
+  source: McpLaunchConfiguration | ((workspace?: string) => McpLaunchConfiguration),
+  instructions: string,
+  discovery?: { version: string; workspaces(): McpLaunchConfiguration['workspaces'] }
 ): McpServer {
+  const releases = new Map<string, () => void>();
+  const configuration = (workspace?: string) => {
+    let config = typeof source === 'function' ? source(workspace) : source;
+    if (workspace) {
+      const workspaces = config.workspaces.filter(w => w.bucket === workspace || localPathKey(w.root) === localPathKey(workspace));
+      if (!workspaces.length) throw new ToolFailure('wrong_workspace', 'This workspace is not available in the MCP connection.');
+      config = { ...config, workspaces };
+    }
+    for (const root of [config.stateRoot, ...config.workspaces.map(w => w.root)]) {
+      if (!releases.has(root)) releases.set(root, registerLocalPathRoot(root));
+    }
+    return config;
+  };
   const server = new McpServer(
-    { name: MCP_SERVER_NAME, version: config.extensionVersion },
+    { name: MCP_SERVER_NAME, version: discovery?.version || configuration().extensionVersion },
     { instructions }
   );
-  const releasePathRoots = [config.stateRoot, ...config.workspaces.map(workspace => workspace.root)]
-    .map(registerLocalPathRoot);
-  server.server.onclose = () => releasePathRoots.forEach(release => release());
+  server.server.onclose = () => { releases.forEach(release => release()); releases.clear(); };
+  server.registerTool('conflicts_workspaces', {
+    description: TOOL_DESCRIPTIONS.conflicts_workspaces,
+    inputSchema: toolInputSchemas.conflicts_workspaces,
+    annotations: { readOnlyHint: true },
+  }, toolHandler(async () => ({
+    workspaces: discovery ? discovery.workspaces() : configuration().workspaces,
+  })));
 
   server.registerTool(
     'conflicts_list',
@@ -657,8 +678,8 @@ export function createConflictMcpServer(
       inputSchema: toolInputSchemas.conflicts_list,
       annotations: { readOnlyHint: true },
     },
-    toolHandler(async ({ includeTerminal, limit }) => ({
-      conflicts: await listRecords(config, Boolean(includeTerminal), Number(limit)),
+    toolHandler(async ({ includeTerminal, limit, workspace }) => ({
+      conflicts: await listRecords(configuration(workspace as string | undefined), Boolean(includeTerminal), Number(limit)),
     }))
   );
 
@@ -670,7 +691,7 @@ export function createConflictMcpServer(
       annotations: { readOnlyHint: true },
     },
     toolHandler(async ({ conflictId, workspace }) =>
-      publicRecord(await locateRecord(config, String(conflictId), workspace as string | undefined))
+      publicRecord(await locateRecord(configuration(workspace as string | undefined), String(conflictId), workspace as string | undefined))
     )
   );
 
@@ -683,7 +704,7 @@ export function createConflictMcpServer(
     },
     toolHandler(async ({ conflictId, workspace, side, offset, maxBytes }) =>
       readChunk(
-        await locateRecord(config, String(conflictId), workspace as string | undefined),
+        await locateRecord(configuration(workspace as string | undefined), String(conflictId), workspace as string | undefined),
         side as 'local' | 'remote',
         Number(offset),
         Number(maxBytes)
@@ -699,6 +720,7 @@ export function createConflictMcpServer(
       annotations: { readOnlyHint: true },
     },
     toolHandler(async ({ conflictId, workspace }) => {
+      const config = configuration(workspace as string | undefined);
       const located = await locateRecord(
         config,
         String(conflictId),
@@ -731,6 +753,7 @@ export function createConflictMcpServer(
       annotations: { destructiveHint: true },
     },
     toolHandler(async (input, signal) => {
+      const config = configuration(input.workspace as string | undefined);
       const located = await locateRecord(
         config,
         String(input.conflictId),
@@ -758,6 +781,7 @@ export function createConflictMcpServer(
       inputSchema: toolInputSchemas.conflicts_acknowledge_local,
     },
     toolHandler(async (input, signal) => {
+      const config = configuration(input.workspace as string | undefined);
       const located = await locateRecord(
         config,
         String(input.conflictId),
@@ -780,6 +804,7 @@ export function createConflictMcpServer(
       annotations: { destructiveHint: true },
     },
     toolHandler(async (input, signal) => {
+      const config = configuration(input.workspace as string | undefined);
       const located = await locateRecord(
         config,
         String(input.conflictId),
@@ -808,7 +833,7 @@ export function createConflictMcpServer(
           throw new ToolFailure('cancelled', 'The wait was cancelled.');
         }
         const located = await locateRecord(
-          config,
+          configuration(input.workspace as string | undefined),
           String(input.conflictId),
           input.workspace as string | undefined
         );
@@ -846,14 +871,31 @@ export function createConflictMcpServer(
 }
 
 export async function runConflictMcpServer(): Promise<void> {
-  const config = loadConfiguration();
+  const externalIndex = process.argv.indexOf('--external-directory');
+  const workspaceIndex = process.argv.indexOf('--workspace');
+  const directory = externalIndex >= 0 ? process.argv[externalIndex + 1] : undefined;
+  const pinned = workspaceIndex >= 0 ? process.argv[workspaceIndex + 1] : undefined;
+  if (externalIndex >= 0 && (!directory || directory.startsWith('--'))) throw new Error('An external connection directory is required.');
+  if (workspaceIndex >= 0 && (!pinned || !path.isAbsolute(pinned))) throw new Error('An absolute workspace path is required.');
+  const config = directory ? (workspace?: string) => {
+    const selected = discoverExternalConnection(directory, pinned || workspace).configuration;
+    if (pinned && workspace && !selected.workspaces.some(w => w.bucket === workspace || localPathKey(w.root) === localPathKey(workspace))) {
+      throw new ToolFailure('wrong_workspace', 'This MCP connection is pinned to another workspace.');
+    }
+    return selected;
+  } : loadConfiguration();
   const instructionsPath = path.join(__dirname, '..', 'resources', 'mcp', 'conflict-resolution-instructions.md');
   const instructions = await fs.promises.readFile(instructionsPath, 'utf8');
-  const server = createConflictMcpServer(config, instructions);
+  const server = createConflictMcpServer(config, instructions, directory ? {
+    version: extensionVersion,
+    workspaces: () => pinned
+      ? discoverExternalConnection(directory, pinned).configuration.workspaces
+      : listExternalConnections(directory).flatMap(connection => connection.configuration.workspaces),
+  } : undefined);
   await server.connect(new StdioServerTransport());
 }
 
-if (process.env[MCP_CONFIG_ENV]) {
+if (process.env[MCP_CONFIG_ENV] || process.argv.includes('--external-directory')) {
   void runConflictMcpServer().catch(error => {
     process.stderr.write(`SFTP Sync AI MCP server failed: ${safeMessage(error)}\n`);
     process.exitCode = 1;

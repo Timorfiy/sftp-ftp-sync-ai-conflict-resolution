@@ -1,5 +1,6 @@
 import { localPathKey } from '../helper/localPaths';
 import * as vscode from 'vscode';
+import { publishExternalConnection } from './externalConnection';
 import { getConflictMcpConfiguration } from '../fileHandlers/transfer/conflictBridge';
 import {
   MCP_CONFIG_ENV,
@@ -47,6 +48,12 @@ export function registerConflictMcpProvider(
     ELECTRON_RUN_AS_NODE: '1',
     [MCP_CONFIG_ENV]: JSON.stringify(configuration),
   };
+  // Keep the normal editor registration unchanged; external clients opt in.
+  if (vscode.workspace?.getConfiguration('sftp').get<boolean>('externalMcp.enable', false)) {
+    context.subscriptions.push(publishExternalConnection(
+      context.globalStorageUri.fsPath, configuration, args[0]
+    ));
+  }
   const cursorMcp = (vscode as VscodeWithCursor).cursor?.mcp;
   if (cursorMcp) {
     cursorMcp.registerServer({

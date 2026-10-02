@@ -105,7 +105,8 @@ describe('bundled stdio MCP server', () => {
     expect(client.getInstructions()).toContain('conflicts_list');
     const tools = await client.listTools();
     expect(tools.tools.map(tool => tool.name)).toEqual([
-      'conflicts_list',
+      'conflicts_workspaces',
+        'conflicts_list',
       'conflicts_get',
       'conflicts_read',
       'conflicts_diff',

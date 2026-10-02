@@ -101,13 +101,15 @@ export type ConflictBridgeResponse = z.infer<typeof conflictBridgeResponseSchema
 
 export const conflictSelectorShape = {
   conflictId: conflictIdSchema.describe('Conflict ID returned by conflicts_list.'),
-  workspace: sha256Schema
+  workspace: z.string().min(1).max(4096)
     .optional()
-    .describe('Optional workspace bucket returned by conflicts_list for multi-root disambiguation.'),
+    .describe('Workspace bucket from conflicts_workspaces/conflicts_list, or absolute project root. Required when external MCP has multiple projects.'),
 };
 
 export const toolInputSchemas = {
+  conflicts_workspaces: {},
   conflicts_list: {
+    workspace: conflictSelectorShape.workspace,
     includeTerminal: z
       .boolean()
       .optional()
@@ -152,6 +154,7 @@ export const toolInputSchemas = {
 } as const;
 
 export const TOOL_DESCRIPTIONS = {
+  conflicts_workspaces: "List available editor projects, including absolute roots and workspace buckets, even when there are no conflicts. Select the root matching your task and pass workspace to every conflict tool.",
   conflicts_list:
     'List conflicts scoped to the currently open workspace roots. Active conflicts are returned by default.',
   conflicts_get:

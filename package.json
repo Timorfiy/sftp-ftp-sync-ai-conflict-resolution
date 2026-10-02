@@ -2,7 +2,7 @@
   "name": "sftp-sync-ai",
   "displayName": "SFTP/FTP Sync + AI Conflict Resolution",
   "description": "SFTP/FTP synchronization with AI-assisted conflict resolution for VS Code and Cursor",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "publisher": "Timorfiy",
   "author": "Timorfiy",
   "engines": {
@@ -89,6 +89,12 @@
       "type": "object",
       "title": "SFTP/FTP Sync + AI Conflict Resolution",
       "properties": {
+        "sftp.externalMcp.enable": {
+          "type": "boolean",
+          "default": false,
+          "scope": "window",
+          "description": "Allow local external MCP clients to access live conflict tools. Reload the editor window after changing this setting."
+        },
         "sftp.printDebugLog": {
           "type": "boolean",
           "default": false,

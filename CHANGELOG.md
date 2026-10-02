@@ -7,6 +7,14 @@
 * Keep Visual Studio Marketplace uploads manual and default workflow dispatch
   non-publishing. All automatic publications retain the build-once quality gates.
 
+## 0.9.1 - 2026-10-02
+
+* Route external MCP calls to explicitly selected editor projects across multiple
+  windows. Add `conflicts_workspaces`, refresh live sessions on each call, and
+  refuse ambiguous or unavailable project selections.
+* Include opt-in external client discovery and a launcher that preserves per-call
+  project routing instead of binding the client to a project at startup.
+
 ## 0.9.0 - 2026-10-01
 
 Native transfer Activity, quieter editor notifications, and preliminary Linux/macOS compatibility.

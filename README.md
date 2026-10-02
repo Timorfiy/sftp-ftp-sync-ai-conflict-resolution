@@ -359,6 +359,11 @@ Context Protocol)** in supported VS Code and Cursor versions. Use an agent
 in that editor with access to those tools; your agent's normal account and
 model setup still apply. The extension itself needs no AI-provider API key.
 
+For a separate local client, enable `sftp.externalMcp.enable` in each editor
+window and reload those windows. One external MCP connection can serve multiple
+projects: the agent calls `conflicts_workspaces` and explicitly selects the root
+matching its task. See [external MCP setup](docs/troubleshooting.md#external-mcp-clients).
+
 With a conflict pending, ask your agent:
 
 > Resolve the pending SFTP/FTP upload conflict. Read both versions and the

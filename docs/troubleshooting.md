@@ -86,6 +86,42 @@ This limitation is specific to FTP metadata. SFTP normally supplies exact timest
 
 ## Conflicts
 
+### External MCP clients
+
+The editor's automatic MCP registration is local to its built-in agent. To allow
+a separate local client such as Codex, set `sftp.externalMcp.enable` to `true` in
+editor settings and reload the window. The extension writes a short-lived session
+connection under its private global storage `external-mcp` directory, outside the
+project. It contains a session capability, not FTP/SFTP credentials; do not copy
+it into a repository, logs, or a shared configuration file.
+
+Start the bundled server with Node.js:
+
+```text
+node <installed-extension>/dist/mcp-server.js --external-directory <extension-global-storage>/external-mcp --workspace <absolute-project-path>
+```
+
+Omit `--workspace` to expose all opted-in windows through one MCP connection.
+Call `conflicts_workspaces` to find the project matching your task, then pass its
+`bucket` or absolute root as `workspace` to every tool, including `conflicts_list`.
+Without an explicit selection, multiple sessions or workspace roots are rejected.
+An explicit `--workspace` pins the connection and refuses other projects.
+
+`resources/mcp/launch.cjs` is a client launcher. When copied to a private client
+configuration directory, it locates the installed Cursor extension. It never
+selects a project from the launcher's working directory or falls back to an
+unrelated open project. For VS Code or custom editor profiles, run the installed
+launcher and supply `--external-directory` pointing to that profile's extension
+global storage. No session capability needs to be copied into client settings.
+
+The server refreshes discovery for each tool call. Closed or expired sessions and
+ambiguous windows fail closed. After an editor restart, old conflicts may be
+orphaned; inspect the current conflict and trigger a new transfer when needed.
+Disabling the setting and reloading removes the exported connection. All uploads
+still run through the editor extension and retain the revision, content-hash, and
+remote-change checks.
+
+
 Open the diff, inspect the captured remote snapshot, and choose an explicit
 action. Cancelling keeps the remote item unchanged. For the agent path, fetch
 context/diff, submit or acknowledge the local merge, resolve the newest
