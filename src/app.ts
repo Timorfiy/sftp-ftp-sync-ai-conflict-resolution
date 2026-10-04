@@ -1,6 +1,6 @@
 import { LRUCache } from 'lru-cache';
 import StatusBarItem from './ui/statusBarItem';
-import { COMMAND_TOGGLE_OUTPUT } from './constants';
+import { COMMAND_SHOW_OUTPUT } from './constants';
 import AppState from './modules/appState';
 import RemoteExplorer from './modules/remoteExplorer';
 
@@ -22,8 +22,8 @@ app.sftpBarItem = new StatusBarItem(
       return 'SFTP';
     }
   },
-  'SFTP@Timorfiy',
-  COMMAND_TOGGLE_OUTPUT
+  'Show SFTP/FTP Output',
+  COMMAND_SHOW_OUTPUT
 );
 app.fsCache = new LRUCache<string, string>({ max: 6 });
 

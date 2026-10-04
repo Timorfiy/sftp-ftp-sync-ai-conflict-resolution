@@ -7,6 +7,7 @@ import { showConflictActions } from '../fileHandlers/transfer/conflictBridge';
 import { showErrorDetails } from '../errors/reporter';
 import { redactText } from '../security/redaction';
 import logger from '../logger';
+import { COMMAND_SHOW_OUTPUT } from '../constants';
 
 export function initializeActivityUi(context: vscode.ExtensionContext): vscode.Disposable {
   const view = vscode.window.createTreeView('transferQueue', { treeDataProvider: transferQueueProvider });
@@ -50,7 +51,7 @@ export function initializeActivityUi(context: vscode.ExtensionContext): vscode.D
     view.badge = issues ? { value: issues, tooltip: `${issues} files or operations need attention` } : undefined;
     view.description = transferQueueProvider.filter;
     let text = app.state.profile ? `SFTP: ${app.state.profile}` : 'SFTP';
-    let tooltip = 'Open SFTP/FTP Activity';
+    let tooltip = 'Show SFTP/FTP Output';
     if (conflicts) text = `$(warning) ${conflicts} ${conflicts === 1 ? 'conflict' : 'conflicts'}`;
     else if (active.length > 1) text = `$(sync~spin) ${active.length} operations`;
     else if (active.length === 1) {
@@ -65,7 +66,7 @@ export function initializeActivityUi(context: vscode.ExtensionContext): vscode.D
         [...group.items.values()].find(item => item.status === 'running')?.localPath].filter(Boolean).join('\n');
     } else if (issues) text = `$(warning) ${issues} ${issues === 1 ? 'issue' : 'issues'}`;
     else if (lastSuccess && Date.now() < successUntil) text = `$(${lastSuccess.cancelRequested || activityCounts(lastSuccess).cancelled ? 'close' : 'check'}) ${activityResultMessage(lastSuccess)}`;
-    app.sftpBarItem.showActivityState(redactText(text), redactText(tooltip), ACTIVITY_OPEN);
+    app.sftpBarItem.showActivityState(redactText(text), redactText(tooltip), COMMAND_SHOW_OUTPUT);
     for (const group of groups) if (activityCounts(group).conflicts && !announcedConflicts.has(group.id)) {
       announcedConflicts.add(group.id);
       void vscode.window.showWarningMessage(`Upload paused: files in ${[...group.connections.values()].map(connection => connection.label).join(', ')} need conflict review.`, 'Review Conflicts')
@@ -101,7 +102,7 @@ export function initializeActivityUi(context: vscode.ExtensionContext): vscode.D
         const choice = await vscode.window.showQuickPick([{ label: item.connection.label, description: item.kind },
           { label: redactText(relativeActivityPath(item)), description: `${item.status} · ${item.attempts} attempts` },
           { label: 'Show Output', description: [...item.warnings].join('; ') }], { title: 'Transfer Details' });
-        if (choice?.label === 'Show Output') await vscode.commands.executeCommand('sftpSyncAI.toggleOutputPanel');
+        if (choice?.label === 'Show Output') await vscode.commands.executeCommand(COMMAND_SHOW_OUTPUT);
       }
     } else if (node.type === 'issue') {
       const issue = node.group.issues[node.index];

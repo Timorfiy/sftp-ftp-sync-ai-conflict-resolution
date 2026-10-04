@@ -116,6 +116,8 @@ describe('conflict MCP server contract', () => {
       const listed = await data.client.listTools();
       expect(listed.tools.map(tool => tool.name)).toEqual([
         'conflicts_workspaces',
+        'upload_files',
+        'uploads_wait',
         'conflicts_list',
         'conflicts_get',
         'conflicts_read',

@@ -1,14 +1,27 @@
-# SFTP/FTP conflict resolution for editor agents
+# SFTP/FTP uploads and conflict resolution for editor agents
 
 This server is registered automatically by
 `Timorfiy.sftp-sync-ai` in supported VS Code and Cursor versions. Use the
 editor's already-running agent and model. The extension does not provide a
 model, AI-provider account, or API key.
 
-Use these tools only for conflicts reported by this extension.
+Upload saved files with `upload_files`, passing the selected workspace and an
+explicit list of relative or absolute file paths. This uses the live extension;
+watcher and auto-upload can stay disabled. Active-profile configuration,
+exclusions, hooks, backups and conflict checks remain in effect. Save dirty
+editor buffers first. Directories, symbolic links and private state are refused.
+
+Only `uploaded` counts confirm successful file transfers. `terminal: false`
+means work is unfinished; call `uploads_wait` with the returned `operationId`
+instead of resubmitting the batch. A timeout or cancelled wait does not cancel
+an accepted transfer. Use Activity to cancel transfers. Operations belong to
+one editor session; after a reload, inspect Activity/remote state before retrying.
+Successful files without warnings are omitted from the `files` result to save
+context. Failed, excluded and cancelled files remain visible. When a conflict
+appears, follow the conflict steps below, then resume `uploads_wait` for the batch.
 
 First call `conflicts_workspaces` and select the absolute root matching the
-project in your current task. Pass its `bucket` as `workspace` to every conflict
+project in your current task. Pass its `bucket` as `workspace` to every upload or conflict
 tool, including `conflicts_list`. Never select a different project just because
 it has a pending conflict. External MCP discovers all opted-in editor windows
 on each call; multiple projects require an explicit selection. If the intended

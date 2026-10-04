@@ -8,6 +8,7 @@ import { discoverExternalConnection, listExternalConnections } from './externalC
 import { localPathKey, registerLocalPathRoot } from '../helper/localPaths';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { redactedErrorMessage } from '../security/redaction';
+import { uploadBridgeRoot, uploadInputSchemas, uploadJobSchema, uploadSession, uploadSummary, UploadJob } from './uploadContract';
 import {
   requireSafeLocalPath,
   SafeLocalPathError,
@@ -614,6 +615,31 @@ function toolResult(value: Record<string, unknown>) {
   };
 }
 
+async function waitForUpload(
+  config: McpLaunchConfiguration, operationId: string, workspace: string,
+  timeoutSeconds: number, signal: AbortSignal, initial?: UploadJob
+): Promise<Record<string, unknown>> {
+  const root = uploadBridgeRoot(config);
+  const results = path.join(root, 'results');
+  const resultFile = path.join(results, `${operationId}.json`);
+  const deadline = Date.now() + timeoutSeconds * 1000;
+  for (;;) {
+    if (signal.aborted) throw new ToolFailure('cancelled', 'Stopped waiting; an accepted upload may still be running.', { operationId });
+    await requireSafeLocalPath(root, resultFile, { allowMissingLeaf: true, type: 'file' });
+    const raw = await readJson<unknown>(resultFile);
+    const job = raw ? uploadJobSchema.parse(raw) : undefined;
+    if (job && (job.operationId !== operationId || job.workspace !== workspace || job.session !== uploadSession(config))) {
+      throw new ToolFailure('invalid_response', 'The upload result does not match this operation and editor session.');
+    }
+    if (job?.terminal || (initial && job?.files.some(file => file.status === 'conflict'))) return uploadSummary(job!);
+    if (Date.now() >= deadline) {
+      if (!job && !initial) throw new ToolFailure('not_found', 'No upload operation exists in this editor session.');
+      return { ...uploadSummary(job || initial!), timedOut: true };
+    }
+    await new Promise(resolve => setTimeout(resolve, 150));
+  }
+}
+
 function toolHandler<T extends Record<string, unknown>>(
   handler: (input: T, signal: AbortSignal) => Promise<Record<string, unknown>>
 ) {
@@ -670,6 +696,50 @@ export function createConflictMcpServer(
   }, toolHandler(async () => ({
     workspaces: discovery ? discovery.workspaces() : configuration().workspaces,
   })));
+
+  server.registerTool('upload_files', {
+    description: 'Upload saved files through the live extension without watcher. Honors active profile, ignores, backups and conflict checks. Returns compact results or conflict IDs; use uploads_wait for unfinished operations. Never resend a pending batch.',
+    inputSchema: uploadInputSchemas.upload_files,
+    annotations: { destructiveHint: true, idempotentHint: false },
+  }, toolHandler(async (input, signal) => {
+    const config = configuration(String(input.workspace));
+    if (config.workspaces.length !== 1) throw new ToolFailure('workspace_required', 'Select one workspace.');
+    const workspace = config.workspaces[0];
+    const paths: string[] = [];
+    const keys = new Set<string>();
+    for (const supplied of input.paths as string[]) {
+      const file = path.resolve(workspace.root, supplied);
+      try { await requireSafeLocalPath(workspace.root, file, { type: 'file' }); }
+      catch (error) {
+        if (error instanceof SafeLocalPathError) throw new ToolFailure('invalid_path', 'Only existing regular files inside the selected workspace may be uploaded.');
+        throw error;
+      }
+      const key = localPathKey(file);
+      if (!keys.has(key)) { keys.add(key); paths.push(path.relative(workspace.root, file).replace(/\\/g, '/')); }
+    }
+    const root = uploadBridgeRoot(config);
+    const requests = path.join(root, 'requests');
+    try { await requireSafeLocalPath(config.stateRoot, requests, { type: 'directory' }); }
+    catch { throw new ToolFailure('extension_unavailable', 'The live editor does not provide uploads. Install 0.9.2 or later and reload it.'); }
+    if (signal.aborted) throw new ToolFailure('cancelled', 'Upload was cancelled before submission.');
+    const operationId = randomUUID();
+    await atomicWriteJson(path.join(requests, `${operationId}.json`), {
+      version: 1, operationId, capability: config.capability, workspace: workspace.bucket,
+      paths, createdAt: new Date().toISOString(),
+    });
+    const initial: UploadJob = { version: 1, operationId, session: uploadSession(config),
+      workspace: workspace.bucket, terminal: false, files: paths.map(file => ({ path: file, status: 'pending' })) };
+    return waitForUpload(config, operationId, workspace.bucket, Number(input.timeoutSeconds), signal, initial);
+  }));
+
+  server.registerTool('uploads_wait', {
+    description: 'Wait for an upload_files operation in the same workspace and editor session. Returns counts and only unfinished, failed, skipped or warning files; terminal confirms completion.',
+    inputSchema: uploadInputSchemas.uploads_wait,
+    annotations: { readOnlyHint: true },
+  }, toolHandler(async (input, signal) => {
+    const config = configuration(String(input.workspace));
+    return waitForUpload(config, String(input.operationId), config.workspaces[0].bucket, Number(input.timeoutSeconds), signal);
+  }));
 
   server.registerTool(
     'conflicts_list',

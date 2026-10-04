@@ -5,8 +5,16 @@ const { Client } = require('@modelcontextprotocol/sdk/client/index.js');
 const { StdioClientTransport } = require('@modelcontextprotocol/sdk/client/stdio.js');
 
 const quickPicks = [];
+let uploadService;
 jest.mock('vscode', () => ({
-  Uri: { file: fsPath => ({ fsPath }) },
+  Uri: class Uri {
+    static file(fsPath) { return Object.assign(new this(), { fsPath, scheme: 'file' }); }
+    static parse(text) {
+      const url = new URL(text);
+      return Object.assign(new this(), { scheme: url.protocol.slice(0, -1), query: decodeURIComponent(url.search.slice(1)), authority: url.host });
+    }
+    toString() { return this.fsPath || this.authority; }
+  },
   commands: { executeCommand: jest.fn(async () => undefined) },
   workspace: { textDocuments: [] },
   window: {
@@ -89,6 +97,9 @@ jest.mock('../../src/modules/connectionHealth', () => ({
 jest.mock('../../src/fileHandlers/diff', () => ({
   diff: jest.fn(async () => undefined),
 }));
+jest.mock('../../src/modules/serviceManager', () => ({ getFileService: jest.fn(() => uploadService) }));
+jest.mock('../../src/fileHandlers/shared', () => ({ refreshRemoteExplorer: jest.fn() }));
+jest.mock('../../src/modules/remoteBackups', () => ({ remoteBackupsProvider: { refresh: jest.fn() } }));
 
 const startFTPServer = require('../fixtures/ftpServer');
 const startSFTPServer = require('../fixtures/sftpServer');
@@ -113,6 +124,8 @@ const {
 const {
   MCP_CONFIG_ENV,
 } = require('../../src/mcp/conflictContract');
+const { initializeUploadBridge } = require('../../src/mcp/uploadBridge');
+const { runMcpUpload } = require('../../src/mcp/uploadRunner');
 
 function memoryMemento() {
   let state = {};
@@ -236,6 +249,7 @@ for (const protocol of ['ftp', 'sftp']) {
     });
     let transport;
     let client;
+    let uploadBridge;
     const uploads = [];
     try {
       await remoteFs.connect(option, {
@@ -264,8 +278,29 @@ for (const protocol of ['ftp', 'sftp']) {
       await client.connect(transport);
 
       const fileService = new FileService(localRoot, localRoot, config);
+      uploadService = fileService;
+      fileService.getRemoteFileSystem = async () => remoteFs;
+      uploadBridge = await initializeUploadBridge(mcpConfiguration, runMcpUpload);
+      const workspace = mcpConfiguration.workspaces[0].bucket;
+      const explicitPath = path.join(localRoot, 'explicit.txt');
+      await fs.promises.writeFile(explicitPath, 'explicit MCP upload without watcher');
+      const host = require('../../src/host');
+      host.getOpenTextDocuments.mockReturnValueOnce([{ uri: require('vscode').Uri.file(explicitPath), isDirty: true }]);
+      const dirty = structured(await client.callTool({ name: 'upload_files', arguments: { workspace, paths: ['explicit.txt'] } }));
+      expect(dirty).toMatchObject({ terminal: true, uploaded: 0, files: [{ status: 'failed', message: expect.stringContaining('dirty editor buffer') }] });
+      const explicit = structured(await client.callTool({ name: 'upload_files', arguments: { workspace, paths: ['explicit.txt'] } }));
+      expect(explicit).toMatchObject({ ok: true, terminal: true, uploaded: 1, files: [] });
+      expect((await server.sandbox.read('/explicit.txt')).toString()).toBe('explicit MCP upload without watcher');
+      expect(fileService.getConfig().watcher.autoUpload).toBe(false);
+      expect(fileService.getConfig().uploadOnSave).toBe(false);
+
+      await fs.promises.mkdir(path.join(localRoot, '.vscode'), { recursive: true });
+      await fs.promises.writeFile(path.join(localRoot, '.vscode', 'sftp.json'), 'private-config');
+      const excluded = structured(await client.callTool({ name: 'upload_files', arguments: { workspace, paths: ['.vscode/sftp.json'] } }));
+      expect(excluded).toMatchObject({ terminal: true, uploaded: 0, files: [{ status: 'skipped' }] });
+      await expect(server.sandbox.read('/.vscode/sftp.json')).rejects.toThrow();
       let sequence = 0;
-      async function beginConflict(label) {
+      async function beginConflict(label, throughMcp = false) {
         sequence += 1;
         const remotePath = `/${label}.txt`;
         const localPath = path.join(localRoot, `${label}.txt`);
@@ -295,7 +330,7 @@ for (const protocol of ['ftp', 'sftp']) {
           new Date('2026-09-23T12:02:00Z'),
           new Date('2026-09-23T12:02:00Z')
         );
-        const upload = runTransfer({
+        const upload = throughMcp ? client.callTool({ name: 'upload_files', arguments: { workspace, paths: [`${label}.txt`] } }).then(structured) : runTransfer({
           srcFs: localFs,
           targetFs: remoteFs,
           src: localPath,
@@ -304,9 +339,26 @@ for (const protocol of ['ftp', 'sftp']) {
           lifecycle: createConflictLifecycle({ fileService, config }),
         });
         uploads.push(upload.then(() => undefined, () => undefined));
+        const result = throughMcp ? await upload : undefined;
+        if (throughMcp) expect(result).toMatchObject({ terminal: false, uploaded: 0, files: [{ status: 'conflict' }] });
         const conflict = await waitForConflict(client, `${label}.txt`);
-        return { remotePath, localPath, changed, upload, conflict };
+        return { remotePath, localPath, changed, upload, conflict, result };
       }
+
+      const explicitConflict = await beginConflict('explicit-conflict', true);
+      expect((await server.sandbox.read(explicitConflict.remotePath)).toString()).toBe(explicitConflict.changed.toString());
+      const prepared = structured(await client.callTool({ name: 'conflicts_submit_local', arguments: {
+        workspace, conflictId: explicitConflict.conflict.conflictId, expectedRevision: explicitConflict.conflict.revision,
+        expectedLocalSha256: explicitConflict.conflict.local.sha256, content: 'explicit merged local and remote',
+      } }));
+      expect(prepared.ok).toBe(true);
+      const explicitResolved = structured(await client.callTool({ name: 'conflicts_resolve', arguments: {
+        workspace, conflictId: explicitConflict.conflict.conflictId, expectedRevision: prepared.revision, action: 'upload',
+      } }));
+      expect(explicitResolved.ok).toBe(true);
+      const finished = structured(await client.callTool({ name: 'uploads_wait', arguments: { workspace, operationId: explicitConflict.result.operationId } }));
+      expect(finished).toMatchObject({ terminal: true, uploaded: 1, files: [] });
+      expect((await server.sandbox.read(explicitConflict.remotePath)).toString()).toBe('explicit merged local and remote');
 
       const happy = await beginConflict('happy');
       const context = structured(
@@ -576,6 +628,8 @@ for (const protocol of ['ftp', 'sftp']) {
       expect(failure.result.error).toBeTruthy();
       expect(quickPicks.every(item => item.manualClicks === 0)).toBe(true);
     } finally {
+      uploadBridge?.dispose();
+      uploadService = undefined;
       await disposeConflictBridge();
       await Promise.all(uploads);
       if (client) {

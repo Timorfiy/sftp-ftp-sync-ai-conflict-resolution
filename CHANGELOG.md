@@ -7,6 +7,15 @@
 * Keep Visual Studio Marketplace uploads manual and default workflow dispatch
   non-publishing. All automatic publications retain the build-once quality gates.
 
+## 0.9.2 - 2026-10-04
+
+* Add `upload_files` and `uploads_wait` MCP tools for explicit saved-file uploads
+  through the live extension, with watcher and auto-upload disabled. Preserve
+  workspace routing, active-profile configuration, ignores, backups, hooks and
+  conflict checks. Return compact counts and actionable per-file results.
+* Open the SFTP Output log from the status bar, the Activity toolbar, and the
+  **SFTP: Show Output** command. Keep Activity available in the sidebar.
+
 ## 0.9.1 - 2026-10-02
 
 * Route external MCP calls to explicitly selected editor projects across multiple

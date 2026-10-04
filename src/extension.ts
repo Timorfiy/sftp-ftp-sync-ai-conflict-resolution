@@ -2,6 +2,9 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import { initializeUploadBridge } from './mcp/uploadBridge';
+import { runMcpUpload } from './mcp/uploadRunner';
+import { getConflictMcpConfiguration } from './fileHandlers/transfer/conflictBridge';
 import app from './app';
 import initCommands from './initCommands';
 import { reportError } from './helper';
@@ -90,6 +93,10 @@ export async function activate(context: vscode.ExtensionContext) {
     { globalStorageRoot: context.globalStorageUri.fsPath }
   );
   context.subscriptions.push(registerConflictMcpProvider(context, workspaceFolders));
+  context.subscriptions.push(await initializeUploadBridge(
+    getConflictMcpConfiguration(String(context.extension.packageJSON.version), new Map()),
+    runMcpUpload
+  ));
   initializeActivityUi(context);
   for (const record of await listConflictState(workspaceFolders.map(folder => folder.uri.fsPath))) {
     if (record.status === 'uploaded' || record.status === 'cancelled') continue;

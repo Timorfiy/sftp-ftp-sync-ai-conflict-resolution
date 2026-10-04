@@ -115,6 +115,7 @@ export function createConflictLifecycle(
         remote,
         baseline
       );
+      await handlerContext.onUploadConflict?.(session.record.id, session.record.revision);
 
       if (overwriteAll) {
         const accepted = await acceptBatchOverwrite(session, context);

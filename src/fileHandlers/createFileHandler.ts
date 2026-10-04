@@ -21,6 +21,7 @@ export interface FileHandlerContext {
   config: ServiceConfig;
   connectionLabel: string;
   profile?: string | null;
+  onUploadConflict?: (conflictId: string, revision: number) => Promise<void>;
 }
 
 type FileHandlerContextMethod<R = void> = (this: FileHandlerContext) => R;

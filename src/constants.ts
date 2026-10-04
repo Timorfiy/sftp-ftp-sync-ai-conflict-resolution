@@ -25,6 +25,7 @@ export const COMMAND_ACTIVITY_FILTER = command('activity.filter');
 export const COMMAND_ACTIVITY_CANCEL = command('activity.cancelOperation');
 
 // commands in package.json
+export const COMMAND_SHOW_OUTPUT = command('showOutput');
 export const COMMAND_CONFIG = command('config');
 export const COMMAND_APPLY_IGNORE_PRESET = command('applyIgnorePreset');
 export const COMMAND_TEST_CONNECTION = command('testConnection');

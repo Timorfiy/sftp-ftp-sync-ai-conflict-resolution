@@ -263,6 +263,7 @@ available from Explorer context menus.
 | Compare before uploading | **SFTP: Diff Active File with Remote** |
 | Upload Git working-tree/index changes | **SFTP: Upload Changed Files** · **Ctrl+Alt+U** |
 | Browse the server and track transfers | **SFTP/FTP** sidebar → **Explorer** / **Activity** |
+| Read or copy the text log | Click **SFTP** in the status bar, use **SFTP: Show Output**, or **Show Output** in the Activity toolbar |
 | Switch a configured environment | **SFTP: Set Profile** |
 | Add exclusions for my stack | **SFTP: Apply Ignore Template** |
 | Stop queued or active transfers | **SFTP: Cancel All Transfers** |
@@ -274,8 +275,12 @@ show **All**, **Active**, or **Needs Attention**. Select a file for details,
 conflict actions, or recovery options. Relative paths keep the list readable;
 full local and remote paths are available in tooltips.
 
+**Show Output** opens the bottom **Output** panel with the `sftp` channel.
+It contains configuration, transfer logs, and errors as text you can copy.
+Credentials are redacted. Activity remains available in the sidebar.
+
 The status bar shows preparation, completed-file counts, parallel operations,
-and pending conflicts. Clicking it opens Activity. One summary follows each
+and pending conflicts. Clicking it opens the `sftp` Output channel. One summary follows each
 manual operation; successful automatic saves stay quiet. Repeated background
 connection errors are grouped. Notifications appear inside the editor on every
 platform, without separate Windows popups or sounds.
@@ -354,7 +359,7 @@ extension refreshes the conflict instead of applying an outdated decision.
 
 ### Resolve with your editor's agent
 
-The extension automatically registers conflict tools through **MCP (Model
+The extension automatically registers upload and conflict tools through **MCP (Model
 Context Protocol)** in supported VS Code and Cursor versions. Use an agent
 in that editor with access to those tools; your agent's normal account and
 model setup still apply. The extension itself needs no AI-provider API key.
@@ -363,6 +368,18 @@ For a separate local client, enable `sftp.externalMcp.enable` in each editor
 window and reload those windows. One external MCP connection can serve multiple
 projects: the agent calls `conflicts_workspaces` and explicitly selects the root
 matching its task. See [external MCP setup](docs/troubleshooting.md#external-mcp-clients).
+
+For explicit uploads, the agent calls `upload_files` with `workspace` and a list
+of saved file `paths` (relative to the workspace or absolute). Watcher and
+`uploadOnSave` can stay off. The active profile, exclusions, backups, hooks, and
+conflict checks still apply. File content is read by the extension from disk;
+it is not sent to the model just to upload it.
+
+Results contain uploaded/total counts and only files that need attention.
+If `terminal` is false, resolve any returned conflicts and use `uploads_wait`
+with the returned `operationId`; do not submit the same batch again. A timed-out
+wait can leave transfers running. Use Activity to cancel them. Operation IDs
+are valid only in the same editor session.
 
 With a conflict pending, ask your agent:
 
