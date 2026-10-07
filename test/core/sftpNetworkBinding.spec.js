@@ -64,14 +64,15 @@ test('reconnecting resolves the current adapter address instead of retaining the
   const option = options(server);
   const clients = [];
   try {
-    for (const address of ['127.0.0.2', '127.0.0.3']) {
+    // macOS CI adds 127.0.0.2 explicitly; 127.0.0.1 is always configured.
+    for (const address of ['127.0.0.2', '127.0.0.1']) {
       snapshot.mockReturnValue(adapter(address));
       const client = new SSHClient(option);
       clients.push(client);
       await client.connect(option, authorization);
       client.end();
     }
-    expect(server.peers).toEqual(['127.0.0.2', '127.0.0.3']);
+    expect(server.peers).toEqual(['127.0.0.2', '127.0.0.1']);
   } finally {
     clients.forEach(client => client.end());
     await server.close();
