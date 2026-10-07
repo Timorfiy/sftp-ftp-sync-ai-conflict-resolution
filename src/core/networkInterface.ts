@@ -22,7 +22,7 @@ export function listNetworkInterfaces(): NetworkInterfaceChoice[] {
 export function resolveNetworkInterface(name: string): string {
   const adapter = listNetworkInterfaces().find(entry => entry.name === name);
   if (!adapter) {
-    throw new Error(`FTP network interface "${name}" is unavailable or has no usable IPv4 address. ` +
+    throw new Error(`Network interface "${name}" is unavailable or has no usable IPv4 address. ` +
       'Reconnect it or run SFTP: Select Network Interface.');
   }
   return adapter.addresses[0];

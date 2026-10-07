@@ -477,7 +477,7 @@ confidential file content.
 | [Ignore templates](docs/ignore-templates.md) | Stack-specific exclusions, inheritance, and the complete Bitrix list |
 | [Command reference](docs/commands.md) | All setup, transfer, remote file, backup, and conflict commands |
 | [Editor settings](docs/setting.md) | Extension settings outside `sftp.json` |
-| [FTP network interface](docs/network-interface.md) | Bind FTP to a named network adapter |
+| [Network interface](docs/network-interface.md) | Bind FTP or SFTP to a named network adapter |
 | [Troubleshooting](docs/troubleshooting.md) · [FAQ](FAQ.md) | Connection failures, recovery, and common questions |
 | [Changelog](CHANGELOG.md) · [Releases](https://github.com/Timorfiy/sftp-ftp-sync-ai-conflict-resolution/releases) | Changes and downloadable VSIX packages |
 

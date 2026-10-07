@@ -185,8 +185,8 @@ export function validateConfig(config) {
     );
     return new Error(messages.join(', '));
   }
-  if (config.networkInterface && config.protocol !== 'ftp') {
-    return new Error('networkInterface is supported only for FTP connections.');
+  if (config.networkInterface && config.protocol === 'local') {
+    return new Error('networkInterface is supported only for FTP and SFTP connections.');
   }
   return null;
 }

@@ -7,6 +7,7 @@ import { FileSystem, RemoteFileSystem, SFTPFileSystem } from '../fs';
 import logger from '../../logger';
 import CustomError from '../customError';
 import { TypedFailure } from '../../errors/actionable';
+import { hasInterfaceAddress, resolveNetworkInterface } from '../networkInterface';
 
 let MAX_OPEN_FD_NUM = 222;
 
@@ -44,6 +45,7 @@ export default class SSHClient extends RemoteClient {
   private _opendFdNum: number = 0;
   private _queuedFdRequireCall: Array<(...args: any[]) => any> = [];
   private _connected: boolean = false;
+  private _networkBinding?: { name: string; address: string };
 
   _initClient() {
     return new Client();
@@ -63,8 +65,10 @@ export default class SSHClient extends RemoteClient {
     );
   }
 
-  isClosed() {
-    return !this._connected;
+  isClosed(): boolean {
+    return !this._connected || !!(this._networkBinding &&
+      !hasInterfaceAddress(this._networkBinding.name, this._networkBinding.address)) ||
+      !!this.hoppingClients?.some(client => client.isClosed());
   }
 
   async _doConnect(
@@ -75,7 +79,7 @@ export default class SSHClient extends RemoteClient {
 
     let lastOption: ConnectOption = option;
     let fs: FileSystem | RemoteFileSystem = localFs;
-    let sock;
+    let sock = option.sock;
     if (
       (Array.isArray(hop) && hop.length > 0) ||
       (hop && Object.keys(hop).length > 0)
@@ -299,8 +303,18 @@ export default class SSHClient extends RemoteClient {
     const {
       interactiveAuth,
       connectTimeout,
+      networkInterface,
       ...option // tslint:disable-line
     } = remoteOption;
+
+    this._networkBinding = undefined;
+    // Forwarded SSH channels already travel through the first hop's socket.
+    // Resolve and bind only the local TCP connection, before authentication.
+    if (networkInterface && !option.sock) {
+      const address = resolveNetworkInterface(networkInterface);
+      this._networkBinding = { name: networkInterface, address };
+      logger.info(`SFTP via ${networkInterface} (${address})`);
+    }
 
     // explict compare to true, cause we want to distinct between string and true
     if (option.passphrase === true) {
@@ -409,6 +423,11 @@ export default class SSHClient extends RemoteClient {
             ? Math.max(60 * 1000, connectTimeout || 0)
             : connectTimeout,
           ...option,
+          ...(this._networkBinding ? {
+            localAddress: this._networkBinding.address,
+            forceIPv4: true,
+            forceIPv6: false,
+          } : {}),
           tryKeyboard: !!interactiveAuth,
           hostVerifier,
         });

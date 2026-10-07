@@ -38,6 +38,7 @@ interface Root {
 }
 
 interface Host {
+  networkInterface?: string | null;
   host: string;
   port: number;
   username: string;
@@ -103,7 +104,6 @@ interface SftpOption {
 }
 
 interface FtpOption {
-  networkInterface?: string | null;
   secure: boolean | 'control' | 'implicit';
   secureOptions: any;
   ftpKeepAliveInterval?: number;

@@ -9,6 +9,7 @@ export interface ConnectOption {
   connectTimeout?: number;
   debug(x: string): void;
   workspace?: string;
+  networkInterface?: string | null;
 
   // ssh-only
   privateKeyPath?: string;
@@ -24,7 +25,6 @@ export interface ConnectOption {
   keepalive?: number;
 
   // ftp-only
-  networkInterface?: string | null;
   secure?: any;
   secureOptions?: object;
   passive?: boolean;

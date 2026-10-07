@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const net = require('net');
 const { Server, utils } = require('ssh2');
 const createProtocolSandbox = require('./protocolSandbox');
 
@@ -36,10 +37,13 @@ module.exports = async function startSFTPServer({
   hostKey: providedHostKey,
   onSandboxCreated,
   port: requestedPort = 0,
+  forwardPorts = [],
 } = {}) {
   const sandbox = providedSandbox || await createProtocolSandbox();
   const clients = new Set();
+  const peers = [];
   const streams = new Set();
+  const forwardedSockets = new Set();
   const openFiles = new Set();
   let server;
   let listening = false;
@@ -60,6 +64,7 @@ module.exports = async function startSFTPServer({
   }
 
   async function cleanup() {
+    forwardedSockets.forEach(socket => socket.destroy());
     streams.forEach(stream => stream.end());
     const serverClosed = server && listening
       ? new Promise(resolve => server.close(resolve))
@@ -86,6 +91,7 @@ module.exports = async function startSFTPServer({
     const hostKey = providedHostKey || getRuntimeHostKey();
 
     server = new Server({ hostKeys: [hostKey] }, client => {
+    peers.push(client._sock.remoteAddress);
     clients.add(client);
     sandbox.noteConnection();
     client.on('error', () => {});
@@ -103,6 +109,23 @@ module.exports = async function startSFTPServer({
       }
     });
     client.on('ready', () => {
+      client.on('tcpip', (accept, reject, info) => {
+        if (!['127.0.0.1', 'localhost'].includes(info.destIP) || !forwardPorts.includes(info.destPort)) {
+          reject();
+          return;
+        }
+        const socket = net.connect({ host: '127.0.0.1', port: info.destPort });
+        forwardedSockets.add(socket);
+        let channel;
+        socket.once('close', () => forwardedSockets.delete(socket));
+        socket.on('error', () => channel ? channel.destroy() : reject());
+        socket.once('connect', () => {
+          channel = accept();
+          channel.on('error', () => socket.destroy());
+          channel.once('close', () => socket.destroy());
+          socket.pipe(channel).pipe(socket);
+        });
+      });
       client.on('session', acceptSession => {
         const session = acceptSession();
         session.on('sftp', acceptSftp => {
@@ -367,6 +390,7 @@ module.exports = async function startSFTPServer({
     return {
       port: server.address().port,
       sandbox,
+      peers,
       get activeConnections() {
         return clients.size;
       },

@@ -1,14 +1,14 @@
 import * as vscode from 'vscode';
 import { CONFIG_PATH, COMMAND_SELECT_NETWORK_INTERFACE } from '../constants';
 import { listNetworkInterfaces } from '../core/networkInterface';
-import { getFTPConfigTargets, setNetworkInterface, FTPConfigTarget } from '../modules/networkInterfaceConfig';
+import { getNetworkConfigTargets, setNetworkInterface, NetworkConfigTarget } from '../modules/networkInterfaceConfig';
 import { checkCommand } from './abstract/createCommand';
 
 export default checkCommand({
   id: COMMAND_SELECT_NETWORK_INTERFACE,
 
   async handleCommand() {
-    const candidates: { document: vscode.TextDocument; target: FTPConfigTarget; version: number;
+    const candidates: { document: vscode.TextDocument; target: NetworkConfigTarget; version: number;
       label: string; description: string; detail: string }[] = [];
     for (const folder of vscode.workspace.workspaceFolders || []) {
       const uri = vscode.Uri.joinPath(folder.uri, CONFIG_PATH);
@@ -19,7 +19,7 @@ export default checkCommand({
         throw error;
       }
       const document = await vscode.workspace.openTextDocument(uri);
-      for (const target of getFTPConfigTargets(document.getText())) {
+      for (const target of getNetworkConfigTargets(document.getText())) {
         candidates.push({
           document, target, version: document.version,
           label: `${folder.name}: ${target.label}`, description: target.host,
@@ -29,11 +29,11 @@ export default checkCommand({
       }
     }
     if (!candidates.length) {
-      await vscode.window.showInformationMessage('No FTP profiles found in .vscode/sftp.json.');
+      await vscode.window.showInformationMessage('No FTP or SFTP profiles found in .vscode/sftp.json.');
       return;
     }
     const selected = candidates.length === 1 ? candidates[0] :
-      await vscode.window.showQuickPick(candidates, { placeHolder: 'Select an FTP configuration or profile' });
+      await vscode.window.showQuickPick(candidates, { placeHolder: 'Select an FTP or SFTP configuration or profile' });
     if (!selected) return;
     if (selected.document.isDirty) {
       await vscode.window.showWarningMessage('Save sftp.json before selecting a network interface.');
@@ -46,7 +46,7 @@ export default checkCommand({
       })),
     ];
     const choice = await vscode.window.showQuickPick(choices, {
-      placeHolder: 'Select the adapter for all FTP connections (control and file transfers)',
+      placeHolder: 'Select the adapter for this connection and its file transfers',
     });
     if (!choice) return;
     const { document, target, version } = selected;
@@ -63,7 +63,7 @@ export default checkCommand({
       throw new Error('Could not save the network interface selection to sftp.json.');
     }
     await vscode.window.showInformationMessage(
-      `FTP network interface: ${choice.value || 'system routing'}.`,
+      `${target.protocol.toUpperCase()} network interface: ${choice.value || 'system routing'}.`,
     );
   },
 });

@@ -55,6 +55,7 @@ Use **SFTP: Apply Ignore Template** to add rules to an existing configuration.
 | `password` | string or `null` | Prefer omission/`null`; Secret Storage and prompting are used. |
 | `remotePath` | string | Remote root. Runtime omission is `"./"`. |
 | `connectTimeout` | non-negative integer | Connection timeout in milliseconds; default 10000. |
+| `networkInterface` | string or `null` | Bind FTP or SFTP to a named IPv4 adapter; see [network interface selection](network-interface.md). |
 | `remoteTimeOffsetInHours` | number | Remote time minus local time; default 0. |
 | `concurrency` | positive integer | Default 4 for SFTP; FTP is serialized to 1. |
 | `remote` | string | Optional reference to a `remotefs.remote` editor setting. |
@@ -88,7 +89,6 @@ the stored record.
 | `secure` | boolean, `"control"`, or `"implicit"` | `false` is plain FTP. `true` is explicit TLS. `"control"` currently maps to full explicit TLS. `"implicit"` selects implicit TLS. FTPS is experimental. |
 | `secureOptions` | object or `null` | Options passed to Node.js TLS. |
 | `passive` | boolean | Accepted compatibility property; the current client manages passive transfers internally. |
-| `networkInterface` | string or `null` | Bind FTP control/passive sockets to a named IPv4 adapter; see [network interface selection](network-interface.md). |
 | `ftpKeepAliveInterval` | non-negative integer | FTP NOOP interval in milliseconds. Omission or `0` disables it. Overrides common `keepalive`. |
 | `ftpReconnectAttempts` | non-negative integer | Retry count for safely restartable FTP transfers. Omission is `0`. |
 | `keepalive` | non-negative integer | Used by FTP only when `ftpKeepAliveInterval` is omitted. Omission disables FTP keepalive. |

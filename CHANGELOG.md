@@ -7,6 +7,14 @@
 * Keep Visual Studio Marketplace uploads manual and default workflow dispatch
   non-publishing. All automatic publications retain the build-once quality gates.
 
+## 0.9.3 - 2026-10-07
+
+* Support `networkInterface` for SFTP as well as FTP. Bind the SSH connection
+  to the selected adapter's current IPv4 address and fail when it is unavailable.
+* Include SFTP configurations and inherited profiles in **SFTP: Select Network
+  Interface**. With SSH hopping, bind the first local connection and retain
+  forwarded channels for subsequent hops.
+
 ## 0.9.2 - 2026-10-04
 
 * Add `upload_files` and `uploads_wait` MCP tools for explicit saved-file uploads

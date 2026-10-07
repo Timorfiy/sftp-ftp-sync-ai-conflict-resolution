@@ -239,6 +239,11 @@
         "type": "integer",
         "minimum": 0,
         "default": 10000
+      },
+      "networkInterface": {
+        "type": ["string", "null"],
+        "minLength": 1,
+        "description": "Named IPv4 adapter for FTP or SFTP. Null or omission uses system routing. SFTP hopping binds the first local connection."
       }
     }
   },
@@ -296,11 +301,6 @@
       "passive": {
         "type": "boolean",
         "description": "Compatibility field accepted by runtime validation."
-      },
-      "networkInterface": {
-        "type": ["string", "null"],
-        "minLength": 1,
-        "description": "FTP-only named IPv4 adapter. Null or omission uses system routing."
       },
       "ftpKeepAliveInterval": {
         "type": "integer",
